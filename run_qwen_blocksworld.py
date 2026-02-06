@@ -299,6 +299,15 @@ def extract_plan(response_text: str) -> Optional[str]:
     return plan if plan else None
 
 
+def extract_reasoning(response_text: str) -> Optional[str]:
+    for tag in ["think", "reasoning"]:
+        match = re.search(rf"<{tag}>(.*?)</{tag}>", response_text, re.DOTALL | re.IGNORECASE)
+        if match:
+            reasoning = match.group(1).strip()
+            return reasoning if reasoning else None
+    return None
+
+
 def count_tokens(tokenizer, text: str) -> int:
     return len(tokenizer.encode(text))
 
@@ -327,7 +336,7 @@ def load_model_and_tokenizer(device: str, dtype: str):
     return model, tokenizer, torch_dtype
 
 
-def generate_response(model, tokenizer, prompt: str, gen_config, device: str, seed: int) -> Tuple[str, int]:
+def generate_response(model, tokenizer, prompt: str, gen_config, device: str, seed: int) -> Tuple[str, str, int]:
     import torch
 
     inputs = tokenizer(prompt, return_tensors="pt")
@@ -341,8 +350,9 @@ def generate_response(model, tokenizer, prompt: str, gen_config, device: str, se
         outputs = model.generate(**inputs, generation_config=gen_config, generator=generator)
 
     generated_ids = outputs[0][input_len:]
-    response_text = tokenizer.decode(generated_ids, skip_special_tokens=True)
-    return response_text, int(generated_ids.shape[0])
+    response_text_raw = tokenizer.decode(generated_ids, skip_special_tokens=False)
+    response_text_clean = tokenizer.decode(generated_ids, skip_special_tokens=True)
+    return response_text_raw, response_text_clean, int(generated_ids.shape[0])
 
 
 def format_generation_config(args) -> dict:
@@ -421,10 +431,12 @@ def run_generation(
     error_type: Optional[str] = None
     prompt = ""
     response_text = ""
+    response_text_clean = ""
     prompt_logged = False
     response_logged = False
     prompt_tokens_logged = False
     response_tokens_logged = False
+    reasoning_logged = False
 
     try:
         log_metadata(
@@ -455,7 +467,7 @@ def run_generation(
         prompt_tokens_logged = True
 
         set_seed(spec.seed)
-        response_text, response_tokens = generate_response(
+        response_text, response_text_clean, response_tokens = generate_response(
             model,
             tokenizer,
             prompt,
@@ -468,8 +480,11 @@ def run_generation(
         response_logged = True
         logger.info("Response tokens: %d", response_tokens)
         response_tokens_logged = True
+        reasoning = extract_reasoning(response_text_clean)
+        logger.info("Reasoning trace:\n%s", reasoning if reasoning is not None else "<none>")
+        reasoning_logged = True
 
-        plan_text = extract_plan(response_text)
+        plan_text = extract_plan(response_text_clean)
         if plan_text:
             plan_tokens = count_tokens(tokenizer, plan_text)
             logger.info("Plan tokens: %d", plan_tokens)
@@ -488,6 +503,8 @@ def run_generation(
             logger.info("Response:\n<no_response>")
         if not response_tokens_logged:
             logger.info("Response tokens: 0")
+        if not reasoning_logged:
+            logger.info("Reasoning trace:\n<none>")
         logger.info("Plan tokens: 0")
         logger.info("Error: parse_error: %s", exc)
     except Exception as exc:
@@ -500,6 +517,8 @@ def run_generation(
             logger.info("Response:\n<no_response>")
         if not response_tokens_logged:
             logger.info("Response tokens: 0")
+        if not reasoning_logged:
+            logger.info("Reasoning trace:\n<none>")
         logger.info("Plan tokens: 0")
         logger.info("Error: generation_error: %s", exc)
     finally:
