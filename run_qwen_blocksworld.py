@@ -225,6 +225,11 @@ def find_index(lines: List[str], candidates: List[str], start: int = 0) -> Optio
 
 def parse_grounded_file(path: Path) -> Tuple[List[str], List[str], List[GroundedAction]]:
     text = path.read_text(encoding="utf-8", errors="replace")
+    if text.lstrip().startswith("version https://git-lfs.github.com/spec/v1"):
+        raise ParseError(
+            f"Grounded file appears to be a Git LFS pointer (missing content). "
+            f"Run 'git lfs pull' to fetch: {path}"
+        )
     lines = text.splitlines()
 
     idx_initial = find_index(lines, ["initial state facts:"])
