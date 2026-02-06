@@ -1,0 +1,27 @@
+
+
+(define (problem s7opwsbi8ksrb2c4)
+ (:domain swmivibhgrceuh3n)
+ (:objects qnh0a2c4y9sz8xlg d7wuhdq3ar8t6mf9 no266k1c7engt0y7 a3008t9o9igssqnx rrrvwnltv7g96s9h e5bqx6f0avy7w335 v2zwh99l1ffahvpw x5u8xgnbnxanwe14 - object)
+ (:init 
+    (ni2znqqdangh4jl5)
+    (jyl8ny94brpqqzdx x5u8xgnbnxanwe14)
+    (rwpi4bggss3phkx8 x5u8xgnbnxanwe14 rrrvwnltv7g96s9h)
+    (rwpi4bggss3phkx8 rrrvwnltv7g96s9h v2zwh99l1ffahvpw)
+    (rwpi4bggss3phkx8 v2zwh99l1ffahvpw d7wuhdq3ar8t6mf9)
+    (rwpi4bggss3phkx8 d7wuhdq3ar8t6mf9 a3008t9o9igssqnx)
+    (rwpi4bggss3phkx8 a3008t9o9igssqnx qnh0a2c4y9sz8xlg)
+    (rwpi4bggss3phkx8 qnh0a2c4y9sz8xlg no266k1c7engt0y7)
+    (rwpi4bggss3phkx8 no266k1c7engt0y7 e5bqx6f0avy7w335)
+    (wf0ooz14rzkewsma e5bqx6f0avy7w335))
+ (:goal  (and 
+    (jyl8ny94brpqqzdx no266k1c7engt0y7)
+    (rwpi4bggss3phkx8 no266k1c7engt0y7 x5u8xgnbnxanwe14)
+    (rwpi4bggss3phkx8 x5u8xgnbnxanwe14 d7wuhdq3ar8t6mf9)
+    (rwpi4bggss3phkx8 d7wuhdq3ar8t6mf9 qnh0a2c4y9sz8xlg)
+    (rwpi4bggss3phkx8 qnh0a2c4y9sz8xlg a3008t9o9igssqnx)
+    (rwpi4bggss3phkx8 a3008t9o9igssqnx e5bqx6f0avy7w335)
+    (wf0ooz14rzkewsma e5bqx6f0avy7w335)
+    (jyl8ny94brpqqzdx v2zwh99l1ffahvpw)
+    (rwpi4bggss3phkx8 v2zwh99l1ffahvpw rrrvwnltv7g96s9h)
+    (wf0ooz14rzkewsma rrrvwnltv7g96s9h))))

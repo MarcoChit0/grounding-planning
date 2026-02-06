@@ -1,87 +1,40 @@
 <role>
 You are an AI planning expert.
-</role>
+</role> 
 
 <task>
-Given an initial state, goal facts, and actions, you should return a **valid sequence of actions** (a plan) that, when applied in the initial state, transitions it to the goal state, a state that has all goal facts.
-</task>
+Given the initial state, the set of goal facts, and a list of available actions, return **a plan** (a sequence of actions) that transforms the initial state into a goal state. 
+</task> 
+
+<definitions>
+- A state is a set of facts.
+- A goal state is a state that has all goal facts.
+- An action is applicable if, and only if, **all** its preconditions are in the current state. 
+- When an action is applied: remove its delete effects from the state, then add its add effects. 
+</definitions>
 
 <inputs>
 This is the initial state:
 <initial-state>
-(ontable a)
-(clear a)
-(handempty)
-(ontable d)
-(clear c)
-(clear b)
-(ontable b)
-(ontable c)
-(clear d)
+$initial_state
 </initial-state>
 
 These are the goal facts:
 <goal-facts>
-(on c b)
-(on b a)
-(on d c)
+$goal_facts
 </goal-facts>
 
 These are the actions:
 <actions>
-    Name                          Preconditions                         Delete Effects                            Add Effects
-  (pick-up c)  [(handempty), (ontable c), (clear c)]  [(handempty), (ontable c), (clear c)]                          [(holding c)]
-  (pick-up a)  [(clear a), (handempty), (ontable a)]  [(clear a), (handempty), (ontable a)]                          [(holding a)]
-  (pick-up d)  [(handempty), (ontable d), (clear d)]  [(handempty), (ontable d), (clear d)]                          [(holding d)]
-  (pick-up b)  [(ontable b), (handempty), (clear b)]  [(ontable b), (handempty), (clear b)]                          [(holding b)]
- (put-down c)                          [(holding c)]                          [(holding c)]  [(handempty), (ontable c), (clear c)]
- (put-down a)                          [(holding a)]                          [(holding a)]  [(clear a), (handempty), (ontable a)]
- (put-down d)                          [(holding d)]                          [(holding d)]  [(handempty), (ontable d), (clear d)]
- (put-down b)                          [(holding b)]                          [(holding b)]  [(ontable b), (handempty), (clear b)]
-  (stack c c)               [(clear c), (holding c)]                          [(holding c)]                [(handempty), (on c c)]
-  (stack c a)               [(clear a), (holding c)]               [(clear a), (holding c)]     [(handempty), (on c a), (clear c)]
-  (stack c d)               [(holding c), (clear d)]               [(holding c), (clear d)]     [(handempty), (clear c), (on c d)]
-  (stack c b)               [(holding c), (clear b)]               [(holding c), (clear b)]     [(on c b), (handempty), (clear c)]
-  (stack a c)               [(holding a), (clear c)]               [(holding a), (clear c)]     [(clear a), (handempty), (on a c)]
-  (stack a a)               [(clear a), (holding a)]                          [(holding a)]                [(handempty), (on a a)]
-  (stack a d)               [(holding a), (clear d)]               [(holding a), (clear d)]     [(on a d), (clear a), (handempty)]
-  (stack a b)               [(holding a), (clear b)]               [(holding a), (clear b)]     [(clear a), (handempty), (on a b)]
-  (stack d c)               [(clear c), (holding d)]               [(clear c), (holding d)]     [(on d c), (handempty), (clear d)]
-  (stack d a)               [(clear a), (holding d)]               [(clear a), (holding d)]     [(handempty), (on d a), (clear d)]
-  (stack d d)               [(clear d), (holding d)]                          [(holding d)]                [(on d d), (handempty)]
-  (stack d b)               [(clear b), (holding d)]               [(holding d), (clear b)]     [(on d b), (handempty), (clear d)]
-  (stack b c)               [(clear c), (holding b)]               [(holding b), (clear c)]     [(handempty), (on b c), (clear b)]
-  (stack b a)               [(clear a), (holding b)]               [(clear a), (holding b)]     [(handempty), (on b a), (clear b)]
-  (stack b d)               [(holding b), (clear d)]               [(holding b), (clear d)]     [(on b d), (handempty), (clear b)]
-  (stack b b)               [(holding b), (clear b)]                          [(holding b)]                [(handempty), (on b b)]
-(unstack c c)     [(handempty), (clear c), (on c c)]                [(handempty), (on c c)]                          [(holding c)]
-(unstack c a)     [(handempty), (on c a), (clear c)]     [(handempty), (on c a), (clear c)]               [(clear a), (holding c)]
-(unstack c d)     [(handempty), (clear c), (on c d)]     [(handempty), (clear c), (on c d)]               [(holding c), (clear d)]
-(unstack c b)     [(on c b), (handempty), (clear c)]     [(on c b), (handempty), (clear c)]               [(holding c), (clear b)]
-(unstack a c)     [(clear a), (handempty), (on a c)]     [(clear a), (handempty), (on a c)]               [(holding a), (clear c)]
-(unstack a a)     [(clear a), (handempty), (on a a)]                [(handempty), (on a a)]                          [(holding a)]
-(unstack a d)     [(on a d), (clear a), (handempty)]     [(on a d), (clear a), (handempty)]               [(holding a), (clear d)]
-(unstack a b)     [(clear a), (handempty), (on a b)]     [(clear a), (handempty), (on a b)]               [(holding a), (clear b)]
-(unstack d c)     [(clear d), (handempty), (on d c)]     [(clear d), (handempty), (on d c)]               [(clear c), (holding d)]
-(unstack d a)     [(handempty), (on d a), (clear d)]     [(handempty), (on d a), (clear d)]               [(clear a), (holding d)]
-(unstack d d)     [(on d d), (handempty), (clear d)]                [(on d d), (handempty)]                          [(holding d)]
-(unstack d b)     [(on d b), (handempty), (clear d)]     [(on d b), (handempty), (clear d)]               [(holding d), (clear b)]
-(unstack b c)     [(handempty), (on b c), (clear b)]     [(handempty), (on b c), (clear b)]               [(holding b), (clear c)]
-(unstack b a)     [(handempty), (on b a), (clear b)]     [(handempty), (on b a), (clear b)]               [(clear a), (holding b)]
-(unstack b d)     [(on b d), (handempty), (clear b)]     [(on b d), (handempty), (clear b)]               [(holding b), (clear d)]
-(unstack b b)     [(clear b), (handempty), (on b b)]                [(handempty), (on b b)]                          [(holding b)]
+$actions
 </actions>
-Each row in the table of actions above represents an action and follows the format [Name, Preconditions, Delete Effects, Add Effects], where Name is the name of the action, Preconditions is a list of facts that must be true in a state so that the action can be applied, Delete Effects is a list of facts that are removed from the state the action is applied on, and Add Effects is a list of facts that are added to the state the action is applied on.
 </inputs>
 
 <output-format>
-Return **only** the sequence of actions (the plan) that transitions the initial state into a goal state. 
-Each action of the plan should be identified by its name on the table.
-There should be an action per line.
-The plan should be wrapped in "<plan>...</plan>". 
+Return **only** a plan wrapped in "<plan>...</plan>", where each plan's action should be identified by its name on the table, each on a line.
 Do not include analysis, examples, or commentary outside the plan tags. 
 </output-format>
 
-<checklist>
-1) The plan must be valid, that is, each action must be applicable in the state it is applied in and the plan must end in a goal state.
-</checklist>
+<requirements>
+The plan must be valid: each action must be applicable in the state it is applied in, and the plan must end in a goal state.
+</requirements>

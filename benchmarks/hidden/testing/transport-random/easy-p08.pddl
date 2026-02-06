@@ -1,0 +1,48 @@
+
+
+(define (problem e4qvzfv8yu58ceps)
+ (:domain hbrpoig8f1cbfno6)
+ (:objects 
+    u26192k42qpr75pr y088o5or15byvzk3 i8bzbf1i3ldqyun3 - rek8pk3yr9oudocu
+    uvyr0qf4b8dwoecb o7y22t1tdgnnqfkp ugkv05sz9c3fuquh wv98y3umpyo0cu4y - zrenun5z3jqip98q
+    q71n8mtzx272hpoe vb9ooaedoecve6pr pmbjpi4hn3qxkhkt gbtyzmepgthcw81x e6va05g1x3j1l7r8 qm1h8ojrjedkts2h yj5ci6vg2g73aj0j - gfygwwqc38hyf9sx
+    l5nwqvrr9a7mfp05 w19vw3rtqohmuh8l mn4r7sgmsoxlta8i - b9m80o2rak1vrjnv
+    )
+ (:init (sk28t7a9tgiqhg9j u26192k42qpr75pr w19vw3rtqohmuh8l)
+    (sk28t7a9tgiqhg9j y088o5or15byvzk3 w19vw3rtqohmuh8l)
+    (sk28t7a9tgiqhg9j i8bzbf1i3ldqyun3 mn4r7sgmsoxlta8i)
+    (iqk2919ahej8cx9j l5nwqvrr9a7mfp05 w19vw3rtqohmuh8l)
+    (iqk2919ahej8cx9j w19vw3rtqohmuh8l mn4r7sgmsoxlta8i)
+    (dgdzvgpmm82i1lr3 uvyr0qf4b8dwoecb q71n8mtzx272hpoe)
+    (dgdzvgpmm82i1lr3 o7y22t1tdgnnqfkp gbtyzmepgthcw81x)
+    (dgdzvgpmm82i1lr3 ugkv05sz9c3fuquh gbtyzmepgthcw81x)
+    (dgdzvgpmm82i1lr3 wv98y3umpyo0cu4y qm1h8ojrjedkts2h)
+    (dgdzvgpmm82i1lr3 u26192k42qpr75pr e6va05g1x3j1l7r8)
+    (dgdzvgpmm82i1lr3 y088o5or15byvzk3 e6va05g1x3j1l7r8)
+    (dgdzvgpmm82i1lr3 i8bzbf1i3ldqyun3 vb9ooaedoecve6pr)
+    (hxtpdpff5e8ii49k q71n8mtzx272hpoe vb9ooaedoecve6pr)
+    (hxtpdpff5e8ii49k vb9ooaedoecve6pr q71n8mtzx272hpoe)
+    (hxtpdpff5e8ii49k vb9ooaedoecve6pr yj5ci6vg2g73aj0j)
+    (hxtpdpff5e8ii49k pmbjpi4hn3qxkhkt q71n8mtzx272hpoe)
+    (hxtpdpff5e8ii49k qm1h8ojrjedkts2h q71n8mtzx272hpoe)
+    (hxtpdpff5e8ii49k e6va05g1x3j1l7r8 gbtyzmepgthcw81x)
+    (hxtpdpff5e8ii49k e6va05g1x3j1l7r8 yj5ci6vg2g73aj0j)
+    (hxtpdpff5e8ii49k gbtyzmepgthcw81x e6va05g1x3j1l7r8)
+    (hxtpdpff5e8ii49k yj5ci6vg2g73aj0j vb9ooaedoecve6pr)
+    (hxtpdpff5e8ii49k q71n8mtzx272hpoe qm1h8ojrjedkts2h)
+    (hxtpdpff5e8ii49k yj5ci6vg2g73aj0j e6va05g1x3j1l7r8)
+    (hxtpdpff5e8ii49k q71n8mtzx272hpoe pmbjpi4hn3qxkhkt)
+    (hxtpdpff5e8ii49k vb9ooaedoecve6pr gbtyzmepgthcw81x)
+    (hxtpdpff5e8ii49k gbtyzmepgthcw81x vb9ooaedoecve6pr)
+    (hxtpdpff5e8ii49k pmbjpi4hn3qxkhkt gbtyzmepgthcw81x)
+    (hxtpdpff5e8ii49k gbtyzmepgthcw81x pmbjpi4hn3qxkhkt)
+    (hxtpdpff5e8ii49k pmbjpi4hn3qxkhkt qm1h8ojrjedkts2h)
+    (hxtpdpff5e8ii49k qm1h8ojrjedkts2h pmbjpi4hn3qxkhkt)
+    (hxtpdpff5e8ii49k gbtyzmepgthcw81x yj5ci6vg2g73aj0j)
+    (hxtpdpff5e8ii49k yj5ci6vg2g73aj0j gbtyzmepgthcw81x)
+    )
+ (:goal  (and 
+    (dgdzvgpmm82i1lr3 uvyr0qf4b8dwoecb pmbjpi4hn3qxkhkt)
+    (dgdzvgpmm82i1lr3 o7y22t1tdgnnqfkp e6va05g1x3j1l7r8)
+    (dgdzvgpmm82i1lr3 ugkv05sz9c3fuquh q71n8mtzx272hpoe)
+    (dgdzvgpmm82i1lr3 wv98y3umpyo0cu4y q71n8mtzx272hpoe))))

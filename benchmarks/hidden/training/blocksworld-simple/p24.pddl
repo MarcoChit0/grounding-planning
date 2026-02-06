@@ -1,0 +1,26 @@
+
+
+(define (problem pr24)
+ (:domain d1)
+ (:objects o1 o12 o23 o24 o25 o26 o27 - object)
+ (:init 
+    (p1)
+    (p2 o24)
+    (p4 o24 o23)
+    (p4 o23 o1)
+    (p4 o1 o27)
+    (p4 o27 o26)
+    (p4 o26 o25)
+    (p4 o25 o12)
+    (p5 o12))
+ (:goal  (and 
+    (p2 o1)
+    (p4 o1 o24)
+    (p5 o24)
+    (p2 o12)
+    (p4 o12 o27)
+    (p5 o27)
+    (p2 o23)
+    (p4 o23 o26)
+    (p4 o26 o25)
+    (p5 o25))))
