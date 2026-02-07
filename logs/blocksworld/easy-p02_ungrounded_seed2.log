@@ -1,0 +1,306 @@
+[2026-02-06 18:33:20,664] INFO :: Stage: plan generation
+[2026-02-06 18:33:20,664] INFO :: Prompt metadata: domain=benchmarks/ipc2023-learning/grounded/blocksworld/domain.pddl, instance=benchmarks/ipc2023-learning/grounded/blocksworld/easy-p02.pddl, template=ungrounded, seed=2, timestamp=2026-02-06T21:33:20Z
+[2026-02-06 18:33:20,664] INFO :: Model metadata: model=Qwen/Qwen3-0.6B, device=cuda, dtype=torch.float16, generation_config=GenerationConfig {
+  "do_sample": true,
+  "eos_token_id": 151645,
+  "max_new_tokens": 38912,
+  "pad_token_id": 151643,
+  "temperature": 0.6,
+  "top_k": 20,
+  "top_p": 0.95
+}
+, library_versions={'python': '3.13.3', 'torch': '2.10.0+cu128', 'transformers': '5.1.0', 'numpy': '2.4.2'}
+[2026-02-06 18:33:20,664] INFO :: Prompt:
+
+<role>
+You are an AI planning expert.
+</role>
+
+<task>
+Given the PDDL domain and the PDDL instance, return a plan (a sequence of actions) that transforms the initial state into a goal state.
+</task>
+
+<definitions>
+- A state is a set of facts.
+- A goal state is a state that has all goal facts.
+- An action is applicable if, and only if, **all** its preconditions are in the current state.
+- When an action is applied: remove its delete effects from the state, then add its add effects.
+</definitions>
+
+<inputs>
+This is the PDDL domain:
+<pddl-domain>
+;; source: https://github.com/AI-Planning/pddl-generators/blob/main/blocksworld/domain.pddl
+;;
+(define (domain blocksworld)
+
+(:requirements :strips)
+
+(:predicates (clear ?x)
+             (on-table ?x)
+             (arm-empty)
+             (holding ?x)
+             (on ?x ?y))
+
+(:action pickup
+  :parameters (?ob)
+  :precondition (and (clear ?ob) (on-table ?ob) (arm-empty))
+  :effect (and (holding ?ob) (not (clear ?ob)) (not (on-table ?ob)) 
+               (not (arm-empty))))
+
+(:action putdown
+  :parameters  (?ob)
+  :precondition (holding ?ob)
+  :effect (and (clear ?ob) (arm-empty) (on-table ?ob) 
+               (not (holding ?ob))))
+
+(:action stack
+  :parameters  (?ob ?underob)
+  :precondition (and (clear ?underob) (holding ?ob))
+  :effect (and (arm-empty) (clear ?ob) (on ?ob ?underob)
+               (not (clear ?underob)) (not (holding ?ob))))
+
+(:action unstack
+  :parameters  (?ob ?underob)
+  :precondition (and (on ?ob ?underob) (clear ?ob) (arm-empty))
+  :effect (and (holding ?ob) (clear ?underob)
+               (not (on ?ob ?underob)) (not (clear ?ob)) (not (arm-empty)))))
+
+</pddl-domain>
+
+This is the PDDL instance:
+<pddl-instance>
+;; blocks=6, out_folder=new/easy, instance_id=2, seed=43
+
+(define (problem blocksworld-02)
+ (:domain blocksworld)
+ (:objects b1 b2 b3 b4 b5 b6 - object)
+ (:init 
+    (arm-empty)
+    (clear b6)
+    (on b6 b5)
+    (on b5 b4)
+    (on b4 b2)
+    (on b2 b3)
+    (on b3 b1)
+    (on-table b1))
+ (:goal  (and 
+    (clear b6)
+    (on b6 b2)
+    (on b2 b3)
+    (on b3 b4)
+    (on b4 b5)
+    (on b5 b1)
+    (on-table b1))))
+
+</pddl-instance>
+</inputs>
+
+<output-format>
+Return **only** a plan wrapped in "<plan>...</plan>", where each plan's action must use the same name and same number of parameters as one of the action schemas, each on a line. Do not include analysis, examples, or commentary outside the plan tags.
+</output-format>
+
+<requirements>
+The plan must be valid: each action must be applicable in the state it is applied in, and the plan must end in a goal state.
+</requirements>
+[2026-02-06 18:33:20,665] INFO :: Prompt tokens: 786
+[2026-02-06 18:34:02,856] INFO :: Reasoning trace:
+<think>
+Okay, let's tackle this problem. The goal is to transform the initial state of the PDDL instance into the goal state using the given actions. First, I need to understand the current state and the desired state.
+
+Looking at the input, the initial state has several objects and their positions. The goal state requires that all objects are in certain positions, and all the tables are on. The initial state has b6 cleared, on b6 b5, b5 b4, etc. So, the problem is to get all the objects on the table and stack them correctly.
+
+Let me start by identifying the steps needed. The initial state has b6 on b5, which needs to be moved to b2. Also, the objects b2, b3, b4, b5, b6 are on the table. Wait, the initial state has b6 on b5, and all other objects are on the table. So, the first action should be to move b6 from b5 to b2. But how?
+
+The action to move an object is either pickup or putdown. Since b6 is on the table and needs to be moved, maybe pickup? But wait, pickup requires clear, on, and arm-empty. At the initial state, b6 is clear, on the table, and arm-empty. So yes, pickup is applicable. Once b6 is picked up, then put down to get it back to the table. But maybe there's a better way. Alternatively, maybe stack b6 on b5 first, but that doesn't make sense. Wait, the initial state has b6 on b5. So if I want to move b6 to b2, perhaps first pick it up and then put it down? Or maybe there's another way.
+
+Wait, the goal state requires that b6 is on b2. So maybe first pick b6, then put it down. But also, the other objects need to be on the table. So maybe the steps are:
+
+1. Pick up b6.
+2. Put b6 down to get it back to the table.
+3. Then move b5 to b2, but how? Wait, maybe there's another action. Let me think again.
+
+Alternatively, perhaps the initial state has all objects on the table except maybe b6? Wait, the initial state has b6 on the table, and the other objects are on the table. So perhaps the steps are:
+
+- Move b6 from b5 to b2 (using pickup and putdown).
+- Then, since b6 is now on b2, the other objects need to be moved accordingly. But how?
+
+Wait, the initial state has b6 on b5. The goal requires that b6 is on b2. So first, pick b6 up, then put it down. But then, how do the other objects move? Maybe the problem is that the other objects are already on the table, so they need to be moved to their correct positions. But maybe there's a way to stack them. Alternatively, maybe the problem requires that all objects are stacked correctly. For example, b6 on b5, b5 on b4, etc. So perhaps the steps are:
+
+1. Pick up b6.
+2. Put b6 down to get it on the table again (so that it's now on b2).
+3. Then move b5 to b2, but how? Maybe another action.
+
+Wait, perhaps the correct plan is to first pick up b6, put it down, then move b5 to b2. But I need to check the actions. The actions available are pickup, putdown, stack, unstack. So for moving b6, the action would be pickup and putdown. But perhaps there's a way to do it in two steps.
+
+Alternatively, maybe the problem is that the initial state has all objects on the table, but the goal requires that they are arranged correctly. For example, b6 on b2, b5 on b3, etc. So perhaps the steps are:
+
+- First, move b6 from b5 to b2 using pickup and putdown.
+- Then, move b5 from b4 to b3 using another action.
+- Continue this process until all are in place.
+
+But how to model this? Let's outline the steps:
+
+1. Apply pickup to b6. This removes b6 from its current location (b5) and adds it to the table. Wait, but the current state has b6 on the table. So after pickup, b6 is on the table again. But the initial state has b6 on the table. So maybe this is redundant. Wait, no. The initial state has b6 on the table. So if we pick it up, it's on the table. But how does that affect the state? The effect of pickup would be to add holding b6 and remove clear and on. Wait, the effect of pickup is (holding ?ob), (not clear ?ob), (not on ?ob), (not arm-empty). So if b6 is on the table and arm-empty, then applying pickup would add holding and remove clear and on. So the state after pickup would have b6 holding, and the table's state would have b6 on the table again. But that seems redundant. Wait, maybe the initial state already has b6 on the table. So perhaps the first action is to pick up b6, then put it down. But how?
+
+Alternatively, maybe the problem requires that all objects are in the correct positions. Let's think again. The initial state has b6 on b5, and all other objects on the table. The goal is to have all objects on the table, with b6 on b2. So perhaps the steps are:
+
+1. Pick up b6.
+2. Put b6 down to get it back to the table.
+3. Then, move b5 from b4 to b3.
+4. Continue this until all are in place.
+
+But how to represent this as a plan? Each action must be in the same order. So the plan would be:
+
+pick up b6
+put down b6
+unstack b5
+unstack b4
+
+Wait, but unstack requires that both b5 and b4 are on the table. Let me check the actions. The unstack action requires (on ?ob ?underob) and (clear ?ob) and (arm-empty). So if b5 is on the table, then unstacking it would remove b5 from the table and add it to the underob. But in the initial state, b5 is on the table. So maybe unstacking b5 and b4 would take them off the table and put them on the underob. But the initial state has b5 on b4. So maybe the steps are:
+
+- unstack b5 and b4, then move them to other positions.
+
+But I need to make sure each action is applicable. Let me try to outline the plan step by step.
+
+First, the initial state has all objects on the table except maybe b6? No, the initial state has b6 on the table. Wait, the initial state has:
+
+(arm-empty)
+(clar b6)
+(on b6 b5)
+(on b5 b4)
+(on b4 b2)
+(on b2 b3)
+(on b3 b1)
+(on-table b1)
+
+So, all objects except maybe b6? No, b6 is on the table. So the initial state has all objects on the table. The goal requires that all objects are on the table, with b6 on b2. So perhaps the problem is that the initial state has b6 on b5, and the other objects are on the table. So to move b6 to b2, we need to pick it up, put it down, then move it. But how?
+
+Wait, maybe the correct plan is:
+
+1. Apply pickup to b6. This removes b6 from b5 and adds it to the table. So now b6 is on the table again.
+
+But since the initial state already has b6 on the table, perhaps this is redundant. However, the initial state's fact is (clear b6), which is already true. So maybe this is the first step.
+
+Then, apply putdown to b6. This removes b6 from the table and adds it back to the table. Wait, no. Wait, the effect of pickup is (holding ?ob) and (not clear ?ob), (not on ?ob), (not arm-empty). So if b6 is on the table and arm-empty, then after pickup, it's holding, and the table's state has b6 on the table again. So putting it down would require that it's holding, which it already is. So maybe that's not needed. Alternatively, maybe the correct action is to put b6 down to get it back to the table. But since it's already there, maybe that's redundant. So perhaps the first action is to pick up b6, then put it down. But how does that affect the state? The effect of pickup is to add holding, remove clear and on. So the state after pickup would be (clear b6) is false, and (on b6 b5) is false. So the table would have b6 not on the table. Wait, no. The initial state has b6 on the table. So after pickup, since it's on the table, the state would have (clear b6) as false, and (on b6 b5) as false. So the table would no longer have b6. That's a problem. So maybe that approach is incorrect.
+
+Hmm, this suggests that moving b6 from b5 to b2 requires more steps. Let me think again. The initial state has b6 on b5. The goal is to have b6 on b2. So perhaps the correct plan is:
+
+First, pick up b6, then put it down to b2. But how? The action to put down requires holding. So after picking up, b6 is holding. Then, put it down. But the effect of putdown is to add clear, arm-empty, and on. So putting b6 down would make it clear, arm-empty, and on. So the state after putting down would have b6 clear, on, and arm-empty. But the initial state had b6 on the table. So this seems possible. Then, the other objects need to be moved. But how?
+
+Alternatively, maybe the problem is that the initial state has all objects on the table. The goal requires that all objects are on the table, but perhaps the order is different. For example, b6 on b2, b5 on b3, etc. So perhaps the steps are:
+
+1. Move b6 from b5 to b2 using pickup and putdown.
+2. Then, move b5 from b4 to b3 using another action.
+
+But how to model this? Let's try to write the plan step by step.
+
+First action: pick up b6. This removes b6 from b5 and adds it to the table. So the state after this action would have b6 on the table. Then, put it down. This would make it clear, arm-empty, and on. But since the initial state already had b6 on the table, this step might not be needed. Alternatively, maybe the initial state's fact is (clear b6), which is true. So after pickup, (clear b6) is false, and (on b6 b5) is false. So the table would no longer have b6. Which is incorrect. Therefore, this approach might not work.
+
+Wait, perhaps the initial state has b6 on the table. So if we pick it up, it's on the table again. But how? The effect of pickup is to remove clear and on, but add holding. So if the table already has b6, then after pickup, it's holding, and the table's state has b6 on the table. So the state after pickup is:
+
+(clar b6) is false, (on b6 b5) is false, (holding b6) is true, and (arm-empty) is false. But the table's state would have b6 on the table. So this seems possible.
+
+So the first action is pickup b6. Then, the next action is putdown b6. This would make it clear, arm-empty, and on. But the table's state now has b6 on the table. Then, the next steps would be to move b5 and b4. But how?
+
+Alternatively, maybe the correct plan is to first unstack b5 and b4, then stack them. But I need to check the actions.
+
+The unstack action requires (on ?ob ?underob) and (clear ?ob) and (arm-empty). So if b5 is on the table, then unstacking it would remove b5 from the table and add it to the underob. Similarly for b4.
+
+So let's outline the steps:
+
+1. Apply unstack to b5 and b4. This would take them off the table and put them on the underob. Then, move them to other positions.
+
+But the initial state has b5 on b4. So perhaps the steps are:
+
+- unstack b5 and b4, then move them to other positions.
+
+But I'm not sure. Maybe the correct plan is:
+
+First, pick up b6, then put it down. Then, unstack b5 and b4. Then, move them accordingly.
+
+But I need to make sure each action is applicable. Let me try to write the plan as:
+
+plan:
+pick up b6
+put down b6
+unstack b5
+unstack b4
+...
+
+But I need to check if each action is applicable.
+
+Alternatively, perhaps the correct plan is:
+
+1. unstack b5 and b4 to move them to the underob.
+
+But I'm getting stuck here. Let me think again about the initial state. The initial state has all objects on the table. The goal requires that they are arranged in order. For example, b6 on b2, b5 on b3, etc. So perhaps the steps are:
+
+- unstack b5 and b4, then stack them.
+
+But how?
+
+Alternatively, maybe the problem is that the initial state has all objects on the table, and the goal requires that they are arranged in a certain way. So perhaps the plan is to unstack all objects, then stack them.
+
+But the actions available are pickup, putdown, stack, unstack. So for unstacking, the parameters are (on ?ob ?underob) and (clear ?ob) and (arm-empty). So if b5 is on the table, then unstacking it would take it off and add it to the underob. Similarly for b4. Then, after unstacking, stack them.
+
+But the initial state has b5 on b4. So perhaps the steps are:
+
+1. unstack b5 and b4, which takes them off the table and adds them to the underob.
+
+But then, how to move them? Maybe the underob is b2, so after unstacking, they are on b2.
+
+But I'm not sure. Let me try to outline the plan.
+
+Final plan:
+
+1. unstack b5 and b4
+2. unstack b2 and b3
+3. unstack b1 and b6
+
+But I need to make sure each action is applicable.
+
+Alternatively, perhaps the correct plan is:
+
+pick up b6, then put it down, then unstack b5 and b4. But I'm not confident. Let me check the effect of each action.
+
+After picking up b6, the state would be (clear b6) is false, (on b6 b5) is false, (holding b6) is true, (arm-empty) is false. Then, putting it down would add (clear b6) is true, (arm-empty) is true, (on b6 b5) is true. So the state after putting down would have b6 clear, arm-empty, and on. So that's correct. Then, unstacking b5 and b4 would take them off the table and add them to the underob.
+
+So the plan would be:
+
+1. pickup b6
+2. putdown b6
+3. unstack b5
+4. unstack b4
+
+But the goal requires that all objects are on the table, with b6 on b2. So perhaps after all these steps, the final state matches the goal.
+
+But I need to check if each action is applicable. Let's verify:
+
+- pickup b6: preconditions are (clear b6) and (on-table b6) and (arm-empty). Both are true. So applicable.
+
+- putdown b6: requires holding. Yes, after pickup, holding is true.
+
+- unstack b5: requires (on b5 b4) and (clear b5) and (arm-empty). Both are true. So applicable.
+
+- unstack b4: same as above.
+
+Then, after these actions, the state would have all objects on the table, with b6 on b2. Which matches the goal. So the plan is:
+
+pick up b6
+put down b6
+unstack b5
+unstack b4
+
+But wait, the goal requires that all objects are on the table, which they are after these steps. So this should be the correct plan.
+</think>
+[2026-02-06 18:34:02,856] INFO :: Response:
+<pplan>
+pick up b6
+put down b6
+unstack b5
+unstack b4
+</plan>
+[2026-02-06 18:34:02,856] INFO :: Response tokens: 3676
+[2026-02-06 18:34:02,856] INFO :: Extracted plan tokens: 0
+[2026-02-06 18:34:02,856] INFO :: Response metadata: response_tokens=3676, extracted_plan_tokens=0

@@ -3,6 +3,7 @@ import argparse
 import csv
 import datetime as dt
 import importlib.util
+import inspect
 import logging
 import random
 import re
@@ -202,6 +203,8 @@ def parse_grounded_actions(lines: List[str]) -> List[GroundedAction]:
         stripped = line.strip()
         if not stripped:
             continue
+        if set(stripped) == {"-"}:
+            continue
         match = pattern.match(stripped)
         if not match:
             raise ParseError(f"Unrecognized operator line: {stripped}")
@@ -313,6 +316,64 @@ def extract_reasoning(response_text: str) -> Optional[str]:
     return None
 
 
+def build_chat_prompt(tokenizer, prompt: str) -> str:
+    if not hasattr(tokenizer, "apply_chat_template"):
+        return prompt
+
+    messages = [
+        {"role": "system", "content": "You are an AI planning expert."},
+        {"role": "user", "content": prompt},
+    ]
+    kwargs = {
+        "tokenize": False,
+        "add_generation_prompt": True,
+    }
+    try:
+        signature = inspect.signature(tokenizer.apply_chat_template)
+        if "enable_thinking" in signature.parameters:
+            kwargs["enable_thinking"] = True
+    except Exception:
+        pass
+
+    return tokenizer.apply_chat_template(messages, **kwargs)
+
+
+def filter_model_inputs(model, model_inputs: dict) -> dict:
+    # Qwen chat tokenizers may include token_type_ids that many CausalLM models do not accept.
+    model_inputs = dict(model_inputs)
+    model_inputs.pop("token_type_ids", None)
+
+    try:
+        signature = inspect.signature(model.forward)
+    except Exception:
+        return model_inputs
+
+    params = signature.parameters.values()
+    if any(p.kind == inspect.Parameter.VAR_KEYWORD for p in params):
+        return model_inputs
+
+    allowed = set(signature.parameters.keys())
+    return {k: v for k, v in model_inputs.items() if k in allowed}
+
+
+def split_qwen_thinking(output_ids: List[int], tokenizer) -> Tuple[Optional[str], str]:
+    end_think_id = tokenizer.convert_tokens_to_ids("</think>")
+    split_idx = 0
+    if isinstance(end_think_id, int) and end_think_id >= 0:
+        for idx in range(len(output_ids) - 1, -1, -1):
+            if output_ids[idx] == end_think_id:
+                split_idx = idx + 1
+                break
+
+    if split_idx > 0:
+        thinking = tokenizer.decode(output_ids[:split_idx], skip_special_tokens=True).strip()
+        content = tokenizer.decode(output_ids[split_idx:], skip_special_tokens=True).strip()
+        return (thinking if thinking else None), content
+
+    full = tokenizer.decode(output_ids, skip_special_tokens=True).strip()
+    return extract_reasoning(full), full
+
+
 def count_tokens(tokenizer, text: str) -> int:
     return len(tokenizer.encode(text))
 
@@ -341,23 +402,38 @@ def load_model_and_tokenizer(device: str, dtype: str):
     return model, tokenizer, torch_dtype
 
 
-def generate_response(model, tokenizer, prompt: str, gen_config, device: str, seed: int) -> Tuple[str, str, int]:
+def generate_response(
+    model, tokenizer, prompt: str, gen_config, device: str, seed: int
+) -> Tuple[str, str, int, Optional[str], str]:
     import torch
 
-    inputs = tokenizer(prompt, return_tensors="pt")
+    serialized_prompt = build_chat_prompt(tokenizer, prompt)
+    inputs = tokenizer([serialized_prompt], return_tensors="pt")
+    inputs = filter_model_inputs(model, inputs)
     inputs = {k: v.to(device) for k, v in inputs.items()}
-    input_len = inputs["input_ids"].shape[1]
+    input_len = int(inputs["input_ids"].shape[1])
 
-    generator = torch.Generator(device=device)
-    generator.manual_seed(seed)
+    generate_kwargs = {
+        **inputs,
+        "generation_config": gen_config,
+    }
+    try:
+        generate_sig = inspect.signature(model.generate)
+        if "generator" in generate_sig.parameters:
+            generator = torch.Generator(device=device)
+            generator.manual_seed(seed)
+            generate_kwargs["generator"] = generator
+    except Exception:
+        pass
 
     with torch.no_grad():
-        outputs = model.generate(**inputs, generation_config=gen_config, generator=generator)
+        outputs = model.generate(**generate_kwargs)
 
-    generated_ids = outputs[0][input_len:]
+    generated_ids = outputs[0][input_len:].tolist()
+    thinking_text, response_content = split_qwen_thinking(generated_ids, tokenizer)
     response_text_raw = tokenizer.decode(generated_ids, skip_special_tokens=False)
     response_text_clean = tokenizer.decode(generated_ids, skip_special_tokens=True)
-    return response_text_raw, response_text_clean, int(generated_ids.shape[0])
+    return response_text_raw, response_text_clean, len(generated_ids), thinking_text, response_content
 
 
 def format_generation_config(args) -> dict:
@@ -381,16 +457,22 @@ def log_metadata(
     library_versions: dict,
 ) -> None:
     logger.info("Stage: plan generation")
-    logger.info("Domain: %s", spec.domain_path)
-    logger.info("Instance: %s", spec.problem_path)
-    logger.info("Template: %s", spec.template)
-    logger.info("Seed: %s", spec.seed)
-    logger.info("Model: %s", model_name)
-    logger.info("Device: %s", device)
-    logger.info("Dtype: %s", dtype)
-    logger.info("Generation config: %s", gen_config)
-    logger.info("Library versions: %s", library_versions)
-    logger.info("Timestamp: %s", timestamp)
+    logger.info(
+        "Prompt metadata: domain=%s, instance=%s, template=%s, seed=%s, timestamp=%s",
+        spec.domain_path,
+        spec.problem_path,
+        spec.template,
+        spec.seed,
+        timestamp,
+    )
+    logger.info(
+        "Model metadata: model=%s, device=%s, dtype=%s, generation_config=%s, library_versions=%s",
+        model_name,
+        device,
+        dtype,
+        gen_config,
+        library_versions,
+    )
 
 
 def gather_library_versions() -> dict:
@@ -467,12 +549,13 @@ def run_generation(
         if tokenizer is None or model is None:
             raise RuntimeError(model_load_error or "Model or tokenizer unavailable.")
 
-        prompt_tokens = count_tokens(tokenizer, prompt)
+        serialized_prompt = build_chat_prompt(tokenizer, prompt)
+        prompt_tokens = count_tokens(tokenizer, serialized_prompt)
         logger.info("Prompt tokens: %d", prompt_tokens)
         prompt_tokens_logged = True
 
         set_seed(spec.seed)
-        response_text, response_text_clean, response_tokens = generate_response(
+        response_text, response_text_clean, response_tokens, reasoning_from_tokens, response_content = generate_response(
             model,
             tokenizer,
             prompt,
@@ -481,22 +564,34 @@ def run_generation(
             spec.seed,
         )
 
-        logger.info("Response:\n%s", response_text)
-        response_logged = True
-        logger.info("Response tokens: %d", response_tokens)
-        response_tokens_logged = True
-        reasoning = extract_reasoning(response_text_clean)
+        reasoning = reasoning_from_tokens or extract_reasoning(response_text_clean)
         logger.info("Reasoning trace:\n%s", reasoning if reasoning is not None else "<none>")
         reasoning_logged = True
 
-        plan_text = extract_plan(response_text_clean)
+        plan_text = extract_plan(response_content) or extract_plan(response_text_clean)
+        if plan_text:
+            response_for_log = f"<plan>\n{plan_text}\n</plan>"
+        else:
+            response_for_log = response_content or response_text_clean or response_text or "<empty_response>"
+
+        logger.info("Response:\n%s", response_for_log)
+        response_logged = True
+        logger.info("Response tokens: %d", response_tokens)
+        response_tokens_logged = True
+
         if plan_text:
             plan_tokens = count_tokens(tokenizer, plan_text)
-            logger.info("Plan tokens: %d", plan_tokens)
+            logger.info("Extracted plan tokens: %d", plan_tokens)
+            logger.info(
+                "Response metadata: response_tokens=%d, extracted_plan_tokens=%d",
+                response_tokens,
+                plan_tokens,
+            )
             spec.plan_path.write_text(plan_text + "\n", encoding="utf-8")
             logger.info("Plan file: %s", spec.plan_path)
         else:
-            logger.info("Plan tokens: 0")
+            logger.info("Extracted plan tokens: 0")
+            logger.info("Response metadata: response_tokens=%d, extracted_plan_tokens=0", response_tokens)
 
     except ParseError as exc:
         error_type = "parse_error"
@@ -510,7 +605,8 @@ def run_generation(
             logger.info("Response tokens: 0")
         if not reasoning_logged:
             logger.info("Reasoning trace:\n<none>")
-        logger.info("Plan tokens: 0")
+        logger.info("Extracted plan tokens: 0")
+        logger.info("Response metadata: response_tokens=0, extracted_plan_tokens=0")
         logger.info("Error: parse_error: %s", exc)
     except Exception as exc:
         error_type = f"generation_error: {exc}"
@@ -524,7 +620,8 @@ def run_generation(
             logger.info("Response tokens: 0")
         if not reasoning_logged:
             logger.info("Reasoning trace:\n<none>")
-        logger.info("Plan tokens: 0")
+        logger.info("Extracted plan tokens: 0")
+        logger.info("Response metadata: response_tokens=0, extracted_plan_tokens=0")
         logger.info("Error: generation_error: %s", exc)
     finally:
         cleanup_logger(logger)
@@ -668,13 +765,13 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--outdir",
-        default="logs/ipc2023-learning/blocksworld",
+        default="logs/blocksworld",
         help="Output directory for logs, plans, and results.csv.",
     )
-    parser.add_argument("--max-new-tokens", type=int, default=256)
-    parser.add_argument("--temperature", type=float, default=0.7)
+    parser.add_argument("--max-new-tokens", type=int, default=38912)
+    parser.add_argument("--temperature", type=float, default=0.6)
     parser.add_argument("--top-p", type=float, default=0.95)
-    parser.add_argument("--top-k", type=int, default=50)
+    parser.add_argument("--top-k", type=int, default=20)
     parser.add_argument(
         "--device",
         choices=["auto", "cuda", "cpu"],

@@ -1,0 +1,385 @@
+[2026-02-06 20:50:41,949] INFO :: Stage: plan generation
+[2026-02-06 20:50:41,949] INFO :: Prompt metadata: domain=benchmarks/ipc2023-learning/grounded/blocksworld/domain.pddl, instance=benchmarks/ipc2023-learning/grounded/blocksworld/easy-p11.pddl, template=ungrounded, seed=1, timestamp=2026-02-06T23:50:41Z
+[2026-02-06 20:50:41,949] INFO :: Model metadata: model=Qwen/Qwen3-0.6B, device=cuda, dtype=torch.float16, generation_config=GenerationConfig {
+  "do_sample": true,
+  "eos_token_id": 151645,
+  "max_new_tokens": 38912,
+  "pad_token_id": 151643,
+  "temperature": 0.6,
+  "top_k": 20,
+  "top_p": 0.95
+}
+, library_versions={'python': '3.13.3', 'torch': '2.10.0+cu128', 'transformers': '5.1.0', 'numpy': '2.4.2'}
+[2026-02-06 20:50:41,949] INFO :: Prompt:
+
+<role>
+You are an AI planning expert.
+</role>
+
+<task>
+Given the PDDL domain and the PDDL instance, return a plan (a sequence of actions) that transforms the initial state into a goal state.
+</task>
+
+<definitions>
+- A state is a set of facts.
+- A goal state is a state that has all goal facts.
+- An action is applicable if, and only if, **all** its preconditions are in the current state.
+- When an action is applied: remove its delete effects from the state, then add its add effects.
+</definitions>
+
+<inputs>
+This is the PDDL domain:
+<pddl-domain>
+;; source: https://github.com/AI-Planning/pddl-generators/blob/main/blocksworld/domain.pddl
+;;
+(define (domain blocksworld)
+
+(:requirements :strips)
+
+(:predicates (clear ?x)
+             (on-table ?x)
+             (arm-empty)
+             (holding ?x)
+             (on ?x ?y))
+
+(:action pickup
+  :parameters (?ob)
+  :precondition (and (clear ?ob) (on-table ?ob) (arm-empty))
+  :effect (and (holding ?ob) (not (clear ?ob)) (not (on-table ?ob)) 
+               (not (arm-empty))))
+
+(:action putdown
+  :parameters  (?ob)
+  :precondition (holding ?ob)
+  :effect (and (clear ?ob) (arm-empty) (on-table ?ob) 
+               (not (holding ?ob))))
+
+(:action stack
+  :parameters  (?ob ?underob)
+  :precondition (and (clear ?underob) (holding ?ob))
+  :effect (and (arm-empty) (clear ?ob) (on ?ob ?underob)
+               (not (clear ?underob)) (not (holding ?ob))))
+
+(:action unstack
+  :parameters  (?ob ?underob)
+  :precondition (and (on ?ob ?underob) (clear ?ob) (arm-empty))
+  :effect (and (holding ?ob) (clear ?underob)
+               (not (on ?ob ?underob)) (not (clear ?ob)) (not (arm-empty)))))
+
+</pddl-domain>
+
+This is the PDDL instance:
+<pddl-instance>
+;; blocks=21, out_folder=new/easy, instance_id=11, seed=52
+
+(define (problem blocksworld-11)
+ (:domain blocksworld)
+ (:objects b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 - object)
+ (:init 
+    (arm-empty)
+    (clear b20)
+    (on b20 b11)
+    (on b11 b19)
+    (on b19 b10)
+    (on b10 b4)
+    (on b4 b5)
+    (on b5 b21)
+    (on b21 b15)
+    (on b15 b8)
+    (on b8 b6)
+    (on b6 b13)
+    (on-table b13)
+    (clear b7)
+    (on b7 b18)
+    (on b18 b3)
+    (on b3 b1)
+    (on b1 b14)
+    (on b14 b12)
+    (on b12 b16)
+    (on b16 b17)
+    (on b17 b2)
+    (on b2 b9)
+    (on-table b9))
+ (:goal  (and 
+    (clear b14)
+    (on b14 b15)
+    (on b15 b5)
+    (on b5 b4)
+    (on b4 b19)
+    (on b19 b8)
+    (on b8 b2)
+    (on b2 b1)
+    (on b1 b11)
+    (on b11 b10)
+    (on b10 b7)
+    (on b7 b12)
+    (on b12 b21)
+    (on b21 b16)
+    (on b16 b18)
+    (on b18 b3)
+    (on b3 b9)
+    (on b9 b6)
+    (on b6 b20)
+    (on b20 b17)
+    (on b17 b13)
+    (on-table b13))))
+
+</pddl-instance>
+</inputs>
+
+<output-format>
+Return **only** a plan wrapped in "<plan>...</plan>", where each plan's action must use the same name and same number of parameters as one of the action schemas, each on a line. Do not include analysis, examples, or commentary outside the plan tags.
+</output-format>
+
+<requirements>
+The plan must be valid: each action must be applicable in the state it is applied in, and the plan must end in a goal state.
+</requirements>
+[2026-02-06 20:50:41,950] INFO :: Prompt tokens: 1123
+[2026-02-06 20:51:15,835] INFO :: Reasoning trace:
+<think>
+Okay, let's tackle this problem. The user wants a plan to transform the initial state into the goal state using the given PDDL domain. First, I need to understand the current state and the goal state.
+
+Looking at the input, the initial state has some objects on tables and arms. The goal state includes all the clear and on facts. Let me list out the initial state facts to see what needs to be done.
+
+The initial state has:
+- arm_empty
+- clear b20
+- on b20 b11
+- on b11 b19
+- on b19 b10
+- on b10 b4
+- on b4 b5
+- on b5 b21
+- on b21 b15
+- on b15 b8
+- on b8 b6
+- on b6 b13
+- on-table b13
+- clear b7
+- on b7 b18
+- on b18 b3
+- on b3 b1
+- on b1 b14
+- on b14 b12
+- on b12 b16
+- on b16 b17
+- on b17 b2
+- on b2 b9
+- on-table b9
+
+The goal state has:
+- clear b14
+- on b14 b15
+- on b15 b5
+- on b5 b4
+- on b4 b19
+- on b19 b8
+- on b8 b2
+- on b2 b1
+- on b1 b11
+- on b11 b10
+- on b10 b7
+- on b7 b12
+- on b12 b21
+- on b21 b16
+- on b16 b18
+- on b18 b3
+- on b3 b9
+- on b9 b6
+- on b6 b20
+- on b20 b17
+- on b17 b13
+- on-table b13
+
+So, the initial state has b20 on table, b7 on table, and others. The goal requires b14 to be on table, and all the other objects to be in their respective positions. 
+
+The plan needs to move b14 to the correct position and ensure all other objects are in place. Let's think about the steps. 
+
+First, the initial state has b14 on b12. To get it to b15, we need to stack b14 onto b15. But for that, we need to have b14 on the table and b15. Wait, no, the action stack requires that the underob is on the table. So maybe first, we need to have b14 on the table and then stack it on b15.
+
+But in the current state, b14 is on b12. So perhaps first, we need to move b14 to the table. Let's check. The current state has on b12 b16. So maybe stack b14 onto b16. Then, once stacked, b14 would be on table. Then, stack b14 onto b15 to get it on table. 
+
+Alternatively, maybe there's a different sequence. Let's think step by step.
+
+First, check if b14 is on table. The initial state has on b12 b16, but not sure if that's the table. The on-table predicate is used for objects on the table. So if b12 is on the table, then b14's position is on table. But the current state has on b12 b16, which implies that b12 is on the table. So perhaps b14 is on table. But the problem is that the initial state's on b12 b16 might not be the table. Wait, the on-table is for objects on the table. So if the object is on the table, then it's marked with on-table. So in the initial state, b12 is on the table. Therefore, b14's position is on table. 
+
+So, the first step could be to stack b14 onto b16. Then, stack b14 onto b15. Then, have b14 on table. Then, move to the other positions. 
+
+But let's look at the actions. The actions are pickup, putdown, stack, unstack. 
+
+The initial state has b14 on b12. To get it to b15, maybe we need to stack b14 onto b15. However, to do that, we need b14 to be on the table and b15 to be on table. Wait, no, the stack action requires that the underob is on the table and that the holding object is on the table. Wait, the stack action's preconditions are (and (clear ?underob) (holding ?ob)). So if we have b14 holding and on table, then stack b14 onto b15. 
+
+But in the initial state, b14 is on b12. To stack it onto b15, we need to have b14 on the table. So perhaps first, we need to put b14 on the table. But how? The initial state has on b12 b16, which implies that b12 is on the table. So maybe move b14 from b12 to b16? Or maybe not. 
+
+Alternatively, perhaps the initial state has b14 on b12, which is on the table. So we can use the stack action to stack b14 onto b16, which is on the table. Then, stack b14 onto b15. 
+
+But let's check the actions. For example, if we have b14 on the table, then using stack on b14 and b15. 
+
+So the steps could be:
+
+1. Put b14 onto b16. Because b14 is on the table (since b12 is on the table and on b12 b16). 
+
+But wait, the initial state's on b12 b16 would mean that b12 is on the table. So if b14 is on b12, then to stack it onto b16, we need to have b14 on the table. Which it is. So then stack b14 onto b16. 
+
+Once stacked, stack b14 onto b15. 
+
+So the plan would be:
+
+- Put b14 onto b16 (using stack action with underob b16, holding b14)
+- Stack b14 onto b15 (using stack action with underob b15, holding b14)
+
+But wait, when we use the stack action, the effect would be to add the underob's clear and arm-empty. Let me check the effect of the stack action. The effect is (and (arm-empty) (clear ?ob) (on ?ob ?underob) ...). So when we stack, we need to have the underob on the table. 
+
+So after putting b14 onto b16, the state would have b14 on table. Then stack onto b15. 
+
+But let's make sure. Let's think about the initial state. 
+
+Original state: b14 is on b12. So when we stack b14 onto b16, then b14 is on the table (since b12 is on the table). Then stack onto b15. 
+
+Once that's done, the goal state has b14 on table and on b15. 
+
+So the plan would be:
+
+1. putdown b14 (but wait, the initial state has b14 on b12. To put it down, we need to have it on table. Wait, the putdown action requires holding. So perhaps first, we need to put b14 down. 
+
+Alternatively, maybe the correct sequence is to stack b14 onto b15. 
+
+But let's think again. Let's check the initial state's on b12 b16. So b12 is on the table. Therefore, b14 is on table. 
+
+So, the first action could be to stack b14 onto b16. Then stack onto b15. 
+
+So the steps would be:
+
+Put b14 onto b16 (using stack action with underob b16, holding b14)
+
+Then stack b14 onto b15 (using stack action with underob b15, holding b14)
+
+But wait, the effect of the stack action requires that the underob is on the table and that the holding object is on the table. So after putting b14 onto b16, b14 is on the table. Then stack onto b15. 
+
+So the plan would be:
+
+plan:
+
+1. stack b14 onto b16
+
+2. stack b14 onto b15
+
+But wait, the initial state's on b12 b16 implies that b12 is on the table. So putting b14 onto b16 would mean that b14 is on the table. 
+
+So the first action would be to put b14 onto b16, then stack onto b15. 
+
+But let's check the parameters for the stack action. The parameters are (ob ?underob). So for action stack, parameters are (ob ?underob). So in the first step, we need to have b14 holding and on the table. 
+
+So perhaps the correct plan is:
+
+Put b14 onto b16 (using stack action)
+
+Then stack b14 onto b15 (using stack action)
+
+But I need to make sure that each action is applicable. 
+
+In the initial state, after putting b14 onto b16, the state would have:
+
+- clear b14 (since we put it down)
+
+- arm-empty (since we put it down)
+
+- on b14 b16 (since we put it onto b16)
+
+Then stack b14 onto b15. 
+
+Yes. 
+
+So the plan would be:
+
+1. putdown b14 (but wait, no, because the initial state has b14 on b12. To put it down, perhaps we need to have it on the table. Wait, the action putdown requires holding. So first, we need to have b14 holding. 
+
+Wait, the initial state's b14 is on b12. So to put it down, perhaps we need to move it. But the problem is that the action putdown requires holding. So perhaps the correct steps are:
+
+First, put b14 onto b16. Then stack onto b15. 
+
+But how to get b14 onto b16? 
+
+Alternatively, maybe the correct plan is to stack b14 onto b15 first. 
+
+But let me think again. The goal state requires that b14 is on table. 
+
+In the initial state, b14 is on b12. So to get it to the table, perhaps we need to move it. But the actions available are pickup, putdown, stack, unstack. 
+
+So the plan could involve moving b14 to the table. 
+
+Wait, but how? The initial state's on b12 b16 implies that b12 is on the table. So maybe b14 is already on the table. 
+
+Wait, the initial state's on b12 b16 would mean that b12 is on the table. Therefore, b14 is on the table. So stacking is possible. 
+
+So the steps are:
+
+1. stack b14 onto b16 (since b14 is on table)
+
+2. stack b14 onto b15 (since b14 is on table)
+
+So the plan would be:
+
+plan:
+
+- stack b14 onto b16
+
+- stack b14 onto b15
+
+But I need to check if each action is applicable. 
+
+In the first step, the preconditions are (clear ?underob) (holding ?ob). So for stack b14 onto b16, the underob is b16 (which is on the table), and holding is b14. 
+
+In the second step, the underob is b15 (which is on the table), and holding is b14. 
+
+Yes. 
+
+So the plan would be:
+
+1. stack b14 onto b16
+
+2. stack b14 onto b15
+
+But wait, the initial state's on b12 b16 implies that b12 is on the table. Therefore, when we stack b14 onto b16, the effect would be that b14 is on the table. 
+
+Yes. 
+
+Therefore, the plan is as above. 
+
+But let me check the order. 
+
+Initially, the state has b14 on b12. So to stack it onto b16, which is on the table, that's possible. Then stack onto b15. 
+
+Yes. 
+
+So the final answer would be:
+
+plan:
+
+stack b14 onto b16
+
+stack b14 onto b15
+
+But need to present each action on separate lines. 
+
+Wait, the output requires each action to be on a line. So the plan would be:
+
+plan:
+stack b14 onto b16
+stack b14 onto b15
+
+But I need to make sure that all the actions are correct and that the goal is achieved. 
+
+Yes. 
+
+Therefore, the final answer is this plan.
+</think>
+[2026-02-06 20:51:15,835] INFO :: Response:
+<plan>
+stack b14 onto b16
+stack b14 onto b15
+</plan>
+[2026-02-06 20:51:15,835] INFO :: Response tokens: 2954
+[2026-02-06 20:51:15,835] INFO :: Extracted plan tokens: 17
+[2026-02-06 20:51:15,835] INFO :: Response metadata: response_tokens=2954, extracted_plan_tokens=17
+[2026-02-06 20:51:15,835] INFO :: Plan file: logs/blocksworld/easy-p11_ungrounded_seed1.plan
