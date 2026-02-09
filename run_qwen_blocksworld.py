@@ -13,7 +13,7 @@ from pathlib import Path
 from string import Template
 from typing import Callable, List, Optional, Tuple
 
-MODEL_NAME = "Qwen/Qwen3-0.6B"
+MODEL_NAME = "Qwen/Qwen3-4B-Thinking-2507"
 DOMAIN_NAME = "blocksworld"
 
 GROUND_PROMPT_TEMPLATE = """<role>
@@ -757,7 +757,9 @@ def validate_plans(
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run Qwen/Qwen3-0.6B on Blocksworld IPC2023 grounded instances.")
+    parser = argparse.ArgumentParser(
+        description="Run Qwen/Qwen3-4B-Thinking-2507 on Blocksworld IPC2023 grounded instances."
+    )
     parser.add_argument(
         "--instances",
         default=None,
@@ -768,7 +770,7 @@ def parse_args() -> argparse.Namespace:
         default="logs/blocksworld",
         help="Output directory for logs, plans, and results.csv.",
     )
-    parser.add_argument("--max-new-tokens", type=int, default=38912)
+    parser.add_argument("--max-new-tokens", type=int, default=81920)
     parser.add_argument("--temperature", type=float, default=0.6)
     parser.add_argument("--top-p", type=float, default=0.95)
     parser.add_argument("--top-k", type=int, default=20)
