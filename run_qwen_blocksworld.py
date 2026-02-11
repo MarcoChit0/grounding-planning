@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 import argparse
-import csv
 import datetime as dt
-import importlib.util
 import inspect
 import logging
 import random
@@ -157,22 +155,6 @@ def set_seed(seed: int) -> None:
         pass
 
 
-def load_validator() -> Optional[Callable[[str, str, str], Tuple[bool, Optional[str]]]]:
-    path = Path(__file__).resolve().parent / "plan_validation.py"
-    if not path.exists():
-        return None
-
-    spec = importlib.util.spec_from_file_location("plan_validation", str(path))
-    if spec and spec.loader:
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)  # type: ignore[attr-defined]
-        if hasattr(module, "validate_plan"):
-            return getattr(module, "validate_plan")
-        if hasattr(module, "val"):
-            return getattr(module, "val")
-    return None
-
-
 def parse_fact_block(lines: List[str]) -> List[str]:
     facts: List[str] = []
     for line in lines:
@@ -292,7 +274,7 @@ def build_grounded_prompt(grounded_path: Path) -> str:
     )
 
 
-def build_ungrounded_prompt(domain_text: str, problem_text: str) -> str:
+def build_lifted_prompt(domain_text: str, problem_text: str) -> str:
     return Template(UNGROUNDED_PROMPT_TEMPLATE).safe_substitute(
         pddl_domain=domain_text,
         pddl_instance=problem_text,
@@ -524,6 +506,8 @@ def run_generation(
     prompt_tokens_logged = False
     response_tokens_logged = False
     reasoning_logged = False
+    reasoning_metadata_logged = False
+    plan_logged = False
 
     try:
         log_metadata(
@@ -541,7 +525,7 @@ def run_generation(
             prompt = build_grounded_prompt(spec.grounded_path)
         else:
             problem_text = spec.problem_path.read_text(encoding="utf-8", errors="replace")
-            prompt = build_ungrounded_prompt(domain_text, problem_text)
+            prompt = build_lifted_prompt(domain_text, problem_text)
 
         logger.info("Prompt:\n\n%s", prompt)
         prompt_logged = True
@@ -568,6 +552,20 @@ def run_generation(
         logger.info("Reasoning trace:\n%s", reasoning if reasoning is not None else "<none>")
         reasoning_logged = True
 
+        if reasoning_from_tokens:
+            reasoning_source = "tokens"
+        elif reasoning:
+            reasoning_source = "tag"
+        else:
+            reasoning_source = "none"
+        reasoning_tokens = count_tokens(tokenizer, reasoning) if reasoning else 0
+        logger.info(
+            "Reasoning metadata: reasoning_tokens=%d, reasoning_source=%s",
+            reasoning_tokens,
+            reasoning_source,
+        )
+        reasoning_metadata_logged = True
+
         plan_text = extract_plan(response_content) or extract_plan(response_text_clean)
         if plan_text:
             response_for_log = f"<plan>\n{plan_text}\n</plan>"
@@ -580,6 +578,8 @@ def run_generation(
         response_tokens_logged = True
 
         if plan_text:
+            logger.info("Plan:\n%s", plan_text)
+            plan_logged = True
             plan_tokens = count_tokens(tokenizer, plan_text)
             logger.info("Extracted plan tokens: %d", plan_tokens)
             logger.info(
@@ -590,6 +590,8 @@ def run_generation(
             spec.plan_path.write_text(plan_text + "\n", encoding="utf-8")
             logger.info("Plan file: %s", spec.plan_path)
         else:
+            logger.info("Plan:\n<no_plan>")
+            plan_logged = True
             logger.info("Extracted plan tokens: 0")
             logger.info("Response metadata: response_tokens=%d, extracted_plan_tokens=0", response_tokens)
 
@@ -605,6 +607,10 @@ def run_generation(
             logger.info("Response tokens: 0")
         if not reasoning_logged:
             logger.info("Reasoning trace:\n<none>")
+        if not reasoning_metadata_logged:
+            logger.info("Reasoning metadata: reasoning_tokens=0, reasoning_source=none")
+        if not plan_logged:
+            logger.info("Plan:\n<no_plan>")
         logger.info("Extracted plan tokens: 0")
         logger.info("Response metadata: response_tokens=0, extracted_plan_tokens=0")
         logger.info("Error: parse_error: %s", exc)
@@ -620,6 +626,10 @@ def run_generation(
             logger.info("Response tokens: 0")
         if not reasoning_logged:
             logger.info("Reasoning trace:\n<none>")
+        if not reasoning_metadata_logged:
+            logger.info("Reasoning metadata: reasoning_tokens=0, reasoning_source=none")
+        if not plan_logged:
+            logger.info("Plan:\n<no_plan>")
         logger.info("Extracted plan tokens: 0")
         logger.info("Response metadata: response_tokens=0, extracted_plan_tokens=0")
         logger.info("Error: generation_error: %s", exc)
@@ -629,10 +639,10 @@ def run_generation(
     return error_type, response_text
 
 
-def resolve_instances(base_dir: Path, instance_arg: Optional[str]) -> List[str]:
-    available = sorted(p.stem for p in base_dir.glob("easy-*.pddl"))
+def resolve_instances(lifted_dir: Path, instance_arg: Optional[str]) -> List[str]:
+    available = sorted(p.stem for p in lifted_dir.glob("easy-*.pddl"))
     if not available:
-        raise FileNotFoundError(f"No instances found in {base_dir}")
+        raise FileNotFoundError(f"No instances found in {lifted_dir}")
 
     if not instance_arg:
         return available
@@ -668,13 +678,13 @@ def fnmatch_to_regex(pattern: str) -> str:
     return pattern
 
 
-def build_run_specs(instances: List[str], base_dir: Path, outdir: Path) -> List[RunSpec]:
+def build_run_specs(instances: List[str], base_dir: Path, grounded_dir: Path, lifted_dir: Path, outdir: Path) -> List[RunSpec]:
     specs: List[RunSpec] = []
     domain_path = base_dir / "domain.pddl"
     for instance_id in instances:
-        problem_path = base_dir / f"{instance_id}.pddl"
-        grounded_path = base_dir / f"{instance_id}.txt"
-        for template in ["grounded", "ungrounded"]:
+        problem_path = lifted_dir / f"{instance_id}.pddl"
+        grounded_path = grounded_dir / f"{instance_id}.txt"
+        for template in ["grounded", "lifted"]:
             for seed in [1, 2, 3]:
                 log_name = f"{instance_id}_{template}_seed{seed}.log"
                 plan_name = f"{instance_id}_{template}_seed{seed}.plan"
@@ -695,70 +705,9 @@ def build_run_specs(instances: List[str], base_dir: Path, outdir: Path) -> List[
     return specs
 
 
-def validate_plans(
-    specs: List[RunSpec],
-    run_errors: dict,
-    validator: Optional[Callable[[str, str, str], Tuple[bool, Optional[str]]]],
-    results_path: Path,
-) -> None:
-    results_path.parent.mkdir(parents=True, exist_ok=True)
-    with results_path.open("w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        writer.writerow(["domain", "instance", "template", "log_file", "seed", "is_valid", "error_type"])
-
-        for spec in specs:
-            error_type = run_errors.get((spec.instance_id, spec.template, spec.seed))
-            if error_type:
-                writer.writerow([
-                    DOMAIN_NAME,
-                    spec.instance_id,
-                    spec.template,
-                    str(spec.log_path),
-                    spec.seed,
-                    0,
-                    error_type,
-                ])
-                continue
-
-            if not spec.plan_path.exists():
-                writer.writerow([
-                    DOMAIN_NAME,
-                    spec.instance_id,
-                    spec.template,
-                    str(spec.log_path),
-                    spec.seed,
-                    0,
-                    "no_plan",
-                ])
-                continue
-
-            if validator is None:
-                writer.writerow([
-                    DOMAIN_NAME,
-                    spec.instance_id,
-                    spec.template,
-                    str(spec.log_path),
-                    spec.seed,
-                    0,
-                    "validator_missing",
-                ])
-                continue
-
-            is_valid, message = validator(str(spec.domain_path), str(spec.problem_path), str(spec.plan_path))
-            writer.writerow([
-                DOMAIN_NAME,
-                spec.instance_id,
-                spec.template,
-                str(spec.log_path),
-                spec.seed,
-                1 if is_valid else 0,
-                "" if is_valid else (message or "validation_failed"),
-            ])
-
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Run Qwen/Qwen3-4B-Thinking-2507 on Blocksworld IPC2023 grounded instances."
+        description="Run Qwen/Qwen3-4B-Thinking-2507 on Blocksworld grounded and lifted instances."
     )
     parser.add_argument(
         "--instances",
@@ -768,7 +717,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--outdir",
         default="logs/blocksworld",
-        help="Output directory for logs, plans, and results.csv.",
+        help="Output directory for logs and plans.",
+    )
+    parser.add_argument(
+        "--base-dir",
+        default="benchmarks/blocksworld",
+        help="Blocksworld benchmark base directory (domain.pddl, grounded/, lifted/).",
     )
     parser.add_argument("--max-new-tokens", type=int, default=81920)
     parser.add_argument("--temperature", type=float, default=0.6)
@@ -786,14 +740,20 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
 
-    base_dir = Path("benchmarks/ipc2023-learning/grounded/blocksworld")
+    base_dir = Path(args.base_dir)
     outdir = Path(args.outdir)
     domain_path = base_dir / "domain.pddl"
+    grounded_dir = base_dir / "grounded"
+    lifted_dir = base_dir / "lifted"
     if not domain_path.exists():
         raise FileNotFoundError(f"Domain file not found: {domain_path}")
+    if not grounded_dir.exists():
+        raise FileNotFoundError(f"Grounded directory not found: {grounded_dir}")
+    if not lifted_dir.exists():
+        raise FileNotFoundError(f"Lifted directory not found: {lifted_dir}")
 
-    instances = resolve_instances(base_dir, args.instances)
-    specs = build_run_specs(instances, base_dir, outdir)
+    instances = resolve_instances(lifted_dir, args.instances)
+    specs = build_run_specs(instances, base_dir, grounded_dir, lifted_dir, outdir)
 
     device = args.device
     if device == "auto":
@@ -833,9 +793,8 @@ def main() -> None:
     else:
         gen_config = None
 
-    run_errors = {}
     for spec in runs_to_generate:
-        error_type, _ = run_generation(
+        run_generation(
             spec,
             model,
             tokenizer,
@@ -845,12 +804,6 @@ def main() -> None:
             domain_text,
             model_load_error,
         )
-        if error_type:
-            run_errors[(spec.instance_id, spec.template, spec.seed)] = error_type
-
-    validator = load_validator()
-    results_path = outdir / "results.csv"
-    validate_plans(specs, run_errors, validator, results_path)
 
 
 if __name__ == "__main__":

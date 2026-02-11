@@ -1,0 +1,291 @@
+[2026-02-09 17:02:34,158] INFO :: Stage: plan generation
+[2026-02-09 17:02:34,159] INFO :: Prompt metadata: domain=/content/drive/MyDrive/grounding-planning/benchmarks/blocksworld/domain.pddl, instance=/content/drive/MyDrive/grounding-planning/benchmarks/blocksworld/lifted/p02.pddl, template=grounded, seed=1, timestamp=2026-02-09T17:02:34Z
+[2026-02-09 17:02:34,160] INFO :: Model metadata: model=Qwen/Qwen3-4B-Thinking-2507, device=cuda, dtype=torch.float16, generation_config=GenerationConfig {
+  "do_sample": true,
+  "eos_token_id": 151645,
+  "max_new_tokens": 81920,
+  "pad_token_id": 151643,
+  "temperature": 0.6,
+  "top_k": 20,
+  "top_p": 0.95
+}
+, library_versions={'python': '3.12.12', 'torch': '2.9.0+cu126', 'transformers': '5.0.0', 'numpy': '2.0.2'}
+[2026-02-09 17:02:34,602] INFO :: Prompt:
+
+<role>
+You are an AI planning expert.
+</role>
+
+<task>
+Given the initial state, the set of goal facts, and a list of available actions, return **a plan** (a sequence of actions) that transforms the initial state into a goal state.
+</task>
+
+<definitions>
+- A state is a set of facts.
+- A goal state is a state that has all goal facts.
+- An action is applicable if, and only if, **all** its preconditions are in the current state.
+- When an action is applied: remove its delete effects from the state, then add its add effects.
+</definitions>
+
+<inputs>
+This is the initial state:
+<initial-state>
+(clear b2)
+(on-table b1)
+(on-table b2)
+(clear b1)
+(arm-empty)
+</initial-state>
+
+These are the goal facts:
+<goal-facts>
+(on b1 b2)
+</goal-facts>
+
+These are the actions:
+<actions>
+name:  (pickup b2) ; preconditions:  (on-table b2), (clear b2), (arm-empty) ; delete effects:  (on-table b2), (clear b2), (arm-empty) ; add effects:  (holding b2)
+name:  (pickup b1) ; preconditions:  (on-table b1), (arm-empty), (clear b1) ; delete effects:  (on-table b1), (arm-empty), (clear b1) ; add effects:  (holding b1)
+name:  (putdown b2) ; preconditions:  (holding b2) ; delete effects:  (holding b2) ; add effects:  (on-table b2), (clear b2), (arm-empty)
+name:  (putdown b1) ; preconditions:  (holding b1) ; delete effects:  (holding b1) ; add effects:  (on-table b1), (arm-empty), (clear b1)
+name:  (stack b2 b2) ; preconditions:  (holding b2), (clear b2) ; delete effects:  (holding b2) ; add effects:  (on b2 b2), (arm-empty)
+name:  (stack b2 b1) ; preconditions:  (holding b2), (clear b1) ; delete effects:  (holding b2), (clear b1) ; add effects:  (clear b2), (arm-empty), (on b2 b1)
+name:  (stack b1 b2) ; preconditions:  (holding b1), (clear b2) ; delete effects:  (holding b1), (clear b2) ; add effects:  (on b1 b2), (arm-empty), (clear b1)
+name:  (stack b1 b1) ; preconditions:  (holding b1), (clear b1) ; delete effects:  (holding b1) ; add effects:  (on b1 b1), (arm-empty)
+name:  (unstack b2 b2) ; preconditions:  (on b2 b2), (clear b2), (arm-empty) ; delete effects:  (on b2 b2), (arm-empty) ; add effects:  (holding b2)
+name:  (unstack b2 b1) ; preconditions:  (clear b2), (arm-empty), (on b2 b1) ; delete effects:  (clear b2), (arm-empty), (on b2 b1) ; add effects:  (holding b2), (clear b1)
+name:  (unstack b1 b2) ; preconditions:  (on b1 b2), (arm-empty), (clear b1) ; delete effects:  (on b1 b2), (arm-empty), (clear b1) ; add effects:  (holding b1), (clear b2)
+name:  (unstack b1 b1) ; preconditions:  (on b1 b1), (arm-empty), (clear b1) ; delete effects:  (on b1 b1), (arm-empty) ; add effects:  (holding b1)
+</actions>
+</inputs>
+
+<output-format>
+Return **only** a plan wrapped in "<plan>...</plan>", where each plan's action should be identified by its name on the table, each on a line. Do not include analysis, examples, or commentary outside the plan tags.
+</output-format>
+
+<requirements>
+The plan must be valid: each action must be applicable in the state it is applied in, and the plan must end in a goal state.
+</requirements>
+[2026-02-09 17:02:34,605] INFO :: Prompt tokens: 1010
+[2026-02-09 17:04:32,769] INFO :: Reasoning trace:
+Okay, let's try to figure out this planning problem. So, the goal is to get (on b1 b2) as the state. The initial state has a bunch of facts: (clear b2), (on-table b1), (on-table b2), (clear b1), and (arm-empty). Hmm, I need to see what actions can be done here.
+
+First, looking at the actions. The goal is (on b1 b2), which means block b1 is on top of block b2. So I need to stack b1 on b2. Let me check the stack actions.
+
+There's a stack b1 b2 action. Let me check its preconditions: (holding b1), (clear b2). The delete effects are (holding b1), (clear b2), and add effects are (on b1 b2), (arm-empty), (clear b1). So if I can get holding b1 and clear b2, then applying stack b1 b2 would result in (on b1 b2), which is exactly the goal.
+
+But in the initial state, do we have holding b1? No, the initial state has (clear b1), (on-table b1), etc., but not holding anything. So first, I need to pick up b1. Wait, but to pick up b1, the preconditions are (on-table b1), (arm-empty), (clear b1). The initial state has all those: (on-table b1), (arm-empty), and (clear b1). So pickup b1 is applicable here.
+
+Wait, initial state has (clear b1) and (on-table b1), yes. So first action could be pickup b1.
+
+Let me write that down. Action 1: pickup b1.
+
+After applying pickup b1, the state changes. The delete effects are (on-table b1), (arm-empty), (clear b1), and add effects (holding b1). So the new state would be: (clear b2), (holding b1), (arm-empty), and (on-table b2) remains? Wait, initial state has (on-table b1) and (on-table b2), but after pickup b1, (on-table b1) is removed. So the new state after pickup b1 would be:
+
+- (clear b2)
+- (holding b1)
+- (arm-empty)
+- (on-table b2) [still there]
+- (clear b1) is removed (since delete effect is (clear b1)), so clear b1 is gone.
+
+Wait, initial state: (clear b1), (on-table b1), (on-table b2), (clear b2), (arm-empty). After pickup b1:
+
+- Delete effects: (on-table b1), (arm-empty), (clear b1)
+- Add effects: (holding b1)
+
+So the new state is:
+
+(clear b2)
+(on-table b2)
+(holding b1)
+(arm-empty is removed? Wait, the delete effects for pickup b1 include (arm-empty), so arm-empty is removed. Wait, no: the delete effects are the things that are removed from the state. So when you apply pickup b1, you remove (on-table b1), (arm-empty), and (clear b1), then add (holding b1).
+
+So initial state has (arm-empty), so after pickup, arm-empty is deleted. So the new state has:
+
+- (clear b2)
+- (on-table b2)
+- (holding b1)
+- (arm-empty) is gone.
+
+Wait, no. Wait, the delete effects are the things that are removed. So the state starts with (arm-empty), so after applying pickup b1, (arm-empty) is removed. So the new state would not have arm-empty anymore.
+
+Wait, but the initial state has (arm-empty), so when we apply pickup b1, the delete effects remove (arm-empty), so arm-empty is no longer present. So the state after pickup b1 is:
+
+(clear b2)
+(on-table b2)
+(holding b1)
+(arm-empty) is gone.
+
+But wait, the initial state also had (clear b1), which is removed. So yes.
+
+Now, after pickup b1, the next step would be to stack b1 on b2. But for stack b1 b2, the preconditions are (holding b1) and (clear b2). In the current state after pickup b1, (clear b2) is still there (since it wasn't removed by pickup b1), and (holding b1) is present. So stack b1 b2 should be applicable.
+
+Let me check the stack b1 b2 action. Its preconditions are (holding b1), (clear b2). Yes, both are present. So applying stack b1 b2 would do:
+
+Delete effects: (holding b1), (clear b2)
+Add effects: (on b1 b2), (arm-empty), (clear b1)
+
+So after this action, the state would have (on b1 b2), which is the goal. So the plan would be two actions: pickup b1 followed by stack b1 b2.
+
+Wait, but let me check if there's any problem here.
+
+Wait, in the initial state, (clear b1) is present. After pickup b1, (clear b1) is removed (as per delete effects of pickup b1), so the state after pickup b1 has no clear b1. Then, when we apply stack b1 b2, the add effect includes (clear b1), so after stack, clear b1 is added back.
+
+But the goal is (on b1 b2), which is achieved. So the plan would be:
+
+1. pickup b1
+2. stack b1 b2
+
+Let me verify step by step.
+
+Initial state:
+
+(clear b2)
+(on-table b1)
+(on-table b2)
+(clear b1)
+(arm-empty)
+
+First action: pickup b1.
+
+Check if applicable: preconditions (on-table b1), (arm-empty), (clear b1) are all in initial state. Yes.
+
+After applying pickup b1:
+
+Remove (on-table b1), (arm-empty), (clear b1)
+Add (holding b1)
+
+So new state:
+
+(clear b2)
+(on-table b2)
+(holding b1)
+
+Second action: stack b1 b2.
+
+Preconditions: (holding b1) and (clear b2). Both present.
+
+Apply stack b1 b2:
+
+Remove (holding b1), (clear b2)
+Add (on b1 b2), (arm-empty), (clear b1)
+
+So the new state after stack:
+
+(on b1 b2)
+(arm-empty)
+(clear b1)
+(on-table b2)
+
+Which includes the goal fact (on b1 b2). So yes, that's the goal.
+
+Wait, but the problem says the goal is (on b1 b2), so this plan works.
+
+Wait, but let me check if there's any other possible actions that might interfere.
+
+Wait, another thought: in the initial state, (clear b1) and (clear b2) are both present. So maybe there's a way to do it in fewer steps, but in this case, the two-step plan seems correct.
+
+Wait, but let me check if stack b1 b2 is the correct action. The name is (stack b1 b2), which according to the actions list, has preconditions (holding b1), (clear b2). Yes. So that's correct.
+
+Alternatively, is there a possibility that after pickup b1, we need to do something else? Like, maybe unstack or put down? But no, the goal is to have (on b1 b2), so stacking directly seems right.
+
+Wait, another angle: the initial state has (clear b1) and (clear b2). So both blocks are clear. So pickup b1 is possible, as the preconditions are met.
+
+Yes, so the plan is pickup b1 followed by stack b1 b2.
+
+Let me check if the stack action's add effects include (arm-empty), which would be necessary for the next step, but since we're done after stack, it's okay.
+
+So the plan should be:
+
+pickup b1
+stack b1 b2
+
+Let me check if the actions are correctly named. The action names are written as (pickup b2), etc. So the names are "pickup b1" and "stack b1 b2".
+
+Yes, in the actions list:
+
+name: (pickup b1) ; ... 
+
+name: (stack b1 b2) ; ...
+
+So the plan is two actions: pickup b1 and stack b1 b2.
+
+Wait, but let me make sure that after stack b1 b2, the state indeed has (on b1 b2). The add effects of stack b1 b2 include (on b1 b2), so yes.
+
+Yes, this seems correct.
+
+Is there any step missing? Let's see.
+
+Alternative approach: Could we pickup b2 first? Let's see. The initial state has (clear b2), (on-table b2), (arm-empty). So pickup b2 is applicable. If we do that, then we have holding b2. Then, we could stack b2 on b1? But the goal is (on b1 b2), so maybe not. Wait, stacking b2 on b1 would give (on b2 b1), which is not the goal. So that's probably not helpful.
+
+So the correct path is to pick up b1 and stack it on b2.
+
+Yes, so the plan is two steps.
+
+Let me check if the stack action's preconditions are met after pickup b1.
+
+After pickup b1, state is:
+
+(clear b2)
+(on-table b2)
+(holding b1)
+
+So (holding b1) is present, (clear b2) is present. So stack b1 b2's preconditions are met.
+
+Yes.
+
+So the answer should be the two actions.
+
+I think that's it.
+</think>
+[2026-02-09 17:04:32,775] INFO :: Reasoning metadata: reasoning_tokens=2109, reasoning_source=tokens
+[2026-02-09 17:04:32,775] INFO :: Response:
+<plan>
+pickup b1
+stack b1 b2
+</plan>
+[2026-02-09 17:04:32,775] INFO :: Response tokens: 2127
+[2026-02-09 17:04:32,775] INFO :: Plan:
+pickup b1
+stack b1 b2
+[2026-02-09 17:04:32,775] INFO :: Extracted plan tokens: 9
+[2026-02-09 17:04:32,775] INFO :: Response metadata: response_tokens=2127, extracted_plan_tokens=9
+[2026-02-09 17:04:32,780] INFO :: Plan file: /content/drive/MyDrive/grounding-planning/logs/blocksworld/p02_grounded_seed1.plan
+[2026-02-10 14:12:40,572] INFO ::
+[2026-02-10 14:40:19,129] INFO :: ### Plan Validation ###
+
+Checking plan: logs/blocksworld/p02_grounded_seed1.plan
+Plan to validate:
+
+Plan size: 2
+1:
+(pickup b1)
+ 
+2:
+(stack b1 b2)
+ 
+
+Plan Validation details
+-----------------------
+
+Checking next happening (time 1)
+Deleting (clear b1)
+Deleting (on-table b1)
+Deleting (arm-empty)
+Adding (holding b1)
+
+Checking next happening (time 2)
+Deleting (clear b2)
+Deleting (holding b1)
+Adding (arm-empty)
+Adding (clear b1)
+Adding (on b1 b2)
+Plan executed successfully - checking goal
+Plan valid
+Final value: 2 
+
+Successful plans:
+Value: 2
+ logs/blocksworld/p02_grounded_seed1.plan 2 
+
+[2026-02-10 14:40:19,129] INFO :: Validate status: valid

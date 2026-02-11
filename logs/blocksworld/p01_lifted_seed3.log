@@ -1,0 +1,282 @@
+[2026-02-09 17:01:09,880] INFO :: Stage: plan generation
+[2026-02-09 17:01:09,881] INFO :: Prompt metadata: domain=/content/drive/MyDrive/grounding-planning/benchmarks/blocksworld/domain.pddl, instance=/content/drive/MyDrive/grounding-planning/benchmarks/blocksworld/lifted/p01.pddl, template=lifted, seed=3, timestamp=2026-02-09T17:01:09Z
+[2026-02-09 17:01:09,881] INFO :: Model metadata: model=Qwen/Qwen3-4B-Thinking-2507, device=cuda, dtype=torch.float16, generation_config=GenerationConfig {
+  "do_sample": true,
+  "eos_token_id": 151645,
+  "max_new_tokens": 81920,
+  "pad_token_id": 151643,
+  "temperature": 0.6,
+  "top_k": 20,
+  "top_p": 0.95
+}
+, library_versions={'python': '3.12.12', 'torch': '2.9.0+cu126', 'transformers': '5.0.0', 'numpy': '2.0.2'}
+[2026-02-09 17:01:09,883] INFO :: Prompt:
+
+<role>
+You are an AI planning expert.
+</role>
+
+<task>
+Given the PDDL domain and the PDDL instance, return a plan (a sequence of actions) that transforms the initial state into a goal state.
+</task>
+
+<definitions>
+- A state is a set of facts.
+- A goal state is a state that has all goal facts.
+- An action is applicable if, and only if, **all** its preconditions are in the current state.
+- When an action is applied: remove its delete effects from the state, then add its add effects.
+</definitions>
+
+<inputs>
+This is the PDDL domain:
+<pddl-domain>
+(define (domain blocksworld-4ops)
+  (:requirements :strips)
+  (:predicates
+    (clear ?x)
+    (on-table ?x)
+    (arm-empty)
+    (holding ?x)
+    (on ?x ?y)
+  )
+
+  (:action pickup
+    :parameters (?ob)
+    :precondition (and (clear ?ob) (on-table ?ob) (arm-empty))
+    :effect (and (holding ?ob) (not (clear ?ob)) (not (on-table ?ob))
+      (not (arm-empty)))
+  )
+
+  (:action putdown
+    :parameters (?ob)
+    :precondition (holding ?ob)
+    :effect (and (clear ?ob) (arm-empty) (on-table ?ob)
+      (not (holding ?ob)))
+  )
+
+  (:action stack
+    :parameters (?ob ?underob)
+    :precondition (and (clear ?underob) (holding ?ob))
+    :effect (and (arm-empty) (clear ?ob) (on ?ob ?underob)
+      (not (clear ?underob)) (not (holding ?ob)))
+  )
+
+  (:action unstack
+    :parameters (?ob ?underob)
+    :precondition (and (on ?ob ?underob) (clear ?ob) (arm-empty))
+    :effect (and (holding ?ob) (clear ?underob)
+      (not (on ?ob ?underob)) (not (clear ?ob)) (not (arm-empty)))
+  )
+)
+</pddl-domain>
+
+This is the PDDL instance:
+<pddl-instance>
+(define (problem BW-rand-2)
+(:domain blocksworld-4ops)
+(:objects b1 b2 )
+(:init
+(arm-empty)
+(on-table b1)
+(on-table b2)
+(clear b1)
+(clear b2)
+)
+(:goal
+(and
+(on b2 b1))
+)
+)
+
+
+
+</pddl-instance>
+</inputs>
+
+<output-format>
+Return **only** a plan wrapped in "<plan>...</plan>", where each plan's action must use the same name and same number of parameters as one of the action schemas, each on a line. Do not include analysis, examples, or commentary outside the plan tags.
+</output-format>
+
+<requirements>
+The plan must be valid: each action must be applicable in the state it is applied in, and the plan must end in a goal state.
+</requirements>
+[2026-02-09 17:01:09,886] INFO :: Prompt tokens: 670
+[2026-02-09 17:02:34,146] INFO :: Reasoning trace:
+Okay, let's see. I need to figure out a plan for this PDDL problem. The domain is blocksworld-4ops, and the instance is BW-rand-2. Let me first understand the initial state and the goal.
+
+The initial state has two blocks: b1 and b2. Both are on the table, and both are clear. Also, the arm is empty. The goal is to have (on b2 b1), meaning b2 is on top of b1.
+
+Hmm, in the block world, usually, you want to stack blocks. But here the goal is (on b2 b1), so b2 is on b1. Wait, but in standard block world, when you stack, you put a block on top of another. So to have b2 on b1, we need to stack b2 on b1. But wait, the initial state has both on the table. So the plan should involve moving one block to the other.
+
+Wait, let me think step by step.
+
+First, the initial state: arm-empty, on-table b1, on-table b2, clear b1, clear b2.
+
+The goal is (on b2 b1). So we need b2 to be on b1.
+
+But in the standard block world, stacking usually requires holding a block and putting it on top of another. But here, the problem is that both blocks are on the table and clear. So to stack b2 on b1, we need to pick up b2 first, then stack it on b1.
+
+Wait, but the problem is that the goal is (on b2 b1), which would mean b2 is on top of b1. So the plan would be: pickup b2, then stack b2 on b1.
+
+Let's check the actions.
+
+First, pickup requires (clear ?ob), (on-table ?ob), (arm-empty). In the initial state, both b1 and b2 are clear and on-table, and arm is empty. So we can pick up either. Let's pick b2 first.
+
+Action 1: pickup b2.
+
+After pickup: holding b2, not clear b2, not on-table b2, arm is not empty.
+
+Then, we need to stack b2 on b1. But for stack action: requires (clear ?underob) and (holding ?ob). The underob here would be b1. Is b1 clear? In the initial state, yes, b1 is clear. After pickup b2, the state would have clear b1 still? Wait, when you pick up b2, the clear effects: the effect of pickup is (holding ?ob) (not clear ?ob) (not on-table ?ob) (not arm-empty). So after pickup b2, clear b2 is false, but clear b1 is still true. Because the pickup action only affects the object being picked up. So yes, b1 remains clear.
+
+So then, stack action: parameters (b2 b1). Precondition: (clear b1) and (holding b2). Which is true after the pickup. So stack b2 on b1.
+
+Applying stack: effect is arm-empty, clear b2, on b2 b1, not clear b1, not holding b2.
+
+So after stack, the state would have on b2 b1, which is the goal.
+
+Wait, but the goal is (on b2 b1), so that's exactly what we want. So the plan would be two actions: pickup b2, then stack b2 on b1.
+
+Wait, but let's check if the stack action's preconditions are met. The stack action requires (clear ?underob) and (holding ?ob). Here, underob is b1, which is clear (since we didn't touch it), and holding b2 is true. So yes.
+
+So the plan is:
+
+pickup b2
+
+stack b2 b1
+
+But wait, the problem says the goal is (on b2 b1). Let me make sure that after stack, that's the case.
+
+Yes. So the plan has two steps.
+
+Wait, but in the initial state, both blocks are on the table and clear. So the first action is pickup b2. Then stack b2 on b1.
+
+Is there any other possible way? Like, could you pick up b1 first? But the goal is to have b2 on b1, so we need to put b2 on top of b1, so we have to pick up b2 first. If we pick up b1 first, then stack b1 on b2, but that would give (on b1 b2), which is not the goal.
+
+So the correct plan is pickup b2, then stack b2 b1.
+
+Let me check if the stack action's effect includes (on b2 b1). Yes, the effect is (on ?ob ?underob), so on b2 b1.
+
+So the plan should be two actions.
+
+Wait, but the problem says "return a plan (a sequence of actions) that transforms the initial state into a goal state."
+
+Let me write the actions in the correct format.
+
+The actions must use the same name and same number of parameters as the action schemas.
+
+For pickup: :parameters (?ob), so the action is pickup b2.
+
+For stack: :parameters (?ob ?underob), so stack b2 b1.
+
+So the plan would be:
+
+pickup b2
+
+stack b2 b1
+
+Wait, but let me check if the stack action's preconditions are met after the pickup.
+
+After pickup b2:
+
+- holding b2 is true
+
+- clear b2 is false (because the effect of pickup is (not clear ?ob))
+
+- on-table b2 is false
+
+- arm-empty is false
+
+- clear b1 is still true (since we didn't change it)
+
+So stack action preconditions: (clear b1) and (holding b2) are both true. So yes, stack is applicable.
+
+After applying stack:
+
+- on b2 b1 is added
+
+- clear b2 is added (so b2 is now clear again)
+
+- arm-empty is added
+
+- clear b1 is removed (so b1 is not clear anymore)
+
+- holding b2 is removed
+
+So the state after stack has (on b2 b1), which is the goal.
+
+Therefore, the plan is two actions.
+
+Wait, but the problem says "the plan must end in a goal state". So after these two actions, the goal is achieved.
+
+Yes.
+
+So the output should be:
+
+<plan>
+pickup b2
+stack b2 b1
+</plan>
+
+Wait, but the problem says "each plan's action must use the same name and same number of parameters as one of the action schemas".
+
+The pickup action has one parameter, stack has two. So the plan entries are correct.
+
+Let me check if there's any possible mistake here.
+
+Another possible issue: in the stack action, the effect says (clear ?ob), which after stacking, b2 is clear. But in the goal state, the goal is (on b2 b1), which is correct.
+
+Yes, that's the desired state.
+
+So I think this is the correct plan.
+</think>
+[2026-02-09 17:02:34,150] INFO :: Reasoning metadata: reasoning_tokens=1500, reasoning_source=tokens
+[2026-02-09 17:02:34,150] INFO :: Response:
+<plan>
+pickup b2
+stack b2 b1
+</plan>
+[2026-02-09 17:02:34,150] INFO :: Response tokens: 1518
+[2026-02-09 17:02:34,150] INFO :: Plan:
+pickup b2
+stack b2 b1
+[2026-02-09 17:02:34,151] INFO :: Extracted plan tokens: 9
+[2026-02-09 17:02:34,151] INFO :: Response metadata: response_tokens=1518, extracted_plan_tokens=9
+[2026-02-09 17:02:34,155] INFO :: Plan file: /content/drive/MyDrive/grounding-planning/logs/blocksworld/p01_lifted_seed3.plan
+[2026-02-10 14:12:40,570] INFO ::
+[2026-02-10 14:40:19,125] INFO :: ### Plan Validation ###
+
+Checking plan: logs/blocksworld/p01_lifted_seed3.plan
+Plan to validate:
+
+Plan size: 2
+1:
+(pickup b2)
+ 
+2:
+(stack b2 b1)
+ 
+
+Plan Validation details
+-----------------------
+
+Checking next happening (time 1)
+Deleting (clear b2)
+Deleting (on-table b2)
+Deleting (arm-empty)
+Adding (holding b2)
+
+Checking next happening (time 2)
+Deleting (clear b1)
+Deleting (holding b2)
+Adding (arm-empty)
+Adding (clear b2)
+Adding (on b2 b1)
+Plan executed successfully - checking goal
+Plan valid
+Final value: 2 
+
+Successful plans:
+Value: 2
+ logs/blocksworld/p01_lifted_seed3.plan 2 
+
+[2026-02-10 14:40:19,125] INFO :: Validate status: valid

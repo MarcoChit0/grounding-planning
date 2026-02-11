@@ -1,0 +1,680 @@
+[2026-02-09 18:27:51,813] INFO :: Stage: plan generation
+[2026-02-09 18:27:51,814] INFO :: Prompt metadata: domain=/content/drive/MyDrive/grounding-planning/benchmarks/blocksworld/domain.pddl, instance=/content/drive/MyDrive/grounding-planning/benchmarks/blocksworld/lifted/p06.pddl, template=grounded, seed=2, timestamp=2026-02-09T18:27:51Z
+[2026-02-09 18:27:51,814] INFO :: Model metadata: model=Qwen/Qwen3-4B-Thinking-2507, device=cuda, dtype=torch.float16, generation_config=GenerationConfig {
+  "do_sample": true,
+  "eos_token_id": 151645,
+  "max_new_tokens": 81920,
+  "pad_token_id": 151643,
+  "temperature": 0.6,
+  "top_k": 20,
+  "top_p": 0.95
+}
+, library_versions={'python': '3.12.12', 'torch': '2.9.0+cu126', 'transformers': '5.0.0', 'numpy': '2.0.2'}
+[2026-02-09 18:27:51,817] INFO :: Prompt:
+
+<role>
+You are an AI planning expert.
+</role>
+
+<task>
+Given the initial state, the set of goal facts, and a list of available actions, return **a plan** (a sequence of actions) that transforms the initial state into a goal state.
+</task>
+
+<definitions>
+- A state is a set of facts.
+- A goal state is a state that has all goal facts.
+- An action is applicable if, and only if, **all** its preconditions are in the current state.
+- When an action is applied: remove its delete effects from the state, then add its add effects.
+</definitions>
+
+<inputs>
+This is the initial state:
+<initial-state>
+(on-table b2)
+(on b1 b2)
+(arm-empty)
+(clear b3)
+(on b3 b1)
+</initial-state>
+
+These are the goal facts:
+<goal-facts>
+(on b3 b2)
+</goal-facts>
+
+These are the actions:
+<actions>
+name:  (pickup b3) ; preconditions:  (clear b3), (on-table b3), (arm-empty) ; delete effects:  (clear b3), (on-table b3), (arm-empty) ; add effects:  (holding b3)
+name:  (pickup b2) ; preconditions:  (on-table b2), (arm-empty), (clear b2) ; delete effects:  (on-table b2), (arm-empty), (clear b2) ; add effects:  (holding b2)
+name:  (pickup b1) ; preconditions:  (clear b1), (on-table b1), (arm-empty) ; delete effects:  (clear b1), (on-table b1), (arm-empty) ; add effects:  (holding b1)
+name:  (putdown b3) ; preconditions:  (holding b3) ; delete effects:  (holding b3) ; add effects:  (clear b3), (on-table b3), (arm-empty)
+name:  (putdown b2) ; preconditions:  (holding b2) ; delete effects:  (holding b2) ; add effects:  (on-table b2), (arm-empty), (clear b2)
+name:  (putdown b1) ; preconditions:  (holding b1) ; delete effects:  (holding b1) ; add effects:  (clear b1), (on-table b1), (arm-empty)
+name:  (stack b3 b3) ; preconditions:  (clear b3), (holding b3) ; delete effects:  (holding b3) ; add effects:  (on b3 b3), (arm-empty)
+name:  (stack b3 b2) ; preconditions:  (holding b3), (clear b2) ; delete effects:  (holding b3), (clear b2) ; add effects:  (clear b3), (on b3 b2), (arm-empty)
+name:  (stack b3 b1) ; preconditions:  (clear b1), (holding b3) ; delete effects:  (clear b1), (holding b3) ; add effects:  (on b3 b1), (clear b3), (arm-empty)
+name:  (stack b2 b3) ; preconditions:  (holding b2), (clear b3) ; delete effects:  (holding b2), (clear b3) ; add effects:  (on b2 b3), (arm-empty), (clear b2)
+name:  (stack b2 b2) ; preconditions:  (holding b2), (clear b2) ; delete effects:  (holding b2) ; add effects:  (on b2 b2), (arm-empty)
+name:  (stack b2 b1) ; preconditions:  (clear b1), (holding b2) ; delete effects:  (holding b2), (clear b1) ; add effects:  (on b2 b1), (arm-empty), (clear b2)
+name:  (stack b1 b3) ; preconditions:  (holding b1), (clear b3) ; delete effects:  (holding b1), (clear b3) ; add effects:  (clear b1), (arm-empty), (on b1 b3)
+name:  (stack b1 b2) ; preconditions:  (holding b1), (clear b2) ; delete effects:  (holding b1), (clear b2) ; add effects:  (clear b1), (on b1 b2), (arm-empty)
+name:  (stack b1 b1) ; preconditions:  (clear b1), (holding b1) ; delete effects:  (holding b1) ; add effects:  (on b1 b1), (arm-empty)
+name:  (unstack b3 b3) ; preconditions:  (clear b3), (on b3 b3), (arm-empty) ; delete effects:  (on b3 b3), (arm-empty) ; add effects:  (holding b3)
+name:  (unstack b3 b2) ; preconditions:  (clear b3), (on b3 b2), (arm-empty) ; delete effects:  (clear b3), (on b3 b2), (arm-empty) ; add effects:  (holding b3), (clear b2)
+name:  (unstack b3 b1) ; preconditions:  (arm-empty), (clear b3), (on b3 b1) ; delete effects:  (on b3 b1), (clear b3), (arm-empty) ; add effects:  (clear b1), (holding b3)
+name:  (unstack b2 b3) ; preconditions:  (on b2 b3), (arm-empty), (clear b2) ; delete effects:  (on b2 b3), (arm-empty), (clear b2) ; add effects:  (holding b2), (clear b3)
+name:  (unstack b2 b2) ; preconditions:  (on b2 b2), (arm-empty), (clear b2) ; delete effects:  (on b2 b2), (arm-empty) ; add effects:  (holding b2)
+name:  (unstack b2 b1) ; preconditions:  (on b2 b1), (arm-empty), (clear b2) ; delete effects:  (on b2 b1), (arm-empty), (clear b2) ; add effects:  (clear b1), (holding b2)
+name:  (unstack b1 b3) ; preconditions:  (clear b1), (arm-empty), (on b1 b3) ; delete effects:  (clear b1), (arm-empty), (on b1 b3) ; add effects:  (holding b1), (clear b3)
+name:  (unstack b1 b2) ; preconditions:  (clear b1), (on b1 b2), (arm-empty) ; delete effects:  (clear b1), (on b1 b2), (arm-empty) ; add effects:  (holding b1), (clear b2)
+name:  (unstack b1 b1) ; preconditions:  (clear b1), (on b1 b1), (arm-empty) ; delete effects:  (on b1 b1), (arm-empty) ; add effects:  (holding b1)
+</actions>
+</inputs>
+
+<output-format>
+Return **only** a plan wrapped in "<plan>...</plan>", where each plan's action should be identified by its name on the table, each on a line. Do not include analysis, examples, or commentary outside the plan tags.
+</output-format>
+
+<requirements>
+The plan must be valid: each action must be applicable in the state it is applied in, and the plan must end in a goal state.
+</requirements>
+[2026-02-09 18:27:51,821] INFO :: Prompt tokens: 1744
+[2026-02-09 18:32:17,522] INFO :: Reasoning trace:
+Okay, let's try to figure out this planning problem. So, the goal is to get (on b3 b2) in the state. Let me first understand the initial state and the actions available.
+
+Initial state:
+- (on-table b2)
+- (on b1 b2)
+- (arm-empty)
+- (clear b3)
+- (on b3 b1)
+
+Wait, wait, the initial state is written as:
+(on-table b2)
+(on b1 b2)
+(arm-empty)
+(clear b3)
+(on b3 b1)
+
+Hmm, so b3 is on b1, which is on b2. And b2 is on the table. Also, b3 is clear (so nothing is on top of b3), and the arm is empty.
+
+The goal is to have (on b3 b2). So we need b3 to be on top of b2.
+
+Let me list the current state facts:
+
+- on-table b2: yes
+- on b1 b2: yes (b1 is on b2)
+- arm-empty: yes
+- clear b3: yes (so b3 has nothing on it)
+- on b3 b1: yes (b3 is on b1)
+
+So the stack is b3 -> b1 -> b2 (on table). We need to get b3 on b2 directly.
+
+First, I need to figure out what actions can be done here.
+
+The goal is (on b3 b2), so we need to stack b3 onto b2. But looking at the stack actions, there's a (stack b3 b2) action. Let's check its preconditions.
+
+The stack b3 b2 action has preconditions: (holding b3), (clear b2). So we need to be holding b3 and b2 must be clear.
+
+But in the initial state, b2 is on the table (so not clear, since clear means nothing is on it). Wait, in the initial state, (clear b3) is true, but (clear b2) is false because b1 is on b2. So b2 is not clear.
+
+So to stack b3 onto b2, we need to have b2 clear. So first, we need to move b1 off of b2 so that b2 becomes clear.
+
+But how?
+
+Let's see. The current stack is b3 on b1, which is on b2. So b1 is on b2, so to get b2 clear, we need to unstack b1 from b2.
+
+But to unstack b1 from b2, we need to use the unstack actions. Let's check the unstack actions.
+
+Looking at the unstack actions, there's (unstack b1 b2). Wait, the unstack actions are named like (unstack b1 b2), which would take b1 off b2. Let's check the preconditions for unstack b1 b2.
+
+The unstack b1 b2 action has preconditions: (clear b1), (on b1 b2), (arm-empty). Wait, according to the list:
+
+name: (unstack b1 b2) ; preconditions: (clear b1), (on b1 b2), (arm-empty) ; delete effects: (clear b1), (on b1 b2), (arm-empty) ; add effects: (holding b1), (clear b2)
+
+Ah, so to unstack b1 from b2, we need clear b1 (but in the initial state, is b1 clear? Let's see.
+
+In the initial state, (clear b3) is true, but (clear b1) is not mentioned. Wait, the initial state has (on b3 b1), so b1 is being supported by b2 (since on b1 b2), so b1 is not clear. Because clear means that the block has nothing on top of it. So in the initial state, b1 has b3 on top (since on b3 b1), so b1 is not clear. Therefore, the precondition (clear b1) for unstack b1 b2 is not met.
+
+Hmm, this is a problem. So we can't unstack b1 from b2 directly because b1 isn't clear.
+
+Alternative approach: Maybe we need to pick up b3 first. Let's see.
+
+The pickup actions: to pick up b3, we need (clear b3), (on-table b3), (arm-empty). But in the initial state, (on-table b3) is false. Because b3 is on b1, which is on b2 (on table). So b3 is not on the table. So pickup b3 is not applicable.
+
+Similarly, pickup b2 requires (on-table b2), which is true (since initial state has on-table b2), but (clear b2) is false (since b1 is on b2), so pickup b2 is not applicable.
+
+So the only possible pickup might be b1? Wait, pickup b1 needs (clear b1), (on-table b1), (arm-empty). But b1 is not on the table (it's on b2), so on-table b1 is false. So pickup b1 is not applicable.
+
+Hmm, so none of the pickup actions are applicable in the initial state. Because all the objects are stacked, and the clear conditions aren't met for the objects we want to pick up.
+
+Wait, but the initial state has (clear b3), which is true. So b3 is clear. But to pick up b3, we need (on-table b3), which is not true. So even though b3 is clear, it's not on the table, so we can't pick it up.
+
+So the first step might be to move b1 off b2 so that b2 becomes clear, but how?
+
+Wait, perhaps we need to unstack b3 from b1 first. Let's check the unstack actions.
+
+There's an unstack b3 b1 action. Let's look at its preconditions.
+
+unstack b3 b1: preconditions (arm-empty), (clear b3), (on b3 b1). Delete effects: (on b3 b1), (clear b3), (arm-empty). Add effects: (clear b1), (holding b3).
+
+Wait, in the initial state, (clear b3) is true, (on b3 b1) is true, and (arm-empty) is true. So all preconditions for unstack b3 b1 are met.
+
+Yes! So unstack b3 b1 is applicable here.
+
+Let's see: unstack b3 b1 would take b3 off b1, so now b3 is in the arm (holding b3), and b1 becomes clear (since b3 was on it), and b3 is no longer on b1.
+
+So after applying unstack b3 b1:
+
+- Remove (on b3 b1), (clear b3), (arm-empty)
+- Add (clear b1), (holding b3)
+
+Wait, no: according to the action definition, when an action is applied: remove its delete effects, then add its add effects.
+
+The unstack b3 b1 action has delete effects: (on b3 b1), (clear b3), (arm-empty). So those are removed from the state.
+
+Add effects: (clear b1), (holding b3).
+
+So initial state after unstack b3 b1:
+
+- on-table b2: yes
+- on b1 b2: yes
+- arm-empty: no (since arm-empty is deleted, so becomes false)
+- clear b3: no (deleted)
+- on b3 b1: no (deleted)
+- add effects: clear b1 (now true), holding b3 (true)
+
+So the new state after unstack b3 b1 would be:
+
+(on-table b2)
+(on b1 b2)
+(arm-empty is false now, since it's deleted)
+(clear b3 is false)
+(on b3 b1 is false)
+(clear b1 is true)
+(holding b3 is true)
+
+Wait, but the initial state had (arm-empty) as true. So after applying unstack b3 b1, the arm is not empty anymore (since holding b3 is added), so arm-empty becomes false.
+
+So the state now has holding b3, clear b1, and the stack is b1 on b2 (since on b1 b2 remains), and b3 is being held.
+
+Now, with b3 held, and b1 clear (since we unstacked b3 from b1), perhaps we can do something else.
+
+The goal is to get (on b3 b2). So we need to stack b3 onto b2. To do that, we need to have b3 held, and b2 clear.
+
+But currently, b2 is not clear (since b1 is on b2). So we need to get b2 clear.
+
+How? Well, if we can unstack b1 from b2. To unstack b1 from b2, we need the unstack b1 b2 action.
+
+Check the preconditions for unstack b1 b2: (clear b1), (on b1 b2), (arm-empty).
+
+In the current state after unstack b3 b1, we have:
+
+- clear b1: true (from the add effects)
+- on b1 b2: true (still)
+- arm-empty: false (since holding b3)
+
+So arm-empty is false, so the precondition (arm-empty) is not met. Therefore, unstack b1 b2 is not applicable.
+
+Hmm. So we need to get the arm empty again. But we're holding b3, so arm is not empty.
+
+So perhaps we need to put down b3 first.
+
+Let's see: the putdown actions. For example, putdown b3.
+
+The putdown b3 action has preconditions: (holding b3). Which is true now.
+
+So we can put down b3. Let's try that.
+
+After putting down b3:
+
+- delete effects: (holding b3)
+- add effects: (clear b3), (on-table b3), (arm-empty)
+
+So the state becomes:
+
+(on-table b2)
+(on b1 b2)
+(arm-empty: true)
+(clear b3: true)
+(on b3 b1: false)
+(clear b1: true)
+(holding b3: false)
+
+Wait, but after unstacking b3 from b1, we had b3 being held. Then putting it down would return it to the table.
+
+So the new state would be:
+
+- on-table b3 (added)
+- clear b3 (added)
+- arm-empty (added)
+- holding b3 is removed.
+
+So now, b3 is back on the table, clear, arm is empty.
+
+But we've gone back to a state similar to initial, except that b1 is clear (from unstacking b3 from b1). Wait, in the initial state, b1 was not clear (since b3 was on it). Now after unstacking and putting down, b1 is clear.
+
+Hmm, maybe this isn't helpful.
+
+Alternative approach: Let's think again.
+
+We need (on b3 b2). Let's see what actions can lead to that.
+
+The stack b3 b2 action requires (holding b3) and (clear b2). So we need to have b2 clear and holding b3.
+
+In the initial state, b2 is not clear (b1 is on it), so we need to make b2 clear first.
+
+To make b2 clear, we need to remove b1 from b2. To do that, we need to unstack b1 from b2.
+
+But unstack b1 b2 requires (clear b1), (on b1 b2), (arm-empty).
+
+In initial state, clear b1 is false (since b3 is on b1), so we can't do that.
+
+So first, we need to make b1 clear. How?
+
+We can unstack b3 from b1 (which we did earlier). Let's try that step.
+
+Step 1: unstack b3 b1.
+
+As we saw, this action is applicable in initial state.
+
+After step 1:
+
+- holding b3 is true
+- clear b1 is true
+- on b3 b1 is false
+- clear b3 is false
+- arm-empty is false
+
+Now, with clear b1 true, and holding b3, perhaps we can do something else.
+
+Next, we can try to put down b3 (since we have it held). Let's do that.
+
+Step 2: putdown b3.
+
+After step 2:
+
+- holding b3 is false
+- on-table b3 is true
+- clear b3 is true
+- arm-empty is true
+
+So now, the state is:
+
+(on-table b2)
+(on b1 b2)
+(arm-empty)
+(clear b3)
+(on b3 b2 is false)
+(on b3 b1 is false)
+(clear b1 is true)
+
+Wait, no. After step 1, the state has clear b1 true, and on b1 b2 true.
+
+After step 2 (putdown b3), we have b3 back on the table, clear, arm empty.
+
+So now, the state is:
+
+- on-table b2: yes
+- on b1 b2: yes
+- arm-empty: yes
+- clear b3: yes
+- on b3 b1: no
+- clear b1: yes (from step 1)
+- holding b3: no
+
+Hmm. Now, with b1 clear, and arm empty, perhaps we can pickup b1.
+
+Wait, pickup b1 requires (clear b1), (on-table b1), (arm-empty). But in this state, b1 is on b2 (on b1 b2), so on-table b1 is false. So pickup b1 is not applicable.
+
+So we need to get b1 to the table. But how?
+
+Alternatively, since we have clear b1, and b1 is on b2, perhaps we can unstack b1 from b2 now.
+
+Let's check unstack b1 b2.
+
+Preconditions: (clear b1), (on b1 b2), (arm-empty). All are true now (clear b1 is true, on b1 b2 is true, arm-empty is true).
+
+Yes! So step 3: unstack b1 b2.
+
+Applying unstack b1 b2:
+
+- delete effects: (clear b1), (on b1 b2), (arm-empty)
+- add effects: (holding b1), (clear b2)
+
+So after step 3:
+
+- holding b1 is true
+- clear b2 is true (since b1 was removed from b2)
+- on b1 b2 is false
+- clear b1 is false
+- arm-empty is false
+
+Now, the state has b1 being held, and b2 is clear.
+
+Next step: we can put down b1 on the table? Or stack it on b2.
+
+Wait, the goal is to have (on b3 b2). So we need b3 on b2.
+
+We have b1 held, but we need b3.
+
+Wait, in step 2, we put down b3 on the table. So b3 is now on the table, clear.
+
+So after step 2, b3 is on table, clear.
+
+So now, in step 3, after unstacking b1 from b2, we have:
+
+- holding b1
+- clear b2 (so b2 is now clear)
+- b3 is on table (clear)
+
+So next step: we can pickup b3.
+
+Let's check: pickup b3 requires (clear b3), (on-table b3), (arm-empty).
+
+In the current state (after step 3), arm is not empty (holding b1), so arm-empty is false. So pickup b3 is not applicable.
+
+Hmm, problem here. Because we have b1 being held, arm is not empty.
+
+So we need to put down b1 first.
+
+Step 4: putdown b1.
+
+putdown b1 has preconditions: (holding b1). Which is true.
+
+After step 4:
+
+- delete effects: (holding b1)
+- add effects: (clear b1), (on-table b1), (arm-empty)
+
+So now, state is:
+
+- on-table b2: yes
+- on b1 b2: no (from step 3)
+- arm-empty: yes
+- clear b3: yes (from step 2)
+- on-table b1: yes
+- clear b1: yes
+- holding b1: no
+
+So now, b1 is back on the table, clear, arm empty.
+
+Now, we can pickup b3.
+
+Step 5: pickup b3.
+
+Check preconditions: (clear b3), (on-table b3), (arm-empty) → all true.
+
+Apply pickup b3:
+
+- delete effects: (clear b3), (on-table b3), (arm-empty)
+- add effects: (holding b3)
+
+So now, holding b3.
+
+Step 6: stack b3 b2.
+
+Check preconditions: (holding b3), (clear b2).
+
+In current state: clear b2 is true (from step 3), holding b3 is true.
+
+So stack b3 b2 is applicable.
+
+Apply stack b3 b2:
+
+- delete effects: (holding b3), (clear b2)
+- add effects: (clear b3), (on b3 b2), (arm-empty)
+
+After this action:
+
+- on b3 b2 is true (goal achieved)
+- clear b3 is true
+- arm-empty is true
+
+So the goal state is reached.
+
+Let's check the steps:
+
+1. unstack b3 b1
+2. putdown b3
+3. unstack b1 b2
+4. putdown b1
+5. pickup b3
+6. stack b3 b2
+
+Wait, but step 4: after step 3, we have holding b1, so step 4 is putdown b1.
+
+Let me retrace each step's state to make sure.
+
+Initial state:
+
+- on-table b2
+- on b1 b2
+- arm-empty
+- clear b3
+- on b3 b1
+
+Step 1: unstack b3 b1
+
+- delete: (on b3 b1), (clear b3), (arm-empty)
+- add: (clear b1), (holding b3)
+
+New state:
+
+- on-table b2
+- on b1 b2
+- arm-empty: false
+- clear b3: false
+- on b3 b1: false
+- clear b1: true
+- holding b3: true
+
+Step 2: putdown b3
+
+- delete: (holding b3)
+- add: (clear b3), (on-table b3), (arm-empty)
+
+New state:
+
+- on-table b2
+- on b1 b2
+- arm-empty: true
+- clear b3: true
+- on b3 b1: false
+- clear b1: true
+- holding b3: false
+
+Step 3: unstack b1 b2
+
+Preconditions: clear b1 (true), on b1 b2 (true), arm-empty (true) → yes.
+
+- delete: (clear b1), (on b1 b2), (arm-empty)
+- add: (holding b1), (clear b2)
+
+New state:
+
+- on-table b2
+- on b1 b2: false
+- arm-empty: false
+- clear b1: false
+- holding b1: true
+- clear b2: true
+
+Step 4: putdown b1
+
+- delete: (holding b1)
+- add: (clear b1), (on-table b1), (arm-empty)
+
+New state:
+
+- on-table b2
+- on b1 b2: false
+- arm-empty: true
+- clear b1: true
+- on-table b1: true
+- holding b1: false
+
+Step 5: pickup b3
+
+Preconditions: clear b3 (true), on-table b3 (true), arm-empty (true) → yes.
+
+- delete: (clear b3), (on-table b3), (arm-empty)
+- add: (holding b3)
+
+New state:
+
+- on-table b2
+- on b1 b2: false
+- arm-empty: false
+- clear b3: false
+- on-table b3: false
+- holding b3: true
+
+Step 6: stack b3 b2
+
+Preconditions: holding b3 (true), clear b2 (true) → yes.
+
+- delete: (holding b3), (clear b2)
+- add: (clear b3), (on b3 b2), (arm-empty)
+
+Final state:
+
+- on-table b2
+- on b1 b2: false
+- arm-empty: true
+- clear b3: true
+- on b3 b2: true (goal achieved)
+- on-table b1: true
+- clear b1: true
+
+So yes, the goal (on b3 b2) is present.
+
+Therefore, the plan is:
+
+unstack b3 b1
+
+putdown b3
+
+unstack b1 b2
+
+putdown b1
+
+pickup b3
+
+stack b3 b2
+
+Let me check if all actions are applicable in their respective states.
+
+Step 1: unstack b3 b1 is applicable in initial state? Yes.
+
+Step 2: putdown b3 after step 1: holding b3 is true, so yes.
+
+Step 3: unstack b1 b2 after step 2: in step 2's state, clear b1 is true (from step 1), on b1 b2 is true (still), arm-empty is true (from step 2). So yes.
+
+Step 4: putdown b1 after step 3: holding b1 is true, so yes.
+
+Step 5: pickup b3 after step 4: clear b3 is true (from step 2), on-table b3 is true (from step 2), arm-empty is true (from step 4). Yes.
+
+Step 6: stack b3 b2 after step 5: holding b3 is true, clear b2 is true (from step 3). Yes.
+
+All steps are valid.
+
+So the plan is those six actions.
+</think>
+[2026-02-09 18:32:17,533] INFO :: Reasoning metadata: reasoning_tokens=4742, reasoning_source=tokens
+[2026-02-09 18:32:17,533] INFO :: Response:
+<plan>
+unstack b3 b1
+putdown b3
+unstack b1 b2
+putdown b1
+pickup b3
+stack b3 b2
+</plan>
+[2026-02-09 18:32:17,533] INFO :: Response tokens: 4784
+[2026-02-09 18:32:17,534] INFO :: Plan:
+unstack b3 b1
+putdown b3
+unstack b1 b2
+putdown b1
+pickup b3
+stack b3 b2
+[2026-02-09 18:32:17,534] INFO :: Extracted plan tokens: 33
+[2026-02-09 18:32:17,534] INFO :: Response metadata: response_tokens=4784, extracted_plan_tokens=33
+[2026-02-09 18:32:17,538] INFO :: Plan file: /content/drive/MyDrive/grounding-planning/logs/blocksworld/p06_grounded_seed2.plan
+[2026-02-10 14:12:40,629] INFO ::
+[2026-02-10 14:40:19,186] INFO :: ### Plan Validation ###
+
+Checking plan: logs/blocksworld/p06_grounded_seed2.plan
+Plan to validate:
+
+Plan size: 6
+1:
+(unstack b3 b1)
+ 
+2:
+(putdown b3)
+ 
+3:
+(unstack b1 b2)
+ 
+4:
+(putdown b1)
+ 
+5:
+(pickup b3)
+ 
+6:
+(stack b3 b2)
+ 
+
+Plan Validation details
+-----------------------
+
+Checking next happening (time 1)
+Deleting (on b3 b1)
+Deleting (clear b3)
+Deleting (arm-empty)
+Adding (holding b3)
+Adding (clear b1)
+
+Checking next happening (time 2)
+Deleting (holding b3)
+Adding (clear b3)
+Adding (arm-empty)
+Adding (on-table b3)
+
+Checking next happening (time 3)
+Deleting (on b1 b2)
+Deleting (clear b1)
+Deleting (arm-empty)
+Adding (holding b1)
+Adding (clear b2)
+
+Checking next happening (time 4)
+Deleting (holding b1)
+Adding (clear b1)
+Adding (arm-empty)
+Adding (on-table b1)
+
+Checking next happening (time 5)
+Deleting (clear b3)
+Deleting (on-table b3)
+Deleting (arm-empty)
+Adding (holding b3)
+
+Checking next happening (time 6)
+Deleting (clear b2)
+Deleting (holding b3)
+Adding (arm-empty)
+Adding (clear b3)
+Adding (on b3 b2)
+Plan executed successfully - checking goal
+Plan valid
+Final value: 6 
+
+Successful plans:
+Value: 6
+ logs/blocksworld/p06_grounded_seed2.plan 6 
+
+[2026-02-10 14:40:19,186] INFO :: Validate status: valid
