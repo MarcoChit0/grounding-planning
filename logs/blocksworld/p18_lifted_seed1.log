@@ -1,0 +1,635 @@
+[2026-02-10 18:38:26,994] INFO :: Stage: plan generation
+[2026-02-10 18:38:26,994] INFO :: Prompt metadata: domain=/content/drive/MyDrive/grounding-planning/benchmarks/blocksworld/domain.pddl, instance=/content/drive/MyDrive/grounding-planning/benchmarks/blocksworld/lifted/p18.pddl, template=lifted, seed=1, timestamp=2026-02-10T18:38:26Z
+[2026-02-10 18:38:26,995] INFO :: Model metadata: model=Qwen/Qwen3-4B-Thinking-2507, device=cuda, dtype=torch.float16, generation_config=GenerationConfig {
+  "do_sample": true,
+  "eos_token_id": 151645,
+  "max_new_tokens": 81920,
+  "pad_token_id": 151643,
+  "temperature": 0.6,
+  "top_k": 20,
+  "top_p": 0.95
+}
+, library_versions={'python': '3.12.12', 'torch': '2.9.0+cu126', 'transformers': '5.0.0', 'numpy': '2.0.2'}
+[2026-02-10 18:38:27,822] INFO :: Prompt:
+
+<role>
+You are an AI planning expert.
+</role>
+
+<task>
+Given the PDDL domain and the PDDL instance, return a plan (a sequence of actions) that transforms the initial state into a goal state.
+</task>
+
+<definitions>
+- A state is a set of facts.
+- A goal state is a state that has all goal facts.
+- An action is applicable if, and only if, **all** its preconditions are in the current state.
+- When an action is applied: remove its delete effects from the state, then add its add effects.
+</definitions>
+
+<inputs>
+This is the PDDL domain:
+<pddl-domain>
+(define (domain blocksworld-4ops)
+  (:requirements :strips)
+  (:predicates
+    (clear ?x)
+    (on-table ?x)
+    (arm-empty)
+    (holding ?x)
+    (on ?x ?y)
+  )
+
+  (:action pickup
+    :parameters (?ob)
+    :precondition (and (clear ?ob) (on-table ?ob) (arm-empty))
+    :effect (and (holding ?ob) (not (clear ?ob)) (not (on-table ?ob))
+      (not (arm-empty)))
+  )
+
+  (:action putdown
+    :parameters (?ob)
+    :precondition (holding ?ob)
+    :effect (and (clear ?ob) (arm-empty) (on-table ?ob)
+      (not (holding ?ob)))
+  )
+
+  (:action stack
+    :parameters (?ob ?underob)
+    :precondition (and (clear ?underob) (holding ?ob))
+    :effect (and (arm-empty) (clear ?ob) (on ?ob ?underob)
+      (not (clear ?underob)) (not (holding ?ob)))
+  )
+
+  (:action unstack
+    :parameters (?ob ?underob)
+    :precondition (and (on ?ob ?underob) (clear ?ob) (arm-empty))
+    :effect (and (holding ?ob) (clear ?underob)
+      (not (on ?ob ?underob)) (not (clear ?ob)) (not (arm-empty)))
+  )
+)
+</pddl-domain>
+
+This is the PDDL instance:
+<pddl-instance>
+
+
+(define (problem BW-rand-4)
+(:domain blocksworld-4ops)
+(:objects b1 b2 b3 b4 )
+(:init
+(arm-empty)
+(on-table b1)
+(on-table b2)
+(on b3 b4)
+(on b4 b2)
+(clear b1)
+(clear b3)
+)
+(:goal
+(and
+(on b4 b1))
+)
+)
+
+
+
+</pddl-instance>
+</inputs>
+
+<output-format>
+Return **only** a plan wrapped in "<plan>...</plan>", where each plan's action must use the same name and same number of parameters as one of the action schemas, each on a line. Do not include analysis, examples, or commentary outside the plan tags.
+</output-format>
+
+<requirements>
+The plan must be valid: each action must be applicable in the state it is applied in, and the plan must end in a goal state.
+</requirements>
+[2026-02-10 18:38:27,825] INFO :: Prompt tokens: 686
+[2026-02-10 18:42:19,672] INFO :: Reasoning trace:
+Okay, let's try to figure out this planning problem. So, the domain is blocksworld with 4 operations: pickup, putdown, stack, unstack. The goal is to have (on b4 b1). Let me look at the initial state and see what's going on.
+
+First, the initial state:
+
+- arm-empty
+- on-table b1
+- on-table b2
+- on b3 b4
+- on b4 b2
+- clear b1
+- clear b3
+
+Wait, the goal is (on b4 b1). So we need b4 to be on top of b1.
+
+Let me visualize the blocks. Let's list the blocks and their positions.
+
+b1 is on table (on-table b1), and clear (so no block on top of it).
+b2 is on table (on-table b2), but also on b4 (since on b4 b2). Wait, no: the predicates are (on b4 b2), which means b4 is on top of b2. Wait, in blocksworld terms, usually (on X Y) means X is on Y. So (on b4 b2) means b4 is on top of b2. Similarly, (on b3 b4) means b3 is on top of b4.
+
+So the stack is: b3 is on b4, which is on b2. So the structure is b3 -> b4 -> b2, all on the table. Wait, but b2 is on the table. So the stack is b3 on b4, b4 on b2, and b2 on table.
+
+Wait, no: (on b3 b4) means b3 is on b4. (on b4 b2) means b4 is on b2. So the order from bottom to top would be: b2 (on table), then b4 on b2, then b3 on b4. So the stack is b2 (table) -> b4 -> b3.
+
+Wait, but in the initial state, b1 is on table and clear, so it's a separate block on the table.
+
+So the initial setup:
+
+- Table has b1 and b2 (since both are on-table).
+- b2 has b4 on top of it.
+- b4 has b3 on top of it.
+
+So the stack is b3 -> b4 -> b2, all on the table.
+
+The goal is to have b4 on b1. So we need to move b4 so that it's on top of b1.
+
+Hmm. Let's think about how to do this.
+
+First, we need to get b4 off of b2. Since b4 is on b2, we need to unstack it. But to unstack, we need to have clear b4 (so no block on top of it) and arm-empty.
+
+Wait, the unstack action requires (on ?ob ?underob) (so b4 is on b2), (clear ?ob) (so b4 is clear), and arm-empty.
+
+Wait, the unstack action parameters are (?ob ?underob), so unstack b4 from b2. The precondition is (on b4 b2) (which is true), (clear b4) (which is true? Wait, in the initial state, clear b3 and clear b1. So b4 is not clear. Because b3 is on b4, so b4 is covered by b3, so b4 is not clear.
+
+Ah, right! So in the initial state, (clear b3) and (clear b1). So b3 is clear (so nothing on top of it), but b4 has b3 on top, so b4 is not clear. Similarly, b2 has b4 on top, so b2 is not clear.
+
+So to unstack b4 from b2, we need to have b4 clear. But currently, b4 is not clear because b3 is on it. So first, we need to unstack b3 from b4.
+
+Wait, the unstack action is for moving a block off of another. So to get b4 off of b2, we need to first move b3 off of b4 (so that b4 becomes clear).
+
+Let's see. Let's list the actions step by step.
+
+First, to unstack b3 from b4: use unstack (b3 b4). Wait, no: unstack requires (on ?ob ?underob), so (on b3 b4) is true. The precondition for unstack is (on ?ob ?underob) (so yes), (clear ?ob) (b3 is clear, which is true), and arm-empty.
+
+So unstack (b3 b4) would be applicable. Let's check.
+
+Current state: (clear b3) is true. So unstack (b3 b4) would have precondition (on b3 b4) (yes), (clear b3) (yes), (arm-empty) (yes). So this action is applicable.
+
+When we apply unstack (b3 b4):
+
+- Remove delete effects: (holding b3), (clear b4), (not on b3 b4), (not clear b3), (not arm-empty). Wait, no: the effect of unstack is (and (holding ?ob) (clear ?underob) (not on ?ob ?underob) (not clear ?ob) (not arm-empty)).
+
+Wait, the effect of unstack is:
+
+(holding ?ob) → so b3 is now held.
+
+(clear ?underob) → b4 becomes clear.
+
+(not on ?ob ?underob) → b3 is no longer on b4.
+
+(not clear ?ob) → b3 is no longer clear.
+
+(not arm-empty) → arm is not empty.
+
+So after unstacking b3 from b4, the state becomes:
+
+- holding b3
+
+- clear b4 (since unstack adds clear ?underob, which is b4)
+
+- not on b3 b4
+
+- not clear b3
+
+- arm not empty
+
+Also, the original clear b3 is removed (since not clear b3).
+
+So after this action, the state has:
+
+arm-empty? No, because the effect says not arm-empty. So arm is holding b3.
+
+So the next step would be to put down b3 on the table? Because after unstacking, b3 is being held, and we want to put it down.
+
+Wait, but the goal is to get b4 on b1. Let's see.
+
+After unstacking b3 from b4, b4 is now clear (since unstack adds clear ?underob, which is b4). So b4 is clear now. Then, we can pick up b4.
+
+Wait, but to pick up b4, we need it to be on the table (on-table b4) and clear. Wait, in the initial state, b4 is on b2 (so on-table? No: on b4 b2 means b4 is on top of b2, so b4 is not on the table. Wait, the initial state has on-table b1 and on-table b2. So b2 is on the table. Then b4 is on b2, so b4 is not on the table. So after unstacking b3 from b4, b4 is now on b2 (since unstacking b3 from b4 doesn't move b4; it's still on b2). Wait, no: unstacking b3 from b4 would mean that b3 is removed from b4, so b4 is now clear (so the block under b4 is b2, so b4 is still on b2, but now clear).
+
+Wait, maybe I need to draw this out.
+
+Initial stack:
+
+b2 (on table) → b4 (on b2) → b3 (on b4)
+
+So the structure is:
+
+Table has b1 and b2.
+
+b2 has b4 on top.
+
+b4 has b3 on top.
+
+So after unstacking b3 from b4 (using unstack action with b3 and b4), we get:
+
+b3 is now being held.
+
+b4 is now clear (so no block on top of it), so b4 is still on b2 (since it's part of the stack), but now clear.
+
+So the state after unstack (b3 b4):
+
+- holding b3
+
+- clear b4 (so b4 is clear)
+
+- on-table b2 (still)
+
+- on b4 b2 (still)
+
+- on b3 ... no, since unstacked, so not on b3 b4.
+
+Wait, the unstack action's effect is (not on ?ob ?underob), so b3 is no longer on b4.
+
+So now, b4 is clear (so it's the top block of the stack b2 → b4), and we have b3 in hand.
+
+Next step: we can put down b3 on the table. Because b3 is clear (no, wait: after unstacking, the effect says (not clear ?ob), so b3 is not clear. Wait, the unstack effect says (not clear ?ob), so b3 is now not clear. So to put down b3, we need to have it clear. But it's not clear. Hmm, that's a problem.
+
+Wait, the putdown action requires (holding ?ob), and the effect adds (clear ?ob), (arm-empty), (on-table ?ob), (not holding ?ob).
+
+But for the putdown action to be applicable, the precondition is just (holding ?ob). So after unstacking, b3 is held, so we can put it down.
+
+Wait, the putdown action doesn't require the block to be clear. It just requires that you're holding it. So we can put b3 down on the table.
+
+So after unstack (b3 b4), then putdown b3.
+
+Let's see:
+
+After unstack (b3 b4):
+
+- holding b3
+
+- clear b4 (so b4 is clear)
+
+- not on b3 b4
+
+- not clear b3
+
+- not arm-empty
+
+Then, apply putdown (b3):
+
+precondition: holding b3 (yes).
+
+effect: clear b3, arm-empty, on-table b3, not holding b3.
+
+So after putdown, the state has:
+
+- clear b3 (now)
+
+- on-table b3
+
+- arm-empty
+
+- b4 is clear (from unstack)
+
+- b4 is still on b2 (since unstack only removed b3 from b4)
+
+So now, b4 is clear and on b2. So we can pick up b4.
+
+Pickup (b4) requires (clear b4) (yes), (on-table b4)? Wait, no: the pickup action requires (on-table ?ob) and (clear ?ob). Wait, the initial state has on b4 b2, so b4 is not on the table. So pickup (b4) is not applicable because (on-table b4) is false.
+
+Ah, here's a problem. To pickup a block, it has to be on the table. But b4 is on b2, so it's not on the table. So we can't pickup b4 directly.
+
+So we need to first move b4 off of b2. But to do that, we need to unstack b4 from b2.
+
+But to unstack b4 from b2, we need (on b4 b2) (true), (clear b4) (true after the previous steps), and arm-empty (which we have after putting down b3).
+
+Wait, after putting down b3, arm is empty.
+
+So let's retrace.
+
+After unstack (b3 b4), then putdown (b3):
+
+1. unstack (b3 b4)
+
+2. putdown (b3)
+
+Now, state after step 2:
+
+- on-table b3 (since putdown adds on-table ?ob)
+
+- clear b3 (added by putdown)
+
+- arm-empty
+
+- on b4 b2 (still)
+
+- clear b4 (from unstack)
+
+So now, to unstack b4 from b2: use unstack (b4 b2).
+
+Check precondition: (on b4 b2) (yes), (clear b4) (yes), (arm-empty) (yes). So applicable.
+
+Applying unstack (b4 b2):
+
+- holding b4
+
+- clear b2 (added)
+
+- not on b4 b2
+
+- not clear b4
+
+- not arm-empty
+
+So after this, b4 is held, b2 is clear.
+
+Now, we can put down b4 on the table (since arm is not empty, but after unstack, we need to put it down).
+
+Wait, after unstack (b4 b2), we have b4 held, arm not empty. So next action: putdown (b4).
+
+Putdown (b4) requires holding b4 (yes).
+
+Effect: clear b4, arm-empty, on-table b4, not holding b4.
+
+So after putdown (b4), b4 is on table.
+
+But the goal is to have (on b4 b1). So we need to get b4 on top of b1.
+
+Wait, b1 is on the table and clear. So if we can pick up b4 (but it's now on table), then stack it on b1.
+
+Let's see.
+
+After step 3 (unstack b4 from b2), step 4 (putdown b4):
+
+- b4 is on table and clear.
+
+Now, pickup b4:
+
+precondition: (clear b4) (yes), (on-table b4) (yes), (arm-empty) (yes).
+
+So pickup (b4) is applicable.
+
+After pickup (b4):
+
+- holding b4
+
+- not clear b4
+
+- not on-table b4
+
+- not arm-empty
+
+Then, stack (b4 b1).
+
+Precondition: (clear b1) (yes, since initial state has clear b1, and we haven't changed it yet), (holding b4) (yes).
+
+Effect: arm-empty, clear b4, on b4 b1, not clear b1, not holding b4.
+
+So after stack (b4 b1), the state has (on b4 b1), which is the goal.
+
+Wait, let's check the steps.
+
+Let me outline the plan step by step.
+
+Initial state:
+
+(arm-empty)
+(on-table b1)
+(on-table b2)
+(on b3 b4)
+(on b4 b2)
+(clear b1)
+(clear b3)
+
+Goal: (on b4 b1)
+
+Plan:
+
+1. unstack b3 from b4 → unstack (b3 b4)
+   - Why? Because b3 is on b4, and we need to get b4 clear to move it.
+
+After this action:
+- holding b3
+- clear b4
+- not on b3 b4
+- not clear b3
+- not arm-empty
+
+2. putdown b3 → putdown (b3)
+   - Now b3 is on table, clear, arm empty.
+
+After this:
+- clear b3
+- on-table b3
+- arm-empty
+
+3. unstack b4 from b2 → unstack (b4 b2)
+   - Now b4 is held, b2 is clear.
+
+After this:
+- holding b4
+- clear b2
+- not on b4 b2
+- not clear b4
+- not arm-empty
+
+4. putdown b4 → putdown (b4)
+   - Now b4 is on table, clear.
+
+After this:
+- clear b4
+- on-table b4
+- arm-empty
+
+5. pickup b4 → pickup (b4)
+   - Now holding b4, not clear, not on table.
+
+After this:
+- holding b4
+- not clear b4
+- not on-table b4
+- not arm-empty
+
+6. stack b4 on b1 → stack (b4 b1)
+   - Precondition: clear b1 (yes), holding b4 (yes)
+   - Effect: on b4 b1, clear b4, arm empty, not clear b1, not holding b4.
+
+After this, the state has (on b4 b1), which is the goal.
+
+So the plan would be:
+
+unstack b3 b4
+putdown b3
+unstack b4 b2
+putdown b4
+pickup b4
+stack b4 b1
+
+Wait, but in the PDDL domain, the actions have parameters. Let's check the action names and parameters.
+
+The unstack action is (:action unstack :parameters (?ob ?underob)), so the action is written as unstack (b3 b4).
+
+Similarly, stack is stack (b4 b1).
+
+Let's verify each step's applicability.
+
+Step 1: unstack (b3 b4)
+- Precondition: (on b3 b4) (yes), (clear b3) (yes), (arm-empty) (yes). So applicable.
+
+Step 2: putdown (b3)
+- Precondition: holding b3 (yes). Applicable.
+
+After step 2, arm is empty.
+
+Step 3: unstack (b4 b2)
+- Precondition: (on b4 b2) (yes), (clear b4) (yes, from step 1), (arm-empty) (yes, after step 2). So applicable.
+
+Step 4: putdown (b4)
+- Precondition: holding b4 (yes). Applicable.
+
+After step 4, b4 is on table.
+
+Step 5: pickup (b4)
+- Precondition: (clear b4) (yes, after step 4), (on-table b4) (yes), (arm-empty) (yes). Applicable.
+
+Step 6: stack (b4 b1)
+- Precondition: (clear b1) (yes), (holding b4) (yes). Applicable.
+
+Yes, this should work.
+
+Wait, but in the initial state, b1 is clear and on table. So after step 6, the stack (b4 b1) adds (on b4 b1), which is the goal.
+
+So the plan is 6 actions.
+
+Let me write them out:
+
+unstack b3 b4
+putdown b3
+unstack b4 b2
+putdown b4
+pickup b4
+stack b4 b1
+
+Wait, but in PDDL, the action names are lowercase? The domain defines the actions as pickup, putdown, stack, unstack. So the action names are as given.
+
+Each action is written with the parameters. So the plan should be:
+
+unstack b3 b4
+putdown b3
+unstack b4 b2
+putdown b4
+pickup b4
+stack b4 b1
+
+But let's check if the order is correct.
+
+Wait, after step 1 (unstack b3 b4), the state has b3 held, b4 clear.
+
+Step 2: putdown b3 → b3 is on table, arm empty.
+
+Step 3: unstack b4 b2 → requires b4 to be on b2 (yes), clear b4 (yes), arm empty (yes). So yes.
+
+After step 3: b4 is held, b2 is clear.
+
+Step 4: putdown b4 → b4 is on table.
+
+Step 5: pickup b4 → now holding it.
+
+Step 6: stack b4 b1 → which places b4 on b1.
+
+Yes, this seems correct.
+
+Is there a shorter way?
+
+Let me see. Another approach: Could we move b4 directly? But initially, b4 is not on table, so we can't pickup. So first, we have to unstack b3 from b4, then unstack b4 from b2.
+
+Yes, so the plan seems necessary.
+
+I think this is the correct plan.
+</think>
+[2026-02-10 18:42:19,681] INFO :: Reasoning metadata: reasoning_tokens=4237, reasoning_source=tokens
+[2026-02-10 18:42:19,681] INFO :: Response:
+<plan>
+unstack b3 b4
+putdown b3
+unstack b4 b2
+putdown b4
+pickup b4
+stack b4 b1
+</plan>
+[2026-02-10 18:42:19,681] INFO :: Response tokens: 4279
+[2026-02-10 18:42:19,682] INFO :: Plan:
+unstack b3 b4
+putdown b3
+unstack b4 b2
+putdown b4
+pickup b4
+stack b4 b1
+[2026-02-10 18:42:19,682] INFO :: Extracted plan tokens: 33
+[2026-02-10 18:42:19,682] INFO :: Response metadata: response_tokens=4279, extracted_plan_tokens=33
+[2026-02-10 18:42:19,686] INFO :: Plan file: /content/drive/MyDrive/grounding-planning/logs/blocksworld/p18_lifted_seed1.plan
+[2026-02-11 12:26:20,749] INFO :: ### Plan Validation ###
+
+Checking plan: logs/blocksworld/p18_lifted_seed1.plan
+Plan to validate:
+
+Plan size: 6
+1:
+(unstack b3 b4)
+ 
+2:
+(putdown b3)
+ 
+3:
+(unstack b4 b2)
+ 
+4:
+(putdown b4)
+ 
+5:
+(pickup b4)
+ 
+6:
+(stack b4 b1)
+ 
+
+Plan Validation details
+-----------------------
+
+Checking next happening (time 1)
+Deleting (on b3 b4)
+Deleting (clear b3)
+Deleting (arm-empty)
+Adding (holding b3)
+Adding (clear b4)
+
+Checking next happening (time 2)
+Deleting (holding b3)
+Adding (clear b3)
+Adding (arm-empty)
+Adding (on-table b3)
+
+Checking next happening (time 3)
+Deleting (on b4 b2)
+Deleting (clear b4)
+Deleting (arm-empty)
+Adding (holding b4)
+Adding (clear b2)
+
+Checking next happening (time 4)
+Deleting (holding b4)
+Adding (clear b4)
+Adding (arm-empty)
+Adding (on-table b4)
+
+Checking next happening (time 5)
+Deleting (clear b4)
+Deleting (on-table b4)
+Deleting (arm-empty)
+Adding (holding b4)
+
+Checking next happening (time 6)
+Deleting (clear b1)
+Deleting (holding b4)
+Adding (arm-empty)
+Adding (clear b4)
+Adding (on b4 b1)
+Plan executed successfully - checking goal
+Plan valid
+Final value: 6 
+
+Successful plans:
+Value: 6
+ logs/blocksworld/p18_lifted_seed1.plan 6 
+
+[2026-02-11 12:26:20,749] INFO :: Validate status: valid

@@ -1,0 +1,1753 @@
+[2026-02-11 09:10:21,481] INFO :: Stage: plan generation
+[2026-02-11 09:10:21,481] INFO :: Prompt metadata: domain=/content/drive/MyDrive/grounding-planning/benchmarks/blocksworld/domain.pddl, instance=/content/drive/MyDrive/grounding-planning/benchmarks/blocksworld/lifted/p29.pddl, template=lifted, seed=1, timestamp=2026-02-11T09:10:21Z
+[2026-02-11 09:10:21,481] INFO :: Model metadata: model=Qwen/Qwen3-4B-Thinking-2507, device=cuda, dtype=torch.float16, generation_config=GenerationConfig {
+  "do_sample": true,
+  "eos_token_id": 151645,
+  "max_new_tokens": 81920,
+  "pad_token_id": 151643,
+  "temperature": 0.6,
+  "top_k": 20,
+  "top_p": 0.95
+}
+, library_versions={'python': '3.12.12', 'torch': '2.9.0+cu126', 'transformers': '5.0.0', 'numpy': '2.0.2'}
+[2026-02-11 09:10:22,311] INFO :: Prompt:
+
+<role>
+You are an AI planning expert.
+</role>
+
+<task>
+Given the PDDL domain and the PDDL instance, return a plan (a sequence of actions) that transforms the initial state into a goal state.
+</task>
+
+<definitions>
+- A state is a set of facts.
+- A goal state is a state that has all goal facts.
+- An action is applicable if, and only if, **all** its preconditions are in the current state.
+- When an action is applied: remove its delete effects from the state, then add its add effects.
+</definitions>
+
+<inputs>
+This is the PDDL domain:
+<pddl-domain>
+(define (domain blocksworld-4ops)
+  (:requirements :strips)
+  (:predicates
+    (clear ?x)
+    (on-table ?x)
+    (arm-empty)
+    (holding ?x)
+    (on ?x ?y)
+  )
+
+  (:action pickup
+    :parameters (?ob)
+    :precondition (and (clear ?ob) (on-table ?ob) (arm-empty))
+    :effect (and (holding ?ob) (not (clear ?ob)) (not (on-table ?ob))
+      (not (arm-empty)))
+  )
+
+  (:action putdown
+    :parameters (?ob)
+    :precondition (holding ?ob)
+    :effect (and (clear ?ob) (arm-empty) (on-table ?ob)
+      (not (holding ?ob)))
+  )
+
+  (:action stack
+    :parameters (?ob ?underob)
+    :precondition (and (clear ?underob) (holding ?ob))
+    :effect (and (arm-empty) (clear ?ob) (on ?ob ?underob)
+      (not (clear ?underob)) (not (holding ?ob)))
+  )
+
+  (:action unstack
+    :parameters (?ob ?underob)
+    :precondition (and (on ?ob ?underob) (clear ?ob) (arm-empty))
+    :effect (and (holding ?ob) (clear ?underob)
+      (not (on ?ob ?underob)) (not (clear ?ob)) (not (arm-empty)))
+  )
+)
+</pddl-domain>
+
+This is the PDDL instance:
+<pddl-instance>
+
+
+(define (problem BW-rand-6)
+(:domain blocksworld-4ops)
+(:objects b1 b2 b3 b4 b5 b6 )
+(:init
+(arm-empty)
+(on b1 b5)
+(on b2 b4)
+(on b3 b1)
+(on-table b4)
+(on b5 b2)
+(on b6 b3)
+(clear b6)
+)
+(:goal
+(and
+(on b5 b4)
+(on b6 b3))
+)
+)
+
+
+
+</pddl-instance>
+</inputs>
+
+<output-format>
+Return **only** a plan wrapped in "<plan>...</plan>", where each plan's action must use the same name and same number of parameters as one of the action schemas, each on a line. Do not include analysis, examples, or commentary outside the plan tags.
+</output-format>
+
+<requirements>
+The plan must be valid: each action must be applicable in the state it is applied in, and the plan must end in a goal state.
+</requirements>
+[2026-02-11 09:10:22,314] INFO :: Prompt tokens: 704
+[2026-02-11 09:22:23,222] INFO :: Reasoning trace:
+Okay, let's try to figure out this planning problem. So, the domain is blocksworld with 4 operations: pickup, putdown, stack, unstack. The goal is to have (on b5 b4) and (on b6 b3). Let me first look at the initial state.
+
+The initial state has:
+- arm-empty
+- on b1 b5
+- on b2 b4
+- on b3 b1
+- on-table b4
+- on b5 b2
+- on b6 b3
+- clear b6
+
+Hmm, wait, the goal is (on b5 b4) and (on b6 b3). Wait, in the current state, on b6 b3 is already true. Wait, no: the initial state says (on b6 b3) is present. Wait, the goal is (on b5 b4) and (on b6 b3). So the on b6 b3 part is already satisfied. So the problem is to get on b5 b4.
+
+Wait, let me check again. The initial state has:
+
+(on b6 b3) — yes, that's in the init. So the goal requires (on b5 b4) and (on b6 b3). So since (on b6 b3) is already true, we just need to get b5 on top of b4.
+
+But let's list all the initial facts:
+
+- arm-empty: true
+- on b1 b5: true (so b1 is on b5)
+- on b2 b4: true (b2 on b4)
+- on b3 b1: true (b3 on b1)
+- on-table b4: true (b4 is on table)
+- on b5 b2: true (b5 on b2)
+- on b6 b3: true (b6 on b3)
+- clear b6: true (b6 is clear)
+
+Wait, so the current state has a stack of blocks. Let me visualize this.
+
+Starting from the bottom (table):
+
+- b4 is on table (on-table b4)
+- b2 is on b4 (on b2 b4)
+- b5 is on b2 (on b5 b2)
+- b1 is on b5 (on b1 b5)
+- b3 is on b1 (on b3 b1)
+- b6 is on b3 (on b6 b3) and clear.
+
+Wait, but in this case, the stack is b6 on b3, which is on b1, which is on b5, which is on b2, which is on b4. So the entire stack is built up from b4 (table) up to b6.
+
+Wait, but the goal is to have b5 on b4. So currently, b5 is on b2, which is on b4. So we need to move b5 from b2 to b4. But to do that, we need to unstack b5 from b2 first, then stack it on b4.
+
+Wait, but the problem is that to move b5, we need to have it clear. Let's see.
+
+First, the current state has clear b6. So b6 is the only clear block. To move other blocks, we need to have them clear.
+
+Let's see what's the path.
+
+We need to get b5 on b4. Currently, b5 is on b2 (on b5 b2). So we need to take b5 off b2, then put it on b4.
+
+But to take b5 off b2, we need to have b5 clear and b2 clear? Wait, no. Wait, the action stack requires that the under block is clear. Wait, the unstack action is used to take a block off another.
+
+Wait, the unstack action has preconditions: (on ?ob ?underob) (clear ?ob) (arm-empty). So to unstack b5 from b2, we need b5 to be on b2, and b5 to be clear. But in the current state, is b5 clear? Let's check.
+
+The initial state has clear b6. The other blocks are on top of others, so none of them are clear except b6. So b5 is not clear. So to unstack b5, we need to first make it clear.
+
+Wait, how do we make a block clear? By putting it down on the table, or by moving it to another block.
+
+Wait, the clear predicate means that a block is not on top of another block. So for a block to be clear, it must not be on any other block.
+
+In the current state, the blocks are stacked as follows (from bottom to top):
+
+b4 (on table)
+b2 (on b4)
+b5 (on b2)
+b1 (on b5)
+b3 (on b1)
+b6 (on b3) and clear.
+
+Wait, no. Wait, the initial state has:
+
+(on b1 b5): so b1 is on b5.
+
+(on b2 b4): b2 on b4.
+
+(on b3 b1): b3 on b1.
+
+(on b5 b2): b5 on b2.
+
+(on b6 b3): b6 on b3.
+
+So the stack from bottom to top:
+
+- b4 is on table (on-table b4)
+- b2 is on b4 (on b2 b4)
+- b5 is on b2 (on b5 b2)
+- b1 is on b5 (on b1 b5)
+- b3 is on b1 (on b3 b1)
+- b6 is on b3 (on b6 b3) and clear.
+
+So the stack order is: b4 (bottom) -> b2 -> b5 -> b1 -> b3 -> b6 (top).
+
+Wait, but the clear blocks are only b6. So to move b5, we need to first unstack b6? Wait, no. Let's think.
+
+The goal is to have b5 on b4. So we need to move b5 from its current position (on b2) to b4.
+
+To do that, we need to first get b5 into the arm. So we need to pick up b5. But to pick up b5, it needs to be clear and on the table. Wait, no: the pickup action requires (clear ?ob) (on-table ?ob) (arm-empty). Wait, but in the current state, b5 is not on the table. It's on b2. So pickup is not applicable for b5.
+
+Ah, right. So we can't pick up b5 directly because it's not on the table. So we need to first unstack the blocks above b5 to make it clear.
+
+Wait, the stack is b5 on b2, then b1 on b5. So to get b5 clear, we need to move b1 off b5 first.
+
+So steps:
+
+1. Unstack b1 from b5. But unstack requires (on b1 b5) (clear b1) (arm-empty). But in the current state, is b1 clear? No, because b1 is on b5, so it's not clear. So we can't unstack b1.
+
+Wait, this is getting complicated. Let's try to list all the current blocks and their positions.
+
+Let's list each block and what they're on:
+
+- b4: on-table (so on table)
+- b2: on b4
+- b5: on b2
+- b1: on b5
+- b3: on b1
+- b6: on b3, and clear.
+
+So the stack is:
+
+b4 (table)
+b2
+b5
+b1
+b3
+b6 (top)
+
+So to get b5 clear, we need to remove b1 from b5, then b3 from b1, etc.
+
+But the arm is empty initially.
+
+First, the arm is empty. So we can start by picking up a clear block. The only clear block is b6.
+
+So step 1: pickup b6.
+
+Wait, pickup requires (clear ?ob) (on-table ?ob) (arm-empty). But b6 is on b3, not on table. So pickup b6 is not applicable. Oh! Wait, the problem here is that the pickup action requires the block to be on the table. So we can't pick up b6 because it's not on the table.
+
+Hmm, this is a problem. Because the only clear block is b6, but it's not on the table, so we can't pick it up.
+
+Wait, the initial state has (clear b6), but (on b6 b3), so it's not on the table.
+
+So how do we get a block that's on the table to be picked up?
+
+Looking at the initial state: (on-table b4). So b4 is on the table. But b4 is not clear, because it's on the table but has blocks on top (b2 is on it).
+
+Wait, no: the on-table predicate means that the block is on the table. So for a block to be on the table, it's not on any other block. So in the initial state, (on-table b4) means b4 is on the table. But b4 has b2 on it (on b2 b4), so b4 is not clear.
+
+So the only clear block is b6, but it's not on the table, so we can't pick it up.
+
+Hmm, this seems like a problem. Wait, maybe I'm misunderstanding the predicates.
+
+Let me recheck the definitions.
+
+The predicates are:
+
+- clear ?x: the block is not on top of another block (so it's free)
+- on-table ?x: the block is on the table (so it's not on any other block)
+- holding ?x: the arm is holding the block
+- on ?x ?y: block x is on block y
+
+In the initial state:
+
+- (on b1 b5): b1 is on b5
+- (on b2 b4): b2 on b4
+- (on b3 b1): b3 on b1
+- (on b5 b2): b5 on b2
+- (on b6 b3): b6 on b3
+- (on-table b4): b4 is on table
+- (clear b6): b6 is clear (so it's not on any block)
+
+Wait, but b6 is on b3, so how can it be clear? Because clear means it's not on top of another block. Wait, no: clear means it's not covered by another block. So if a block is clear, it's not on top of anything. So if b6 is on b3, then b6 is not clear. But the initial state says (clear b6). That seems contradictory.
+
+Wait, this might be a mistake in my understanding.
+
+Wait, the definition says: "clear ?x" is a predicate. The action unstack has effect (clear ?underob), which means that after unstacking, the under block becomes clear.
+
+Wait, in the initial state, (clear b6) is true. So according to the problem statement, b6 is clear. But according to the on b6 b3, that would mean b6 is on b3, so it's not clear. Hmm, this is confusing.
+
+Wait, maybe the clear predicate means that the block is not covered by another block, so a block is clear if it's on the table or on the ground, but in this domain, the table is the ground.
+
+Wait, in standard block world, a block is clear if it's not covered by another block. So if a block is on the table, it's clear. If it's on top of another block, then it's not clear.
+
+Wait, but the initial state has (clear b6) and (on b6 b3). That seems impossible. Because if b6 is on b3, then it's not clear. So there's a contradiction here.
+
+Wait, this might be a typo in the problem statement. Let me check again.
+
+The initial state is:
+
+(:init
+(arm-empty)
+(on b1 b5)
+(on b2 b4)
+(on b3 b1)
+(on-table b4)
+(on b5 b2)
+(on b6 b3)
+(clear b6)
+)
+
+So according to this, b6 is clear (so it's not on any block) but it's on b3. That's a problem. Because if it's on b3, it's not clear.
+
+Hmm, this suggests that there's a mistake in the problem setup. But assuming that the problem is correctly stated, perhaps the "clear" here is defined differently.
+
+Wait, in the action definitions:
+
+The pickup action has effect (not (clear ?ob)), so when you pick up a block, it's no longer clear.
+
+The unstack action has effect (clear ?underob), so after unstacking, the under block becomes clear.
+
+So in the initial state, b6 is clear. But according to the (on b6 b3), that would mean it's not clear. So this is a contradiction.
+
+Wait, perhaps the problem uses a different definition. Let's think: maybe in this domain, a block is clear if it's not on top of another block. So if a block is on the table, it's clear. If it's on another block, it's not clear.
+
+But the initial state has (clear b6) and (on b6 b3). That would imply that b6 is clear (so not on any block) but it's on b3. That's impossible.
+
+This seems like a problem. But since this is a given problem, I have to work with it.
+
+Perhaps the problem has a typo. Alternatively, maybe the "clear" here refers to the block being the top of a stack, but that's not standard.
+
+Wait, let's try to proceed despite this confusion.
+
+Assuming that the initial state has (clear b6) and (on b6 b3), which is a bit odd, but we'll go with it.
+
+The goal is to have (on b5 b4) and (on b6 b3). Wait, (on b6 b3) is already present in the initial state, so we just need to get (on b5 b4).
+
+So the main task is to move b5 from its current position (on b2) to b4.
+
+Let's try to see what steps are needed.
+
+First, to move b5, we need to have it in the arm. So we need to pick it up. But to pick it up, it needs to be clear and on the table.
+
+But b5 is on b2, so it's not clear. So we need to unstack blocks above b5 first.
+
+Wait, the stack of blocks above b5 is b1 (on b5) and b3 (on b1), and b6 (on b3).
+
+So to get b5 clear, we need to unstack b1 from b5, then b3 from b1, then b6 from b3.
+
+Let's try to do that.
+
+First, unstack b1 from b5. But unstack requires (on b1 b5) (clear b1) (arm-empty). However, in the initial state, b1 is not clear (since it's on b5), so the precondition (clear b1) is false. So we can't unstack b1.
+
+Hmm, so this approach might not work.
+
+Alternative idea: Maybe we can move b6 first. But b6 is clear, but it's on b3. Wait, but to move b6, we need to have it clear and on the table. But it's not on the table.
+
+Wait, the pickup action requires the block to be on the table. So no block is on the table except b4. But b4 has b2 on it, so b4 is not clear.
+
+Wait, the only block on the table is b4. So to pick up a block on the table, it needs to be clear. But b4 has b2 on it, so it's not clear.
+
+So the only way to get a block into the arm is to first unstack the blocks on top of it.
+
+Let me try to outline steps.
+
+We need to get b5 on b4.
+
+Current state:
+
+- b4 is on table (so on-table b4)
+- b2 is on b4
+- b5 is on b2
+- b1 is on b5
+- b3 is on b1
+- b6 is on b3 (clear)
+
+So the stack from bottom to top: b4 → b2 → b5 → b1 → b3 → b6.
+
+Wait, but b6 is clear. That's odd.
+
+Wait, perhaps the problem uses a different definition where a block is clear if it's not covered by another block, so the top block is clear. But in standard block world, the top block is clear.
+
+Wait, in standard block world, a block is clear if it's not covered by another block. So the top block is clear.
+
+Ah! Maybe that's the case here. So in the initial state, b6 is the top block (since it's on b3, which is on b1, etc.), so it's clear. So the clear predicate means it's the top block (not covered by anything else). That makes sense.
+
+So in this domain, "clear" means that the block is not covered by another block (i.e., it's the top of a stack). So the top block is clear.
+
+So in the initial state:
+
+- b6 is clear (top block)
+- b3 is on b1, so b3 is not clear (covered by b6)
+- b1 is on b5, so not clear
+- b5 is on b2, so not clear
+- b2 is on b4, so not clear
+- b4 is on table, so not clear (since it's covered by b2)
+
+So the clear block is b6.
+
+Okay, that makes sense. So the clear predicate here indicates that the block is the top of a stack (i.e., no block is on top of it), which is standard in block world.
+
+So with that understanding, let's proceed.
+
+The goal is to have b5 on b4. So we need to move b5 from its current position (on b2) to b4.
+
+To do this, we need to:
+
+1. Move b5 to the arm (by picking it up), but first we need to make it clear (i.e., remove blocks above it).
+
+Current blocks above b5: b1 (on b5), then b3 (on b1), then b6 (on b3). So we need to unstack b1, then b3, then b6.
+
+But unstacking requires that the block being unstacked is clear (which it's not, since it's covered by others).
+
+Wait, the unstack action has preconditions (on ?ob ?underob) (clear ?ob) (arm-empty).
+
+So to unstack a block, it needs to be clear (the top block) and on the under block.
+
+So the only clear block is b6. So we can unstack b6 first.
+
+Let's try that.
+
+Step 1: unstack b6 from b3.
+
+Precondition: (on b6 b3) (clear b6) (arm-empty). All true.
+
+Effect: (holding b6) (clear b3) (not (on b6 b3)) (not (clear b6)) (not (arm-empty)).
+
+After unstacking:
+
+- holding b6
+- clear b3
+- on b6 is not on b3 (now b6 is in arm)
+- arm is not empty.
+
+Now, the state changes.
+
+Next, we can put down b6 on the table. But the goal is to have b5 on b4, so maybe we don't want to put it down yet.
+
+Wait, but after unstacking b6, we have b6 in the arm. Let's see.
+
+After step 1 (unstack b6):
+
+- on b6 b3 is false
+- clear b3 is true
+- holding b6 is true
+- arm is not empty
+
+Now, the next step could be to put down b6. But the goal is to have b5 on b4, so maybe we need to move other blocks.
+
+Alternatively, we can stack b6 somewhere else. But let's think.
+
+We need to get b5 to b4. So we need to move b5 up.
+
+But to move b5, we need to have it clear. So first, we need to unstack b1 from b5.
+
+But to unstack b1, it needs to be clear. Currently, b1 is not clear (since it's covered by b3, which is covered by b6). Wait, after unstacking b6, b3 is clear.
+
+Wait, after unstacking b6, the state has:
+
+- clear b3 (since b6 was unstacked from b3)
+- b3 is now clear, so it's the top block.
+
+So now, b3 is clear.
+
+So step 2: unstack b3 from b1.
+
+Wait, unstack requires (on b3 b1) (clear b3) (arm-empty). But arm is not empty (holding b6), so this is not applicable.
+
+So we need to put down b6 first to make the arm empty.
+
+Step 2: putdown b6.
+
+Precondition: holding b6.
+
+Effect: (clear b6) (arm-empty) (on-table b6) (not holding b6).
+
+After this:
+
+- b6 is on table
+- arm is empty
+- clear b6 is true (since it's on table)
+- on-table b6 is true.
+
+Now, we can proceed.
+
+Now, the state has:
+
+- b6 on table (clear)
+- arm empty
+
+Next, we can unstack b3 from b1.
+
+But to unstack b3, we need it to be clear. Currently, b3 is clear (from step 1).
+
+Precondition for unstack b3 from b1: (on b3 b1) (clear b3) (arm-empty). Yes.
+
+So step 3: unstack b3 from b1.
+
+Effect: (holding b3) (clear b1) (not (on b3 b1)) (not (clear b3)) (not (arm-empty)).
+
+Now, holding b3, arm not empty.
+
+Step 4: putdown b3 on table.
+
+Precondition: holding b3.
+
+Effect: (clear b3) (arm-empty) (on-table b3) (not holding b3).
+
+Now, b3 is on table.
+
+Step 5: unstack b1 from b5.
+
+Precondition: (on b1 b5) (clear b1) (arm-empty). Now, after step 4, arm is empty and b1 is clear (from step 3).
+
+So step 5: unstack b1 from b5.
+
+Effect: (holding b1) (clear b5) (not (on b1 b5)) (not (clear b1)) (not (arm-empty)).
+
+Now, holding b1.
+
+Step 6: putdown b1 on table.
+
+Precondition: holding b1.
+
+Effect: (clear b1) (arm-empty) (on-table b1) (not holding b1).
+
+Now, b1 is on table.
+
+Step 7: pickup b5.
+
+Precondition: (clear b5) (on-table b5) (arm-empty). Wait, but b5 is not on the table. Currently, after step 5, b5 is now clear (since we unstacked b1 from it), but b5 is still on b2.
+
+Wait, no: in step 5, we unstacked b1 from b5. So after that, b5 is now clear (since it's no longer covered by b1), but it's still on b2.
+
+So b5 is clear but not on the table. So we can't pickup b5 because pickup requires on-table.
+
+Ah, right. So to pickup b5, it needs to be on the table.
+
+But currently, b5 is on b2. So we need to move it to the table first.
+
+Wait, this is getting complicated. Let's try to track each step carefully.
+
+Let me try to write down each action step by step.
+
+Initial state:
+
+- arm-empty
+- on b1 b5
+- on b2 b4
+- on b3 b1
+- on-table b4
+- on b5 b2
+- on b6 b3
+- clear b6
+
+Goal: (on b5 b4) and (on b6 b3)
+
+Step 1: unstack b6 from b3.
+
+Action: unstack b6 b3
+
+Precondition: (on b6 b3) (clear b6) (arm-empty) → yes.
+
+After action:
+
+- holding b6
+- clear b3 (was b6's under block)
+- on b6 is not on b3 (so b6 is in arm)
+- arm is not empty.
+
+State now:
+
+- arm-empty: false
+- holding b6: true
+- clear b3: true
+- on b6 b3: false
+- on b5 b2: true
+- on b1 b5: true
+- on b3 b1: true
+- on b2 b4: true
+- on-table b4: true
+- on-table b6: false
+
+Step 2: putdown b6.
+
+Action: putdown b6
+
+Precondition: holding b6 → yes.
+
+After action:
+
+- clear b6: true
+- arm-empty: true
+- on-table b6: true
+- holding b6: false
+
+State now:
+
+- on-table b6: true
+- clear b6: true
+- arm-empty: true
+- on b3 b1: true
+- on b1 b5: true
+- on b5 b2: true
+- on b2 b4: true
+- on-table b4: true
+
+Step 3: unstack b3 from b1.
+
+Action: unstack b3 b1
+
+Precondition: (on b3 b1) (clear b3) (arm-empty) → yes.
+
+After action:
+
+- holding b3
+- clear b1
+- on b3 b1: false
+- clear b3: false
+- arm not empty.
+
+State:
+
+- holding b3: true
+- clear b1: true
+- on b3 b1: false
+- on b1 b5: true
+- on b5 b2: true
+- on b2 b4: true
+- on-table b4: true
+- on-table b6: true
+
+Step 4: putdown b3.
+
+Action: putdown b3
+
+Precondition: holding b3 → yes.
+
+After action:
+
+- clear b3: true
+- arm-empty: true
+- on-table b3: true
+- holding b3: false
+
+State now:
+
+- on-table b3: true
+- clear b3: true
+- arm-empty: true
+- on b1 b5: true
+- on b5 b2: true
+- on b2 b4: true
+- on-table b4: true
+- on-table b6: true
+
+Step 5: unstack b1 from b5.
+
+Action: unstack b1 b5
+
+Precondition: (on b1 b5) (clear b1) (arm-empty) → yes (clear b1 is true from step 3).
+
+After action:
+
+- holding b1
+- clear b5
+- on b1 b5: false
+- clear b1: false
+- arm not empty.
+
+State:
+
+- holding b1: true
+- clear b5: true
+- on b1 b5: false
+- on b5 b2: true
+- on b2 b4: true
+- on-table b4: true
+- on-table b3: true
+- on-table b6: true
+
+Step 6: putdown b1.
+
+Action: putdown b1
+
+Precondition: holding b1 → yes.
+
+After action:
+
+- clear b1: true
+- arm-empty: true
+- on-table b1: true
+- holding b1: false
+
+State now:
+
+- on-table b1: true
+- clear b1: true
+- arm-empty: true
+- on b5 b2: true
+- on b2 b4: true
+- on-table b4: true
+- on-table b3: true
+- on-table b6: true
+
+Now, b5 is clear (from step 5), but it's still on b2. So we need to get b5 to the table first.
+
+Step 7: pickup b5.
+
+Wait, pickup requires (clear b5) (on-table b5) (arm-empty). But b5 is on b2, not on table. So pickup b5 is not applicable.
+
+Hmm, so we need to move b5 from b2 to the table.
+
+To do that, we need to unstack b2 first? Wait, b2 is on b4.
+
+Wait, the stack is:
+
+b4 (table)
+b2 (on b4)
+b5 (on b2)
+
+So to get b5 to the table, we need to first move b5 off b2, but to do that, we need b2 to be clear.
+
+But b2 is covered by b5, so to unstack b5 from b2, we need b5 to be clear (which it is) and b2 to be clear (but b2 is not clear because it's on b4).
+
+Wait, no. To unstack b5 from b2, we need to have b5 clear (which it is) and b2 clear? No, the unstack action's precondition is (on ?ob ?underob) (clear ?ob) (arm-empty). So the under block (b2) doesn't need to be clear. Wait, the unstack action is used to take a block off another block. So the under block (b2) needs to be clear? Or not.
+
+Wait, the unstack action's preconditions are:
+
+(on ?ob ?underob) (clear ?ob) (arm-empty)
+
+So ?ob is the block being unstacked (b5), and ?underob is the block it's on (b2).
+
+So to unstack b5 from b2, we need:
+
+- on b5 b2 (true)
+- clear b5 (true, from step 5)
+- arm-empty (true)
+
+So step 7: unstack b5 b2.
+
+Action: unstack b5 b2
+
+Precondition: yes.
+
+After action:
+
+- holding b5
+- clear b2 (since b5 is removed)
+- on b5 b2: false
+- clear b5: false
+- arm not empty.
+
+State:
+
+- holding b5: true
+- clear b2: true
+- on b5 b2: false
+- on b2 b4: true
+- on-table b4: true
+- etc.
+
+Now, b5 is in the arm.
+
+Step 8: putdown b5 on table.
+
+Action: putdown b5
+
+Precondition: holding b5 → yes.
+
+After action:
+
+- clear b5: true
+- arm-empty: true
+- on-table b5: true
+- holding b5: false.
+
+State now:
+
+- on-table b5: true
+- clear b5: true
+- arm-empty: true.
+
+But the goal is to have on b5 b4. So we need to stack b5 on b4.
+
+But b4 is on the table. So step 9: pickup b5.
+
+Wait, no. After step 8, b5 is on table. So to stack it on b4, we need to pick it up again.
+
+Step 9: pickup b5.
+
+Precondition: (clear b5) (on-table b5) (arm-empty) → yes.
+
+After action:
+
+- holding b5
+- clear b5: false
+- on-table b5: false
+- arm not empty.
+
+Step 10: stack b5 b4.
+
+Action: stack b5 b4
+
+Precondition: (clear b4) (holding b5) → but clear b4? No, because b4 is on table, but has b2 on it, so b4 is not clear.
+
+Wait, stack action requires (clear ?underob) (holding ?ob). So to stack b5 on b4, we need b4 to be clear (i.e., not covered by anything).
+
+But in the current state, b4 is on table with b2 on it, so b4 is not clear. So stack b5 b4 is not applicable.
+
+Ah, problem here. So we need to first move b2 off b4.
+
+But b2 is on b4. So we need to unstack b2 from b4.
+
+Let's see:
+
+Current state after step 8:
+
+- on-table b5: true
+- on b2 b4: true (b2 is on b4)
+- on-table b4: true
+
+To stack b5 on b4, we need b4 to be clear. So first, we need to unstack b2 from b4.
+
+Step 10: unstack b2 b4.
+
+Precondition: (on b2 b4) (clear b2) (arm-empty). But arm is empty (after step 8, we put down b5, so arm is empty).
+
+But is b2 clear? After step 7 (unstack b5 b2), b2 became clear (from the effect of unstack: clear b2).
+
+Yes, in step 7, after unstacking b5 from b2, b2 became clear.
+
+So step 10: unstack b2 b4.
+
+Action: unstack b2 b4
+
+Precondition: (on b2 b4) (clear b2) (arm-empty) → yes.
+
+After action:
+
+- holding b2
+- clear b4
+- on b2 b4: false
+- clear b2: false
+- arm not empty.
+
+State now:
+
+- holding b2: true
+- clear b4: true
+- on b2 b4: false
+- on b4: table (so on-table b4 is true)
+- on-table b5: true.
+
+Step 11: putdown b2 on table.
+
+Action: putdown b2.
+
+Precondition: holding b2 → yes.
+
+After action:
+
+- clear b2: true
+- arm-empty: true
+- on-table b2: true.
+
+State now:
+
+- on-table b2: true
+- clear b2: true
+- clear b4: true (since b2 was unstacked)
+- on-table b4: true.
+
+Now, b4 is clear (since b2 was removed).
+
+Step 12: pickup b5.
+
+Precondition: (clear b5) (on-table b5) (arm-empty) → yes.
+
+After action:
+
+- holding b5
+- clear b5: false
+- on-table b5: false.
+
+Step 13: stack b5 b4.
+
+Action: stack b5 b4.
+
+Precondition: (clear b4) (holding b5) → yes.
+
+After action:
+
+- arm-empty: true
+- clear b5: true
+- on b5 b4: true
+- not (on b5 b4) → no, the effect is (on b5 b4)
+
+So now, the state has (on b5 b4) and (on b6 b3) (which was already in the initial state). So the goal is achieved.
+
+Let's count the steps:
+
+1. unstack b6 b3
+2. putdown b6
+3. unstack b3 b1
+4. putdown b3
+5. unstack b1 b5
+6. putdown b1
+7. unstack b5 b2
+8. putdown b5
+9. pickup b5
+10. unstack b2 b4
+11. putdown b2
+12. pickup b5
+13. stack b5 b4
+
+Wait, but step 8: putdown b5 on table. Then step 9: pickup b5 again. But after step 8, b5 is on table, so step 9 is pickup.
+
+But after step 13, we have on b5 b4, which is the goal.
+
+But let's check if this is the minimal plan.
+
+Alternatively, maybe there's a shorter way.
+
+Let's see if after step 7 (unstack b5 b2), we can stack b5 on b4 directly.
+
+After step 7:
+
+- holding b5
+- clear b2
+- on b5 b2: false
+
+But to stack b5 on b4, we need b4 to be clear. Currently, b4 has b2 on it (on b2 b4), so b4 is not clear.
+
+So we need to unstack b2 first.
+
+So the steps I outlined seem necessary.
+
+Let's list the actions:
+
+1. unstack b6 b3
+2. putdown b6
+3. unstack b3 b1
+4. putdown b3
+5. unstack b1 b5
+6. putdown b1
+7. unstack b5 b2
+8. putdown b5
+9. pickup b5
+10. unstack b2 b4
+11. putdown b2
+12. pickup b5
+13. stack b5 b4
+
+But wait, step 8: putdown b5. After that, b5 is on table. Then step 9: pickup b5 (to move it again).
+
+But maybe after step 7 (unstack b5 b2), we can put it down on b4? No, because b4 is not clear.
+
+Hmm.
+
+Alternative approach: After unstacking b5 (step 7), we have b5 in the arm. Then, we can try to stack it on b4, but b4 is not clear (since b2 is on it).
+
+So we need to unstack b2 first.
+
+So steps 7: unstack b5 b2 → b5 in arm, b2 clear.
+
+Then step 8: unstack b2 b4 → b2 in arm, b4 clear.
+
+Step 9: putdown b2 (on table).
+
+Step 10: pickup b5.
+
+Step 11: stack b5 b4.
+
+So the plan would be shorter.
+
+Let's try:
+
+1. unstack b6 b3
+2. putdown b6
+3. unstack b3 b1
+4. putdown b3
+5. unstack b1 b5
+6. putdown b1
+7. unstack b5 b2
+8. unstack b2 b4
+9. putdown b2
+10. pickup b5
+11. stack b5 b4
+
+Let's check each step.
+
+After step 1: unstack b6 b3 → b6 in arm, b3 clear.
+
+Step 2: putdown b6 → b6 on table.
+
+Step 3: unstack b3 b1 → b3 in arm, b1 clear.
+
+Step 4: putdown b3 → b3 on table.
+
+Step 5: unstack b1 b5 → b1 in arm, b5 clear.
+
+Step 6: putdown b1 → b1 on table.
+
+Step 7: unstack b5 b2 → b5 in arm, b2 clear.
+
+Step 8: unstack b2 b4 → b2 in arm, b4 clear.
+
+Step 9: putdown b2 → b2 on table.
+
+Step 10: pickup b5 → b5 in arm.
+
+Step 11: stack b5 b4 → b5 on b4.
+
+This seems to work.
+
+Let's verify each step's applicability.
+
+Step 1: unstack b6 b3
+
+- on b6 b3: yes (initial)
+- clear b6: yes (initial)
+- arm-empty: yes (initial)
+→ applicable.
+
+After step 1: holding b6, clear b3, on b6 b3 is false.
+
+Step 2: putdown b6
+
+- holding b6: yes
+→ applicable.
+
+After step 2: on-table b6, clear b6, arm-empty.
+
+Step 3: unstack b3 b1
+
+- on b3 b1: yes (initial)
+- clear b3: yes (from step 1)
+- arm-empty: yes (step 2)
+→ applicable.
+
+After step 3: holding b3, clear b1.
+
+Step 4: putdown b3
+
+- holding b3: yes
+→ applicable.
+
+After step 4: on-table b3.
+
+Step 5: unstack b1 b5
+
+- on b1 b5: yes (initial)
+- clear b1: yes (from step 3)
+- arm-empty: yes (step 4)
+→ applicable.
+
+After step 5: holding b1, clear b5.
+
+Step 6: putdown b1
+
+- holding b1: yes
+→ applicable.
+
+After step 6: on-table b1.
+
+Step 7: unstack b5 b2
+
+- on b5 b2: yes (initial)
+- clear b5: yes (from step 5)
+- arm-empty: yes (step 6)
+→ applicable.
+
+After step 7: holding b5, clear b2.
+
+Step 8: unstack b2 b4
+
+- on b2 b4: yes (initial)
+- clear b2: yes (from step 7)
+- arm-empty: no (step 7: arm not empty). Wait, this is a problem.
+
+Ah! After step 7, the arm is not empty (holding b5). So step 8 requires arm-empty, but it's not. So step 8 is not applicable.
+
+Ah, this is a mistake in the previous plan.
+
+So step 8: unstack b2 b4 requires arm-empty, but after step 7, arm is not empty (holding b5). So we can't unstack b2 until we put down b5.
+
+So step 8 is not applicable.
+
+So the previous plan is invalid.
+
+So we need to put down b5 first (step 8), then unstack b2.
+
+Let's correct.
+
+After step 7: holding b5, arm not empty.
+
+Step 8: putdown b5 → b5 on table.
+
+Now, arm is empty.
+
+Step 9: unstack b2 b4.
+
+Precondition: (on b2 b4) (clear b2) (arm-empty) → yes.
+
+After step 9: holding b2, clear b4.
+
+Step 10: putdown b2 → b2 on table.
+
+Step 11: pickup b5.
+
+Step 12: stack b5 b4.
+
+So the plan becomes:
+
+1. unstack b6 b3
+2. putdown b6
+3. unstack b3 b1
+4. putdown b3
+5. unstack b1 b5
+6. putdown b1
+7. unstack b5 b2
+8. putdown b5
+9. unstack b2 b4
+10. putdown b2
+11. pickup b5
+12. stack b5 b4
+
+Let's check step 9.
+
+After step 8: b5 is on table, arm empty.
+
+Step 9: unstack b2 b4.
+
+- on b2 b4: yes (initial)
+- clear b2: yes (from step 7)
+- arm-empty: yes (step 8)
+→ applicable.
+
+After step 9: holding b2, clear b4.
+
+Step 10: putdown b2 → b2 on table.
+
+Step 11: pickup b5 → yes.
+
+Step 12: stack b5 b4 → requires clear b4 (yes, from step 9), holding b5 → yes.
+
+So this plan works.
+
+Let's list the actions:
+
+1. unstack b6 b3
+2. putdown b6
+3. unstack b3 b1
+4. putdown b3
+5. unstack b1 b5
+6. putdown b1
+7. unstack b5 b2
+8. putdown b5
+9. unstack b2 b4
+10. putdown b2
+11. pickup b5
+12. stack b5 b4
+
+Each action is applicable in the state it's applied in.
+
+Let's verify the final state.
+
+After step 12:
+
+- on b5 b4: true (from stack)
+- on b6 b3: true (initial state, but after step 1, b6 was put down on table, so it's on table. But the goal requires on b6 b3. Wait, no!
+
+Wait, the goal is (on b5 b4) and (on b6 b3). But after step 1, we unstacked b6 from b3, so b6 was no longer on b3. Then in step 2, we putdown b6 on table. So b6 is on table, not on b3.
+
+This is a problem. The goal requires (on b6 b3) to be true, but in the initial state, it was true, but after unstacking b6, it's no longer on b3.
+
+Oh no! I completely missed this.
+
+The initial state has (on b6 b3) as true, but the goal also requires (on b6 b3). So we must not unstack b6.
+
+This is a critical mistake.
+
+The problem states that the goal is (on b5 b4) and (on b6 b3). So we must not change b6's position. But in the initial state, b6 is on b3, so to satisfy the goal, we must not move b6.
+
+But in the plan I outlined, we unstacked b6, which moves it off b3. So the goal (on b6 b3) is no longer satisfied.
+
+This means the entire plan is invalid.
+
+Oh no! This is a big issue.
+
+So the problem is that the goal requires (on b6 b3) to be true, but in the initial state, it's true. So we must not move b6 at all.
+
+So the plan must not involve moving b6.
+
+But how can we get b5 on b4 without moving b6?
+
+Let's rethink.
+
+The initial state has (on b6 b3) true. The goal also has (on b6 b3) true. So we must not unstack or move b6.
+
+So the problem is to get b5 on b4 without disturbing b6.
+
+But how?
+
+Let's see.
+
+Current stack:
+
+b4 (table)
+b2 (on b4)
+b5 (on b2)
+b1 (on b5)
+b3 (on b1)
+b6 (on b3) [clear]
+
+We need to move b5 to b4.
+
+To do that, we need to unstack b1, b3, b6? But b6 must stay on b3.
+
+Wait, no. The goal requires b6 to stay on b3, so we can't touch b6.
+
+Ah! So b6 must remain on b3. So we can't unstack b6.
+
+This changes everything.
+
+So the plan must not move b6.
+
+So the steps must avoid moving b6.
+
+Let's try again.
+
+The initial state has b6 clear and on b3.
+
+We need to move b5 to b4.
+
+To move b5, we need to unstack b1 and b3 (since they are on top of b5).
+
+But b6 is on b3, so b3 is not clear. So we need to unstack b6 first? But we can't, because it's required to stay on b3.
+
+This is a contradiction.
+
+Wait, the problem states that the goal has (on b6 b3), so we must not move b6. Therefore, the plan must not involve b6 at all.
+
+But how?
+
+Let's see the initial stack:
+
+b4 (table)
+b2 (on b4)
+b5 (on b2)
+b1 (on b5)
+b3 (on b1)
+b6 (on b3)
+
+We need b5 on b4.
+
+To do this, we need to move b5 from b2 to b4.
+
+But to do that, we need to unstack b1 from b5, then unstack b3 from b1 (but b3 has b6 on it).
+
+But b3 is not clear because b6 is on it.
+
+So to unstack b3, we need b3 to be clear, but it's not.
+
+So perhaps we need to move b6 first, but the goal requires it to stay on b3. So that's not allowed.
+
+This suggests that the problem has no solution, but that's unlikely.
+
+Wait, the problem states that the goal is (on b5 b4) and (on b6 b3). So the initial state already has (on b6 b3), so we don't need to do anything with b6.
+
+But to move b5, we need to unstack b1 and b3.
+
+But b3 has b6 on it, so b3 is not clear.
+
+Hmm.
+
+Alternative idea: Maybe we can move b5 without unstacking b6.
+
+But to unstack b1 from b5, we need b1 to be clear.
+
+Currently, b1 is on b5, so not clear.
+
+To make b1 clear, we need to unstack b3 from b1, but b3 has b6 on it.
+
+So to unstack b3 from b1, we need b3 to be clear. But b3 has b6 on it, so it's not clear.
+
+So we need to unstack b6 from b3 first, but then b6 is no longer on b3, violating the goal.
+
+This is a paradox.
+
+Unless there's a different approach.
+
+Wait, the problem says the goal is (on b5 b4) and (on b6 b3). So the on b6 b3 must remain true.
+
+So any action that moves b6 off b3 is invalid.
+
+So we can't unstack b6.
+
+This means the plan must not touch b6.
+
+But how to move b5 without disturbing b6?
+
+Let's think differently.
+
+The current stack has b6 on b3, which is on b1, etc.
+
+We need to move b5 to b4.
+
+To do that, we need to have b5 clear and on the table.
+
+But b5 is on b2.
+
+So steps:
+
+1. Unstack b1 from b5 → but b1 is not clear.
+
+2. Unstack b3 from b1 → b3 is not clear.
+
+3. Unstack b6 from b3 → but this would move b6 off b3, which violates the goal.
+
+So this seems impossible.
+
+Wait, but the problem states that the initial state has (clear b6). So b6 is clear. In standard block world, the top block is clear. So b6 is the top block.
+
+So the stack is b4 → b2 → b5 → b1 → b3 → b6.
+
+Wait, no. If b6 is clear, then it's the top block. So the order from bottom to top is b4, b2, b5, b1, b3, b6.
+
+Yes.
+
+So to get b5 clear, we need to remove b1, b3, b6.
+
+But we can't remove b6.
+
+This seems impossible.
+
+But the problem must have a solution.
+
+Let me re-read the problem statement.
+
+The problem is BW-rand-6.
+
+The goal is (on b5 b4) and (on b6 b3).
+
+Initial state:
+
+(on b1 b5)
+(on b2 b4)
+(on b3 b1)
+(on-table b4)
+(on b5 b2)
+(on b6 b3)
+(clear b6)
+
+Ah! Wait a minute. In the initial state, (on b6 b3) is true, and (clear b6) is true. So b6 is clear and on b3.
+
+But in standard block world, a block can't be clear and on another block. So there's a mistake here, but we have to work with it.
+
+Assuming that the problem is correctly formulated, perhaps the "clear" here means something else.
+
+Alternatively, perhaps the goal is to have (on b5 b4) and (on b6 b3), but the initial state has (on b6 b3), so we don't need to change it.
+
+Let's try to think of the following:
+
+Maybe we can move b5 without unstacking b6.
+
+How?
+
+If b3 is clear, then we could unstack b3 from b1, but b3 is not clear.
+
+Wait, the only clear block is b6.
+
+So perhaps the solution involves moving b6 to the table, but then the goal would be violated.
+
+But the problem says the goal is to have (on b6 b3), so moving b6 off b3 is not allowed.
+
+This is very confusing.
+
+Let's try to look for a different approach.
+
+Suppose that we can stack b5 on b4 without moving b6.
+
+For example:
+
+We need b4 to be clear. Currently, b4 has b2 on it.
+
+So first, unstack b2 from b4.
+
+But to unstack b2, we need b2 to be clear.
+
+b2 is on b4, and has b5 on it, so b2 is not clear.
+
+So we need to unstack b5 from b2 first.
+
+But to do that, b5 must be clear.
+
+So steps:
+
+1. Unstack b5 from b2 (requires b5 to be clear).
+
+But b5 is not clear.
+
+So we need to unstack b1 from b5.
+
+But b1 is not clear.
+
+This seems impossible.
+
+Wait, perhaps the answer is that it's not possible, but the problem states to return a plan.
+
+Alternatively, maybe the initial state has b5 on b4.
+
+No, the initial state has (on b5 b2).
+
+Wait, the problem might have a typo.
+
+Another idea: Maybe the goal is to have (on b5 b4) and (on b6 b3), but in the initial state, (on b6 b3) is already true, so we just need to get b5 on b4.
+
+Let's try to see if there's a way to do it with fewer steps.
+
+Assume that we can move b6 without affecting the goal, but that's not possible.
+
+Wait, perhaps the problem is designed such that you need to move b6 temporarily but then put it back.
+
+For example:
+
+- Unstack b6 from b3 (step 1)
+- Put it down on table (step 2)
+- Then unstack b3 from b1 (step 3)
+- Put it down (step 4)
+- Continue...
+
+But then after all steps, we move b6 back to b3.
+
+But the goal requires (on b6 b3), so we need to put it back.
+
+Let's try this.
+
+Plan:
+
+1. unstack b6 b3 → b6 in arm
+2. putdown b6 on table
+3. unstack b3 b1 → b3 in arm
+4. putdown b3 on table
+5. unstack b1 b5 → b1 in arm
+6. putdown b1 on table
+7. unstack b5 b2 → b5 in arm
+8. putdown b5 on table
+9. unstack b2 b4 → b2 in arm
+10. putdown b2 on table
+11. pickup b5
+12. stack b5 b4
+
+After step 12, b5 is on b4.
+
+But after step 2, b6 is on table, not on b3. So to satisfy the goal, we need to move b6 back to b3.
+
+So additional steps:
+
+13. pickup b6
+14. stack b6 b3
+
+But the goal requires (on b6 b3), so this would be necessary.
+
+Let's see:
+
+After step 12, the state has:
+
+- on b5 b4: true
+- b6 is on table (from step 2)
+- b3 is on table (from step 4)
+
+So to get b6 back on b3:
+
+Step 13: pickup b6 (requires clear b6 and on-table b6, which it is)
+Step 14: stack b6 b3 (requires clear b3, which is true after step 4)
+
+So the full plan would be 14 actions.
+
+But the problem asks for a plan that transforms the initial state to the goal.
+
+Let's check if this works.
+
+Initial state has (on b6 b3) true.
+
+After steps 1-14:
+
+- b6 is moved to table and back to b3.
+
+This would satisfy the goal.
+
+Let's outline the plan:
+
+1. unstack b6 b3
+2. putdown b6
+3. unstack b3 b1
+4. putdown b3
+5. unstack b1 b5
+6. putdown b1
+7. unstack b5 b2
+8. putdown b5
+9. unstack b2 b4
+10. putdown b2
+11. pickup b5
+12. stack b5 b4
+13. pickup b6
+14. stack b6 b3
+
+Now, check each step's applicability.
+
+Step 1: unstack b6 b3 — applicable.
+
+Step 2: putdown b6 — applicable.
+
+Step 3: unstack b3 b1 — after step 1, b3 is clear (from unstacking b6), and arm is empty (after step 2), so yes.
+
+Step 4: putdown b3 — applicable.
+
+Step 5: unstack b1 b5 — after step 4, arm empty, b1 is clear (from step 3), so yes.
+
+Step 6: putdown b1 — applicable.
+
+Step 7: unstack b5 b2 — after step 6, arm empty, b5 is clear (from step 5), yes.
+
+Step 8: putdown b5 — applicable.
+
+Step 9: unstack b2 b4 — after step 8, arm empty, b2 is clear (from step 7), yes.
+
+Step 10: putdown b2 — applicable.
+
+Step 11: pickup b5 — after step 10, arm empty, b5 is on table (from step 8), so yes.
+
+Step 12: stack b5 b4 — requires clear b4. After step 10, b4 is clear (since b2 was unstacked), so yes.
+
+Step 13: pickup b6 — after step 12, b6 is on table (from step 2), so yes.
+
+Step 14: stack b6 b3 — requires clear b3. After step 4, b3 is on table, so clear. Yes.
+
+So this plan works.
+
+The goal state has (on b5 b4) and (on b6 b3), as required.
+
+This seems to be the correct plan.
+
+Let's list the actions:
+
+1. unstack b6 b3
+2. putdown b6
+3. unstack b3 b1
+4. putdown b3
+5. unstack b1 b5
+6. putdown b1
+7. unstack b5 b2
+8. putdown b5
+9. unstack b2 b4
+10. putdown b2
+11. pickup b5
+12. stack b5 b4
+13. pickup b6
+14. stack b6 b3
+
+Each action is applicable in the state it's applied in.
+
+This should be the solution.
+</think>
+[2026-02-11 09:22:23,251] INFO :: Reasoning metadata: reasoning_tokens=12840, reasoning_source=tokens
+[2026-02-11 09:22:23,251] INFO :: Response:
+<plan>
+unstack b6 b3
+putdown b6
+unstack b3 b1
+putdown b3
+unstack b1 b5
+putdown b1
+unstack b5 b2
+putdown b5
+unstack b2 b4
+putdown b2
+pickup b5
+stack b5 b4
+pickup b6
+stack b6 b3
+</plan>
+[2026-02-11 09:22:23,251] INFO :: Response tokens: 12928
+[2026-02-11 09:22:23,251] INFO :: Plan:
+unstack b6 b3
+putdown b6
+unstack b3 b1
+putdown b3
+unstack b1 b5
+putdown b1
+unstack b5 b2
+putdown b5
+unstack b2 b4
+putdown b2
+pickup b5
+stack b5 b4
+pickup b6
+stack b6 b3
+[2026-02-11 09:22:23,252] INFO :: Extracted plan tokens: 79
+[2026-02-11 09:22:23,252] INFO :: Response metadata: response_tokens=12928, extracted_plan_tokens=79
+[2026-02-11 09:22:23,256] INFO :: Plan file: /content/drive/MyDrive/grounding-planning/logs/blocksworld/p29_lifted_seed1.plan
+[2026-02-11 12:26:21,288] INFO :: ### Plan Validation ###
+
+Checking plan: logs/blocksworld/p29_lifted_seed1.plan
+Plan to validate:
+
+Plan size: 14
+1:
+(unstack b6 b3)
+ 
+2:
+(putdown b6)
+ 
+3:
+(unstack b3 b1)
+ 
+4:
+(putdown b3)
+ 
+5:
+(unstack b1 b5)
+ 
+6:
+(putdown b1)
+ 
+7:
+(unstack b5 b2)
+ 
+8:
+(putdown b5)
+ 
+9:
+(unstack b2 b4)
+ 
+10:
+(putdown b2)
+ 
+11:
+(pickup b5)
+ 
+12:
+(stack b5 b4)
+ 
+13:
+(pickup b6)
+ 
+14:
+(stack b6 b3)
+ 
+
+Plan Validation details
+-----------------------
+
+Checking next happening (time 1)
+Deleting (on b6 b3)
+Deleting (clear b6)
+Deleting (arm-empty)
+Adding (holding b6)
+Adding (clear b3)
+
+Checking next happening (time 2)
+Deleting (holding b6)
+Adding (clear b6)
+Adding (arm-empty)
+Adding (on-table b6)
+
+Checking next happening (time 3)
+Deleting (on b3 b1)
+Deleting (clear b3)
+Deleting (arm-empty)
+Adding (holding b3)
+Adding (clear b1)
+
+Checking next happening (time 4)
+Deleting (holding b3)
+Adding (clear b3)
+Adding (arm-empty)
+Adding (on-table b3)
+
+Checking next happening (time 5)
+Deleting (on b1 b5)
+Deleting (clear b1)
+Deleting (arm-empty)
+Adding (holding b1)
+Adding (clear b5)
+
+Checking next happening (time 6)
+Deleting (holding b1)
+Adding (clear b1)
+Adding (arm-empty)
+Adding (on-table b1)
+
+Checking next happening (time 7)
+Deleting (on b5 b2)
+Deleting (clear b5)
+Deleting (arm-empty)
+Adding (holding b5)
+Adding (clear b2)
+
+Checking next happening (time 8)
+Deleting (holding b5)
+Adding (clear b5)
+Adding (arm-empty)
+Adding (on-table b5)
+
+Checking next happening (time 9)
+Deleting (on b2 b4)
+Deleting (clear b2)
+Deleting (arm-empty)
+Adding (holding b2)
+Adding (clear b4)
+
+Checking next happening (time 10)
+Deleting (holding b2)
+Adding (clear b2)
+Adding (arm-empty)
+Adding (on-table b2)
+
+Checking next happening (time 11)
+Deleting (clear b5)
+Deleting (on-table b5)
+Deleting (arm-empty)
+Adding (holding b5)
+
+Checking next happening (time 12)
+Deleting (clear b4)
+Deleting (holding b5)
+Adding (arm-empty)
+Adding (clear b5)
+Adding (on b5 b4)
+
+Checking next happening (time 13)
+Deleting (clear b6)
+Deleting (on-table b6)
+Deleting (arm-empty)
+Adding (holding b6)
+
+Checking next happening (time 14)
+Deleting (clear b3)
+Deleting (holding b6)
+Adding (arm-empty)
+Adding (clear b6)
+Adding (on b6 b3)
+Plan executed successfully - checking goal
+Plan valid
+Final value: 14 
+
+Successful plans:
+Value: 14
+ logs/blocksworld/p29_lifted_seed1.plan 14 
+
+[2026-02-11 12:26:21,288] INFO :: Validate status: valid
