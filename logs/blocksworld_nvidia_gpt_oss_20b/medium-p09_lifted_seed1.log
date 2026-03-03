@@ -1,0 +1,4687 @@
+[2026-03-03 15:51:25,585] INFO :: Stage: plan generation
+[2026-03-03 15:51:25,585] INFO :: Prompt metadata: domain=benchmarks/blocksworld/domain.pddl, instance=benchmarks/blocksworld/lifted/medium-p09.pddl, template=lifted, seed=1, timestamp=2026-03-03T18:51:25Z
+[2026-03-03 15:51:25,585] INFO :: Model metadata: model=openai/gpt-oss-20b, device=nvidia-nim-api, dtype=n/a, generation_config={'max_tokens': 96000, 'temperature': 1.0, 'top_p': 0.95, 'reasoning_effort': 'high', 'seeded': True}, library_versions={'python': '3.13.5', 'openai': '2.24.0', 'python-dotenv': '1.2.1', 'numpy': '2.4.2'}
+[2026-03-03 15:51:25,585] INFO :: Prompt:
+
+<role>
+You are an AI planning expert.
+</role>
+
+<task>
+Given the PDDL domain and the PDDL instance, return a plan (a sequence of actions) that transforms the initial state into a goal state.
+</task>
+
+<definitions>
+- A state is a set of facts.
+- A goal state is a state that has all goal facts.
+- An action is applicable if, and only if, **all** its preconditions are in the current state.
+- When an action is applied: remove its delete effects from the state, then add its add effects.
+</definitions>
+
+<inputs>
+This is the PDDL domain:
+<pddl-domain>
+(define (domain blocksworld)
+  (:requirements :strips)
+  (:predicates
+    (clear ?x)
+    (on-table ?x)
+    (arm-empty)
+    (holding ?x)
+    (on ?x ?y)
+  )
+
+  (:action pickup
+    :parameters (?ob)
+    :precondition (and (clear ?ob) (on-table ?ob) (arm-empty))
+    :effect (and (holding ?ob) (not (clear ?ob)) (not (on-table ?ob))
+      (not (arm-empty)))
+  )
+
+  (:action putdown
+    :parameters (?ob)
+    :precondition (holding ?ob)
+    :effect (and (clear ?ob) (arm-empty) (on-table ?ob)
+      (not (holding ?ob)))
+  )
+
+  (:action stack
+    :parameters (?ob ?underob)
+    :precondition (and (clear ?underob) (holding ?ob))
+    :effect (and (arm-empty) (clear ?ob) (on ?ob ?underob)
+      (not (clear ?underob)) (not (holding ?ob)))
+  )
+
+  (:action unstack
+    :parameters (?ob ?underob)
+    :precondition (and (on ?ob ?underob) (clear ?ob) (arm-empty))
+    :effect (and (holding ?ob) (clear ?underob)
+      (not (on ?ob ?underob)) (not (clear ?ob)) (not (arm-empty)))
+  )
+)
+</pddl-domain>
+
+This is the PDDL instance:
+<pddl-instance>
+;; blocks=96, out_folder=new/medium, instance_id=9, seed=50
+
+(define (problem blocksworld-09)
+ (:domain blocksworld)
+ (:objects b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 b36 b37 b38 b39 b40 b41 b42 b43 b44 b45 b46 b47 b48 b49 b50 b51 b52 b53 b54 b55 b56 b57 b58 b59 b60 b61 b62 b63 b64 b65 b66 b67 b68 b69 b70 b71 b72 b73 b74 b75 b76 b77 b78 b79 b80 b81 b82 b83 b84 b85 b86 b87 b88 b89 b90 b91 b92 b93 b94 b95 b96 - object)
+ (:init 
+    (arm-empty)
+    (clear b83)
+    (on b83 b15)
+    (on b15 b94)
+    (on b94 b3)
+    (on b3 b2)
+    (on b2 b31)
+    (on b31 b23)
+    (on b23 b10)
+    (on b10 b37)
+    (on b37 b26)
+    (on-table b26)
+    (clear b49)
+    (on-table b49)
+    (clear b73)
+    (on b73 b90)
+    (on b90 b62)
+    (on b62 b36)
+    (on-table b36)
+    (clear b60)
+    (on b60 b4)
+    (on b4 b33)
+    (on b33 b46)
+    (on b46 b53)
+    (on b53 b21)
+    (on b21 b16)
+    (on b16 b51)
+    (on b51 b22)
+    (on b22 b19)
+    (on b19 b57)
+    (on b57 b84)
+    (on b84 b68)
+    (on b68 b5)
+    (on-table b5)
+    (clear b17)
+    (on b17 b76)
+    (on b76 b24)
+    (on-table b24)
+    (clear b6)
+    (on b6 b93)
+    (on-table b93)
+    (clear b39)
+    (on b39 b70)
+    (on b70 b54)
+    (on-table b54)
+    (clear b42)
+    (on b42 b34)
+    (on b34 b28)
+    (on-table b28)
+    (clear b92)
+    (on b92 b50)
+    (on b50 b78)
+    (on b78 b48)
+    (on b48 b52)
+    (on-table b52)
+    (clear b66)
+    (on b66 b27)
+    (on b27 b8)
+    (on b8 b96)
+    (on b96 b65)
+    (on b65 b14)
+    (on b14 b40)
+    (on b40 b58)
+    (on b58 b71)
+    (on-table b71)
+    (clear b67)
+    (on b67 b38)
+    (on b38 b63)
+    (on b63 b18)
+    (on b18 b77)
+    (on b77 b59)
+    (on b59 b80)
+    (on-table b80)
+    (clear b7)
+    (on b7 b79)
+    (on b79 b87)
+    (on b87 b95)
+    (on b95 b44)
+    (on b44 b30)
+    (on b30 b1)
+    (on b1 b56)
+    (on b56 b74)
+    (on b74 b75)
+    (on b75 b12)
+    (on b12 b55)
+    (on b55 b91)
+    (on b91 b9)
+    (on b9 b25)
+    (on b25 b85)
+    (on-table b85)
+    (clear b86)
+    (on b86 b81)
+    (on b81 b13)
+    (on b13 b45)
+    (on b45 b20)
+    (on b20 b88)
+    (on b88 b72)
+    (on b72 b29)
+    (on b29 b41)
+    (on b41 b69)
+    (on b69 b11)
+    (on b11 b43)
+    (on b43 b61)
+    (on b61 b89)
+    (on b89 b32)
+    (on b32 b82)
+    (on-table b82)
+    (clear b47)
+    (on b47 b35)
+    (on b35 b64)
+    (on-table b64))
+ (:goal  (and 
+    (clear b19)
+    (on b19 b35)
+    (on b35 b27)
+    (on b27 b39)
+    (on b39 b38)
+    (on b38 b92)
+    (on b92 b12)
+    (on b12 b45)
+    (on b45 b42)
+    (on b42 b54)
+    (on b54 b9)
+    (on b9 b33)
+    (on b33 b62)
+    (on b62 b88)
+    (on b88 b74)
+    (on b74 b93)
+    (on b93 b5)
+    (on b5 b69)
+    (on b69 b20)
+    (on b20 b82)
+    (on b82 b28)
+    (on b28 b18)
+    (on-table b18)
+    (clear b48)
+    (on b48 b66)
+    (on b66 b50)
+    (on b50 b55)
+    (on b55 b76)
+    (on b76 b91)
+    (on b91 b41)
+    (on b41 b34)
+    (on-table b34)
+    (clear b52)
+    (on b52 b75)
+    (on b75 b95)
+    (on b95 b73)
+    (on b73 b61)
+    (on b61 b59)
+    (on b59 b71)
+    (on-table b71)
+    (clear b44)
+    (on b44 b57)
+    (on b57 b53)
+    (on b53 b81)
+    (on b81 b78)
+    (on b78 b79)
+    (on b79 b96)
+    (on b96 b11)
+    (on b11 b83)
+    (on b83 b32)
+    (on b32 b47)
+    (on b47 b17)
+    (on b17 b8)
+    (on b8 b29)
+    (on b29 b46)
+    (on b46 b80)
+    (on b80 b10)
+    (on b10 b67)
+    (on b67 b6)
+    (on b6 b85)
+    (on b85 b87)
+    (on b87 b2)
+    (on b2 b23)
+    (on b23 b3)
+    (on b3 b58)
+    (on-table b58)
+    (clear b14)
+    (on b14 b94)
+    (on b94 b60)
+    (on b60 b89)
+    (on b89 b77)
+    (on-table b77)
+    (clear b25)
+    (on b25 b84)
+    (on b84 b4)
+    (on b4 b26)
+    (on b26 b65)
+    (on-table b65)
+    (clear b43)
+    (on b43 b22)
+    (on b22 b86)
+    (on b86 b16)
+    (on b16 b64)
+    (on b64 b40)
+    (on b40 b68)
+    (on b68 b7)
+    (on b7 b70)
+    (on b70 b51)
+    (on-table b51)
+    (clear b63)
+    (on b63 b30)
+    (on b30 b56)
+    (on b56 b21)
+    (on b21 b13)
+    (on b13 b72)
+    (on b72 b37)
+    (on b37 b1)
+    (on b1 b49)
+    (on-table b49)
+    (clear b36)
+    (on b36 b90)
+    (on b90 b15)
+    (on-table b15)
+    (clear b31)
+    (on b31 b24)
+    (on-table b24))))
+
+</pddl-instance>
+</inputs>
+
+<output-format>
+Return **only** a plan wrapped in "<plan>...</plan>", where each plan's action must use the same name and same number of parameters as one of the action schemas, each on a line. Do not include analysis, examples, or commentary outside the plan tags.
+</output-format>
+
+<requirements>
+The plan must be valid: each action must be applicable in the state it is applied in, and the plan must end in a goal state.
+</requirements>
+[2026-03-03 16:06:38,688] INFO :: Attempt 1 failed: Error code: 504
+[2026-03-03 16:22:21,779] INFO :: Attempt 2 failed: Error code: 504
+[2026-03-03 16:27:14,820] INFO :: Prompt tokens: 2548
+[2026-03-03 16:27:14,820] INFO :: Reasoning trace:
+We have a Blocks world instance with 96 blocks, but many are not relevant for the goal. We need to produce a plan that transforms the initial state into the goal state. The domain has actions pickup, putdown, stack, unstack.
+
+We need to find a sequence of actions that ends in the goal configuration.
+
+Goal contains many constraints: for many blocks, they need to be on other blocks in a particular order, on-table constraints, clear constraints. So we must rearrange many blocks.
+
+The initial configuration is complex. We need to analyze current ordering and plan a solution. We have to be careful to maintain all constraints. The plan can be long, but we need to provide one plan that accomplishes the goal.
+
+But the problem may be difficult; we might not need to actually solve the full problem manually. We might produce a trivial plan that is just "no-op"? But the requirement: the plan must transform initial state into goal state; goal must be satisfied at end.
+
+Thus we need to compute a plan that satisfies all goal facts.
+
+In this situation, it's impractical to manually plan such a large problem. But perhaps we can cheat: we can produce a plan that uses all possible actions to reorder all blocks correctly. But we need to be sure each action is applicable. That is extremely complex.
+
+Alternatively, maybe we can exploit a trick: we can use "no action" plan if the initial state already satisfies the goal. But likely the initial state does not equal goal. Let's check: The initial state has a certain ordering. The goal ordering is quite different: e.g., the goal requires b19 on b35, etc. The initial state has b19 on b57, etc. So it's not satisfied.
+
+Therefore we need to plan.
+
+Maybe we can produce a plan that uses the "putdown" action to move all blocks to table, then stack them in desired order. But that would require moving each block: unstack to get to top, pickup, putdown on table, then stack appropriately. We need to consider constraints: each block must be clear to unstack, and arm-empty to pick up.
+
+We also have to ensure arm-empty when picking up/unstacking. So we need to maintain correct sequence.
+
+But the problem size is large: 96 blocks. It might be unrealistic to manually produce all steps.
+
+But maybe the goal itself is not requiring all blocks? The goal list includes many blocks, but does it include all 96 blocks? Let's count: The goal includes many blocks: b19, b35, b27, b39, b38, b92, b12, b45, b42, b54, b9, b33, b62, b88, b74, b93, b5, b69, b20, b82, b28, b18, b48, b66, b50, b55, b76, b91, b41, b34, b52, b75, b95, b73, b61, b59, b71, b44, b57, b53, b81, b78, b79, b96, b11, b83, b32, b47, b17, b8, b29, b46, b80, b10, b67, b6, b85, b87, b2, b23, b3, b58, b14, b94, b60, b89, b77, b25, b84, b4, b26, b65, b43, b22, b86, b16, b64, b40, b68, b7, b70, b51, b63, b30, b56, b21, b13, b72, b37, b1, b49, b36, b90, b15, b31, b24. Counting: let's count properly:
+
+We list:
+
+1. b19
+2. b35
+3. b27
+4. b39
+5. b38
+6. b92
+7. b12
+8. b45
+9. b42
+10. b54
+11. b9
+12. b33
+13. b62
+14. b88
+15. b74
+16. b93
+17. b5
+18. b69
+19. b20
+20. b82
+21. b28
+22. b18
+23. b48
+24. b66
+25. b50
+26. b55
+27. b76
+28. b91
+29. b41
+30. b34
+31. b52
+32. b75
+33. b95
+34. b73
+35. b61
+36. b59
+37. b71
+38. b44
+39. b57
+40. b53
+41. b81
+42. b78
+43. b79
+44. b96
+45. b11
+46. b83
+47. b32
+48. b47
+49. b17
+50. b8
+51. b29
+52. b46
+53. b80
+54. b10
+55. b67
+56. b6
+57. b85
+58. b87
+59. b2
+60. b23
+61. b3
+62. b58
+63. b14
+64. b94
+65. b60
+66. b89
+67. b77
+68. b25
+69. b84
+70. b4
+71. b26
+72. b65
+73. b43
+74. b22
+75. b86
+76. b16
+77. b64
+78. b40
+79. b68
+80. b7
+81. b70
+82. b51
+83. b63
+84. b30
+85. b56
+86. b21
+87. b13
+88. b72
+89. b37
+90. b1
+91. b49
+92. b36
+93. b90
+94. b15
+95. b31
+96. b24
+
+Yes, all 96 blocks appear in the goal! So the goal is full ordering, covering all blocks.
+
+Therefore the plan must reposition all blocks. The initial state has a particular ordering. The goal has a different ordering. We need to transform from one to the other.
+
+The domain is standard blocks world. For 96 blocks, we need to plan about 100 actions. For this we need to determine a sequence of actions that will produce the goal.
+
+We can attempt to create a plan by performing a sequence of unstacking and stacking. But we must maintain correct dependencies.
+
+Approach: Use a simple algorithm: to achieve the final stack sequence, we can place blocks in reverse order from the goal. The standard approach: To build a stack from bottom to top, we can start with the bottommost block (on-table). Then we place next block on it, etc. But we need to consider that the goal is a chain: each block is on the next. The bottom block in each chain is on table. The top block is clear.
+
+However, we have many separate chains. But the goal seems to specify a number of separate chains. Many of them may be on-table, but we have many separate stacks. The initial state also has many stacks.
+
+One possible simple plan: take all blocks one by one from the initial state, put them on the table, then build all goal stacks. But we must adhere to constraints: you cannot pick up a block unless it's clear and on-table or on some other block with clear. We can use arm-empty to pick up. After putting a block on the table, we can unstack it (the block is clear after putdown). Then we can reposition it as needed.
+
+But we also might need to reposition many blocks to match goal ordering.
+
+Simplify: We can create a plan that empties everything onto the table, then builds the goal.
+
+This requires:
+
+1. For each block, if it's on some other block and clear, we need to unstack it and put it on table. But unstack requires the block be on another block and clear, and arm-empty. After unstack, the block becomes holding, then we putdown to table. After putting down, the block is on-table and clear, and arm is empty again. The block below becomes clear (if it existed). So we can gradually pick all blocks to table.
+
+But initial state may have many blocks on top of each other. We need to start at the topmost blocks first. That means we need to unstack from top to bottom.
+
+We can define an algorithm:
+
+While there exist blocks not on table:
+
+- find a block that is clear and on-table? Wait, we need to pick all blocks. But we can unstack any block that is clear and on some other block. So we can start with all topmost blocks: those that have no block on top (clear). They are on some block. We can unstack them, put them down to table. After each unstack, the block below becomes clear. So we can gradually empty the stack.
+
+So we can for each stack, unstack from top down to bottom, eventually all blocks will be on the table.
+
+But careful: We can't unstack the bottommost block because it is on-table. Actually we can't unstack a block that is on-table. Only on top of another block.
+
+Thus for each stack, we need to unstack all but the bottom block? Wait, bottom block is on-table, but we need to unstack all blocks above it. After unstacking all above, we will be left with bottom block on-table. But the bottom block may need to be removed from table if we want to build a new stack. But eventually all blocks will be on table, but we also might need some blocks on other blocks for goal. So after empting, we will build goal from bottom to top.
+
+But building goal: The goal has many stacks. We can build each stack bottom to top. For each stack:
+
+- Ensure the bottom block is on table, clear. Then we can pick up the next block that should be on top of it. We need that next block to be clear and on table or on some block that is ready.
+
+Better approach: Build each stack individually: For each stack, we start with bottom block, put it on table if not already. Then for each subsequent block in the stack (next block to be on top of previous), we need that block to be clear and on table (so we can pickup). But the block may currently be on some other block. But since all blocks are currently on table after empting, we can simply pick up each block from table and stack onto the below block.
+
+Thus building stack from bottom to top is straightforward: ensure arm empty, pickup block b, stack onto below block.
+
+Thus we need a plan to empty all stacks, then build the goal.
+
+But we also need to consider that after emptying all stacks, all blocks will be on table and clear. But some of them are already on table initially: those that are on-table. But for those that were on-table, they are already clear. But they might have blocks on them? Wait, if a block is on-table, but some other block might be on top of it? Actually if a block is on-table, and nothing else on it because the on-table fact is true only if block is on the table. It might have other blocks on it: The on relation is defined by a block being on another block. If a block is on-table, it could have other blocks on it? Actually in this representation, there is no separate "on-block" relation: a block can have at most one block below it, and zero or more blocks on top. The clear predicate says there is no block on top of it. So if a block is on-table, it may have other blocks on top, but the on-table predicate remains true: it is on table under that block. Wait, is on-table true for a block that has blocks on top? Usually in blocks world, a block that has other blocks on top is not on the table: the on-table fact indicates that the block is directly on the table, meaning it has no block below. It can still have other blocks on top. But in this representation, they keep "on-table" for the block that is directly on the table. For example, block b26 has (on-table b26). b26 is bottom of stack; and there might be a block on top of it (b37). But b26 remains on-table. This is standard: (on-table X) if X is directly on the table. X can still have block on top. So after emptying, we will remove blocks from top of each stack until only bottom blocks remain, still on-table. Then we can place these blocks on other blocks as needed.
+
+But in the algorithm, we can simply pick up each block that is clear and on some block. We unstack it, putdown. That will leave the block below clear. Continue until all blocks except the bottom of each stack are on-table. But after we finish all stacks, all bottom blocks remain on-table. They might still have blocks on them? Wait, bottom blocks might have had a block above them initially; after unstacking, that block becomes table. The bottom block will remain clear if nothing remains on top. But it might still have a block below? Actually bottom block cannot have something below because it is on-table. So after empting all stacks, every block will be on-table, and every block will be clear (since all stacks removed). But hold on: bottom blocks that originally had other blocks on top will now be clear; but bottom blocks are on-table. So after empting, all blocks are on-table and clear. So we can put all blocks onto their goal positions.
+
+Thus the plan will have roughly (#blocks - #stacks) unstack+putdown actions for emptiness. Then for each block except bottom blocks? Wait, we need to stack them onto others to build goal. The bottom blocks will remain on-table. So we need to stack all other blocks onto their goal below blocks. We will need to stack each block onto the appropriate block below it in the goal chain. So for each block that is not a bottom block, we will pick it from table and stack onto its below. That is (#blocks - #bottom blocks) actions. But each stack requires a pickup and a stack action. That's 2 actions per block.
+
+So total actions: For emptying: (#blocks - #bottom blocks) unstack+putdown actions? Wait, each unstack+putdown takes 2 actions. For each block that is not bottom, we need 1 unstack (1 action) then 1 putdown (1 action) = 2 actions. After empting, we have (#blocks - #bottom) blocks removed from stacks. But the bottom blocks remain. That is (#bottom blocks) blocks on table.
+
+Now we need to stack each non-bottom block onto its goal below. Each stack requires 1 pickup action and 1 stack action = 2 actions. That results in 2*(#blocks - #bottom) actions.
+
+So total actions = 2*(#blocks - #bottom) + 2*(#blocks - #bottom) = 4*(#blocks - #bottom). (#blocks=96). How many stacks? Let's count the number of chains defined by goal (bottom blocks). The goal bottom blocks are those blocks that are on-table: (on-table b18), (on-table b24). So there are 2 stacks? Wait, the goal has:
+
+- (on-table b18)
+- (on-table b24)
+
+But check: the goal also has on-table for other blocks: Let's search. In the goal we see:
+
+(on-table b18)
+(on-table b24)
+
+Also maybe others? Let's check all bottom blocks: In each chain of goal, the bottom is on-table. Let's look at all chains:
+
+Chain1: (on-table b18) -> b18 > b28 > b82 > b20 > b69 > b5 > b93 > b74 > b88 > b62 > b33 > b9 > b54 > b38 > b39 > b27 > b35 > b19. Wait we need to parse carefully. Actually from goal:
+
+- (on-table b18)
+- (on b18 b28)
+- (on b28 b82)
+- (on b82 b20)
+- (on b20 b69)
+- (on b69 b5)
+- (on b5 b93)
+- (on b93 b74)
+- (on b74 b88)
+- (on b88 b62)
+- (on b62 b33)
+- (on b33 b9)
+- (on b9 b54)
+- (on b54 b38)
+- (on b38 b39)
+- (on b39 b27)
+- (on b27 b35)
+- (on b35 b19)
+
+This is a single chain from b18 bottom to b19 top. Wait, but I'm mixing earlier blocks. Let's review the goal chain(s). But we need to confirm the structure.
+
+The goal is:
+
+(and 
+  (clear b19)
+  (on b19 b35)
+  (on b35 b27)
+  (on b27 b39)
+  (on b39 b38)
+  (on b38 b92)
+  (on b92 b12)
+  (on b12 b45)
+  (on b45 b42)
+  (on b42 b54)
+  (on b54 b9)
+  (on b9 b33)
+  (on b33 b62)
+  (on b62 b88)
+  (on b88 b74)
+  (on b74 b93)
+  (on b93 b5)
+  (on b5 b69)
+  (on b69 b20)
+  (on b20 b82)
+  (on b82 b28)
+  (on b28 b18)
+  (on-table b18)
+
+  (clear b48)
+  (on b48 b66)
+  (on b66 b50)
+  (on b50 b55)
+  (on b55 b76)
+  (on b76 b91)
+  (on b91 b41)
+  (on b41 b34)
+  (on-table b34)
+
+  (clear b52)
+  (on b52 b75)
+  (on b75 b95)
+  (on b95 b73)
+  (on b73 b61)
+  (on b61 b59)
+  (on b59 b71)
+  (on-table b71)
+
+  (clear b44)
+  (on b44 b57)
+  (on b57 b53)
+  (on b53 b81)
+  (on b81 b78)
+  (on b78 b79)
+  (on b79 b96)
+  (on b96 b11)
+  (on b11 b83)
+  (on b83 b32)
+  (on b32 b47)
+  (on b47 b17)
+  (on b17 b8)
+  (on b8 b29)
+  (on b29 b46)
+  (on b46 b80)
+  (on b80 b10)
+  (on b10 b67)
+  (on b67 b6)
+  (on b6 b85)
+  (on b85 b87)
+  (on b87 b2)
+  (on b2 b23)
+  (on b23 b3)
+  (on b3 b58)
+  (on-table b58)
+
+  (clear b14)
+  (on b14 b94)
+  (on b94 b60)
+  (on b60 b89)
+  (on b89 b77)
+  (on-table b77)
+
+  (clear b25)
+  (on b25 b84)
+  (on b84 b4)
+  (on b4 b26)
+  (on b26 b65)
+  (on-table b65)
+
+  (clear b43)
+  (on b43 b22)
+  (on b22 b86)
+  (on b86 b16)
+  (on b16 b64)
+  (on b64 b40)
+  (on b40 b68)
+  (on b68 b7)
+  (on b7 b70)
+  (on b70 b51)
+  (on-table b51)
+
+  (clear b63)
+  (on b63 b30)
+  (on b30 b56)
+  (on b56 b21)
+  (on b21 b13)
+  (on b13 b72)
+  (on b72 b37)
+  (on b37 b1)
+  (on b1 b49)
+  (on-table b49)
+
+  (clear b36)
+  (on b36 b90)
+  (on b90 b15)
+  (on-table b15)
+
+  (clear b31)
+  (on b31 b24)
+  (on-table b24)
+)
+
+)
+
+Thus there are multiple chains, each with on-table at bottom. Let's count bottom blocks: For each chain, we see a pair "on-table <block>" at bottom. There are at least:
+
+- b18 bottom of chain 1
+- b34 bottom of chain 2
+- b71 bottom of chain 3
+- b58 bottom of chain 4
+- b77 bottom of chain 5
+- b65 bottom of chain 6
+- b51 bottom of chain 7
+- b49 bottom of chain 8
+- b15 bottom of chain 9
+- b24 bottom of chain 10
+
+So there are 10 chains, each with a bottom block on table. That matches the final state: we need to move some blocks onto other blocks to form these chains. The 10 bottom blocks remain on-table. All other blocks must be stacked above them appropriately.
+
+Thus the number of bottom blocks is 10. So after emptying all stacks to table, we will have 96 blocks on table. Then we will need to build 10 stacks by stacking 86 blocks onto these bottom blocks and on each other.
+
+But hold on: Some blocks may already be on table in the goal. But we will start with all blocks on table; then we will stack them accordingly. That will satisfy the goal.
+
+Thus the plan:
+
+- Step 1: For each stack in the initial state, unstack from top to bottom until only bottom blocks remain on table. We need to carefully process all stacks.
+
+- Step 2: After all blocks are on table and clear, we will stack the goal chains.
+
+However, we need to be careful that after unstack+putdown each block, it becomes clear and on-table. The block below also becomes clear. Eventually each stack's bottom block remains on-table and clear. After emptying all stacks, all blocks are on-table and clear.
+
+But wait, a bottom block that originally had blocks on top will become clear after unstacking. So all blocks will become clear after empting. This is fine.
+
+Thus we need to produce actions:
+
+- For each non-bottom block in initial state, we need to perform: unstack block, putdown block. But we must ensure that we pick from top.
+
+But we can start with all topmost blocks across all stacks. Because there might be many of them. We need to maintain the correct order of unstacking: if a block has another block on top of it, we cannot unstack it until the block on top is removed. So we need to process from top of each stack.
+
+Thus we need to identify all stacks and their block sequences.
+
+Given initial state, we have many chains defined by on relations. Let's parse them to create sequences for each chain.
+
+We have 96 blocks; initial state definitions: They are grouped into stacks. The initial stacks:
+
+From the initial state, we see many "on" facts describing a chain. We need to parse each stack (connected chain). We can treat the entire state as multiple stacks; each block may have at most one block below and at most one above, but the facts may define many independent stacks.
+
+We'll need to identify the bottom block of each stack: those on-table. For each bottom block, we have a chain defined by the on relations.
+
+Let's list all stacks by reading the init facts.
+
+The init facts:
+
+(arm-empty)
+(clear b83)
+(on b83 b15)
+(on b15 b94)
+(on b94 b3)
+(on b3 b2)
+(on b2 b31)
+(on b31 b23)
+(on b23 b10)
+(on b10 b37)
+(on b37 b26)
+(on-table b26)
+(clear b49)
+(on-table b49)
+(clear b73)
+(on b73 b90)
+(on b90 b62)
+(on b62 b36)
+(on-table b36)
+(clear b60)
+(on b60 b4)
+(on b4 b33)
+(on b33 b46)
+(on b46 b53)
+(on b53 b21)
+(on b21 b16)
+(on b16 b51)
+(on b51 b22)
+(on b22 b19)
+(on b19 b57)
+(on b57 b84)
+(on b84 b68)
+(on b68 b5)
+(on-table b5)
+(clear b17)
+(on b17 b76)
+(on b76 b24)
+(on-table b24)
+(clear b6)
+(on b6 b93)
+(on-table b93)
+(clear b39)
+(on b39 b70)
+(on b70 b54)
+(on-table b54)
+(clear b42)
+(on b42 b34)
+(on b34 b28)
+(on-table b28)
+(clear b92)
+(on b92 b50)
+(on b50 b78)
+(on b78 b48)
+(on b48 b52)
+(on-table b52)
+(clear b66)
+(on b66 b27)
+(on b27 b8)
+(on b8 b96)
+(on b96 b65)
+(on b65 b14)
+(on b14 b40)
+(on b40 b58)
+(on b58 b71)
+(on-table b71)
+(clear b67)
+(on b67 b38)
+(on b38 b63)
+(on b63 b18)
+(on b18 b77)
+(on b77 b59)
+(on b59 b80)
+(on-table b80)
+(clear b7)
+(on b7 b79)
+(on b79 b87)
+(on b87 b95)
+(on b95 b44)
+(on b44 b30)
+(on b30 b1)
+(on b1 b56)
+(on b56 b74)
+(on b74 b75)
+(on b75 b12)
+(on b12 b55)
+(on b55 b91)
+(on b91 b9)
+(on b9 b25)
+(on b25 b85)
+(on-table b85)
+(clear b86)
+(on b86 b81)
+(on b81 b13)
+(on b13 b45)
+(on b45 b20)
+(on b20 b88)
+(on b88 b72)
+(on b72 b29)
+(on b29 b41)
+(on b41 b69)
+(on b69 b11)
+(on b11 b43)
+(on b43 b61)
+(on b61 b89)
+(on b89 b32)
+(on b32 b82)
+(on-table b82)
+(clear b47)
+(on b47 b35)
+(on b35 b64)
+(on-table b64)
+
+So from this we must determine all stacks (chains). Let's parse each stack:
+
+We identify bottom blocks as those with (on-table <block>) facts. They include:
+
+- b26
+- b49
+- b36
+- b5
+- b24
+- b93
+- b54
+- b28
+- b52
+- b71
+- b80
+- b85
+- b82
+- b64
+
+Also maybe others? Let's see if there are any other on-table facts: Yes, b82 (on-table), b86? Actually we see (clear b86) but not on-table for b86. So bottom blocks are: b26, b49, b36, b5, b24, b93, b54, b28, b52, b71, b80, b85, b82, b64.
+
+Also maybe b14? Actually we see (on b14 b40), but b14 is not on-table; but we have (on b14 b40). So b14's base is b40, which base is b65? Actually on b65? Let's trace that chain later.
+
+Also we have on b83 b15 but b83 is not on-table. We need to see if there's any block that is on-table but not listed: Wait, the list shows 14 bottom blocks: b26, b49, b36, b5, b24, b93, b54, b28, b52, b71, b80, b85, b82, b64.
+
+But we also saw b73 b90? Wait b73 is clear and on b90, but b73 is not on-table. b90 is on b62, which is on b36 (which is on-table). So that's part of a stack whose bottom is b36.
+
+Now let's parse each stack chain:
+
+Stack A: Bottom b26. (on-table b26). Next: on b26 b37. Wait, from init we have on b37 b26? Actually on b37 b26. So b37 is on b26. Then on b10 b37, on b23 b10, on b2 b31? Wait let's read carefully:
+
+List all "on" facts that involve blocks that are on top of b26. Starting at b26: We have (on b37 b26). Next, find block on b37: (on b10 b37). Next block on b10: (on b23 b10). Next block on b23: (on b2 b31). Wait, there's an on b2 b31? Let's check: We have (on b2 b31) in init. So b2 on b31. That means b2 is on b31, not on b23. Actually we need to trace chain carefully:
+
+Let's write all "on" facts:
+
+From the list, we have:
+
+- on b83 b15
+- on b15 b94
+- on b94 b3
+- on b3 b2
+- on b2 b31
+- on b31 b23
+- on b23 b10
+- on b10 b37
+- on b37 b26
+
+Thus, the chain is: b26 (bottom) -> b37 on top of b26 -> b10 on top of b37 -> b23 on top of b10 -> b2 on top of b23 -> b3 on top of b2 -> b94 on top of b3 -> b15 on top of b94 -> b83 on top of b15.
+
+But we also had b26 on-table. So chain A: bottom b26, then above it: b37, b10, b23, b2, b3, b94, b15, b83. Let's confirm each: After b26, we have b37 on top of b26. Next b10 on top of b37. Next b23 on top of b10. Next b2 on top of b23. Next b3 on top of b2. Next b94 on top of b3. Next b15 on top of b94. Next b83 on top of b15. So the chain length is 8 blocks? Let's count: b26, b37, b10, b23, b2, b3, b94, b15, b83. That's 9 blocks. Actually it's 9. Wait, we may have miscount: It's 9 blocks.
+
+Block b83 is topmost, should be clear. Indeed, init has (clear b83). Good. So chain A: b26 at bottom, b83 at top.
+
+But is b83 clear? yes. Good.
+
+Now chain B: bottom b49. We have (on-table b49). Then we have (on b49 ???). Wait we have (clear b49) and (on-table b49), but we don't see any "on X b49" fact. So b49 has no block on top. So it's a single-block stack. It is clear. Good.
+
+Chain C: bottom b36: (on-table b36). Next we have (on b62 b36). So b62 on b36. Next we have (on b90 b62). So b90 on b62. Next (on b73 b90). So b73 on b90. Next (clear b73). So chain: b36 bottom -> b62 -> b90 -> b73 top (clear). This chain length 4.
+
+Chain D: bottom b5: (on-table b5). Next (on b68 b5). Next (on b84 b68). Next (on b57 b84). Next (on b19 b57). Next (on b22 b19). Next (on b51 b22). Next (on b16 b51). Next (on b21 b16). Next (on b53 b21). Next (on b46 b53). Next (on b38 b46). Wait, we might need to check the chain for b5. Actually let's go step by step:
+
+- on b5? We have (on b5 ???). Wait we have (on b5 ???) but maybe we see on b5 in another chain? Let's list all "on" facts that involve b5:
+
+From init:
+
+- (on b68 b5) (makes b68 on b5)
+- (on b84 b68) (makes b84 on b68)
+- (on b57 b84) (makes b57 on b84)
+- (on b19 b57) (makes b19 on b57)
+- (on b22 b19) (makes b22 on b19)
+- (on b51 b22) (makes b51 on b22)
+- (on b16 b51) (makes b16 on b51)
+- (on b21 b16) (makes b21 on b16)
+- (on b53 b21) (makes b53 on b21)
+- (on b46 b53) (makes b46 on b53)
+- (on b38 b46) (makes b38 on b46)
+- (on b27 b8?) Wait not related. Let's keep listing.
+
+Also later we have (on b39 b70) but irrelevant.
+
+So chain: b5 bottom -> b68 -> b84 -> b57 -> b19 -> b22 -> b51 -> b16 -> b21 -> b53 -> b46 -> b38 -> maybe next? Let's check further:
+
+The next block after b38 in this chain: We see (on b27 b8) but not relevant. There's (on b23 b10) but not here. The next block after b38 could be (on b27 b8)? Let's scan the list of on facts again for any that involve block b38:
+
+- on b38 b63? Wait there is a chain: on b67 b38, on b38 b63. Actually there is (on b67 b38) and (on b38 b63). That means block b67 is on b38, and block b63 is on b38? Wait "on b67 b38" means b67 is on b38, so b67 is above b38. "on b38 b63" means b38 is on b63. So b38 is on b63, not b63 on b38. So the chain we were tracing for b38 as part of b5's chain might be wrong. Actually b38 appears as the block on which b63 is placed? Let's parse:
+
+- on b38 b63 means b38 is on b63. So b38 is on b63. That means b63 is below b38, not above.
+
+But we are tracing chain above b5. b38 is part of that chain: we had b46 on b53, on b21, etc. Did we have "on b38 b46"? Wait we had (on b38 b46). Let's confirm: We see (on b38 b63)? Actually the init includes: (on b67 b38), (on b38 b63). Yes, b67 on b38, b38 on b63. So b38 is on b63. But in the chain from b5, we had b46 on b53, on b21, etc. But we didn't have on b38 b46? Wait maybe we misread earlier. Let's double-check.
+
+List all "on" facts that mention b38:
+
+- (on b38 b63) (b38 on b63)
+- (on b67 b38) (b67 on b38)
+
+Also earlier we have (on b47 b35) etc. So b38 is not on b53. So our earlier assumption that b38 was part of chain from b5 is wrong.
+
+Therefore we need to re-evaluate chain from b5: it ends at b38? Wait let's check chain properly:
+
+We have b5 bottom. We look for block on b5: b68 is on b5. Then block on b68: b84 on b68. Block on b84: b57 on b84. Block on b57: b19 on b57. Block on b19: b22 on b19. Block on b22: b51 on b22. Block on b51: b16 on b51. Block on b16: b21 on b16. Block on b21: b53 on b21. Block on b53: b46 on b53? Wait we have (on b46 b53). So b46 on b53. Block on b46: ??? maybe b? We had (on b47 b35). No. So block on b46: not listed. So the chain ends at b46? But b46 might be on b53, but we had also (on b46 b53). Wait that indicates b46 is on b53, but we haven't found a block on b46. So b46 is topmost? But we also had (clear b42) but that is not b46.
+
+Let's verify the chain again:
+
+- b5 bottom
+- b68 on b5
+- b84 on b68
+- b57 on b84
+- b19 on b57
+- b22 on b19
+- b51 on b22
+- b16 on b51
+- b21 on b16
+- b53 on b21
+- b46 on b53
+
+But we also had (on b38 b46)? Wait no. There is no (on b38 b46). So chain ends at b46 top. Is b46 clear? No, we might have clear? There's no clear on b46 in init. So maybe b46 has something on it. But we didn't see any on X b46. Let's scan again the full list for on X b46. There is (on b47 b35) but not b46. Wait b47 is on b35. So b46 is top, no block on it. So b46 is clear? But init has (clear b42). There's no (clear b46). So b46 is not clear. But it's topmost block. However topmost block must be clear. So maybe our parse wrong: perhaps b46 is not top; maybe there is a block on top of b46. Let's check if there's an "on" fact that has on ? b46? For example "on b38 b46" would be "b38 on b46". We might have that. Let's search: We recall seeing (on b38 b63) earlier, but that didn't involve b46. But maybe we misread and there is "on b38 b46" as part of the chain? Let's search through the list again carefully:
+
+The full list of init facts:
+
+- (arm-empty)
+- (clear b83)
+- (on b83 b15)
+- (on b15 b94)
+- (on b94 b3)
+- (on b3 b2)
+- (on b2 b31)
+- (on b31 b23)
+- (on b23 b10)
+- (on b10 b37)
+- (on b37 b26)
+- (on-table b26)
+- (clear b49)
+- (on-table b49)
+- (clear b73)
+- (on b73 b90)
+- (on b90 b62)
+- (on b62 b36)
+- (on-table b36)
+- (clear b60)
+- (on b60 b4)
+- (on b4 b33)
+- (on b33 b46)
+- (on b46 b53)
+- (on b53 b21)
+- (on b21 b16)
+- (on b16 b51)
+- (on b51 b22)
+- (on b22 b19)
+- (on b19 b57)
+- (on b57 b84)
+- (on b84 b5)
+- (on-table b5)
+- (clear b17)
+- (on b17 b76)
+- (on b76 b24)
+- (on-table b24)
+- (clear b6)
+- (on b6 b93)
+- (on-table b93)
+- (clear b39)
+- (on b39 b70)
+- (on b70 b54)
+- (on-table b54)
+- (clear b42)
+- (on b42 b34)
+- (on b34 b28)
+- (on-table b28)
+- (clear b92)
+- (on b92 b50)
+- (on b50 b78)
+- (on b78 b48)
+- (on b48 b52)
+- (on-table b52)
+- (clear b66)
+- (on b66 b27)
+- (on b27 b8)
+- (on b8 b96)
+- (on b96 b65)
+- (on b65 b14)
+- (on b14 b40)
+- (on b40 b58)
+- (on b58 b71)
+- (on-table b71)
+- (clear b67)
+- (on b67 b38)
+- (on b38 b63)
+- (on b63 b18)
+- (on b18 b77)
+- (on b77 b59)
+- (on b59 b80)
+- (on-table b80)
+- (clear b7)
+- (on b7 b79)
+- (on b79 b87)
+- (on b87 b95)
+- (on b95 b44)
+- (on b44 b30)
+- (on b30 b1)
+- (on b1 b56)
+- (on b56 b74)
+- (on b74 b75)
+- (on b75 b12)
+- (on b12 b55)
+- (on b55 b91)
+- (on b91 b9)
+- (on b9 b25)
+- (on b25 b85)
+- (on-table b85)
+- (clear b86)
+- (on b86 b81)
+- (on b81 b13)
+- (on b13 b45)
+- (on b45 b20)
+- (on b20 b88)
+- (on b88 b72)
+- (on b72 b29)
+- (on b29 b41)
+- (on b41 b69)
+- (on b69 b11)
+- (on b11 b43)
+- (on b43 b61)
+- (on b61 b89)
+- (on b89 b32)
+- (on b32 b82)
+- (on-table b82)
+- (clear b47)
+- (on b47 b35)
+- (on b35 b64)
+- (on-table b64)
+
+Ok, so we have the chain b33 b46... Wait we missed a fact: There's (on b33 b46). Then (on b46 b53). So chain: b36 bottom -> b62 -> b90 -> b73 -> ??? Wait we had chain B earlier: b36 bottom -> b62 -> b90 -> b73. That's correct. The chain C: b36 chain goes to b73 at top. There's no block on b73, so b73 is top. Good.
+
+But then we also have a chain starting at b33: (on b33 b46). Actually chain from b33: b33 bottom? Wait b33 is on b4. Actually on b4 b33 (b4 on b33). So b33 is on b4, not on table. Then b4 on b33? Wait no, "on b4 b33" means b4 is on b33, meaning b4 is on b33. So the chain is: b33 -> b4 -> b60 -> b26? Wait no. Actually we need to follow: b4 on b33. Then b60 on b4. Then b36? Wait we have on b62 b36. Let's reconstruct chain from bottom b36: we had b36 on-table, then b62 on b36. Then b90 on b62, then b73 on b90. Then chain stops. But where does b4 come in? Let's trace chain from bottom b26: we had b26 bottom. Then b37 on b26. Then b10 on b37, etc. So b4 isn't in that chain. Let's check chain for b26: not.
+
+But what about block b33: it is on b4, but there is no on-table for b33. Where is b4? It's on b33 (b4 on b33). So b4 is above b33. Where is b4 below? We have on b60 b4. So b60 on b4. Where is b60 below? We have clear b60, but we have (on b60 b4). Actually we have (on b60 b4). So b60 on b4. So we have chain: bottom: ??? Actually b60 is on b4? Wait "on b60 b4" means b60 is on b4. So b60 is above b4. So above b4. So we need to find the block below b4: we have (on b4 b33). That means b4 is on b33. So b4 on b33. So then we need to find block below b33: no, we see (on b33 b46)? Wait (on b33 b46) means b33 on b46. So b33 is on b46. So we have chain: b46 bottom? Wait b46 on b53? We have (on b33 b46), meaning b33 on b46. So b46 is below b33. Then b46 is on b53: (on b46 b53). So b53 below b46. Then b53 is on b21: (on b53 b21). So b21 below b53. Then b21 on b16: (on b21 b16). So b16 below b21. Then b16 on b51: (on b16 b51). So b51 below b16. Then b51 on b22: (on b51 b22). So b22 below b51. Then b22 on b19: (on b22 b19). So b19 below b22. Then b19 on b57: (on b19 b57). So b57 below b19. Then b57 on b84: (on b57 b84). So b84 below b57. Then b84 on b5: (on b84 b5). So b5 below b84. Then b5 on table.
+
+Wait, this chain appears to include b5 as bottom, but with additional blocks below b5? Actually b5 is on table, so it is bottom. But b5 has block on top of it? Wait we had (on b84 b5), so b84 is on b5. But we had b5 on table. That chain we described from b5 top included b84, b57, etc. But we also found another chain starting at b5 bottom, but below b5 we cannot have anything else because it's on-table. So the chain we just described includes b5 at bottom, then above it b84, etc. Wait we had block on b5: b84. So b84 is on b5. Good.
+
+Thus the chain: b5 bottom -> b84 -> b57 -> b19 -> b22 -> b51 -> b16 -> b21 -> b53 -> b46 -> b33 -> b4 -> b60? Wait let's see: we had earlier b33 on b46. But that shows b33 is on top of b46? Wait (on b33 b46) means b33 is on b46. So b33 is above b46. But we had b46 on b53, and b53 on b21, etc. So continuing:
+
+b46 is on b53 (b46 above b53). So chain: b21 -> b53 -> b46 -> b33 -> b4 -> b60 -> b4? Wait we had b4 on b33, which means b4 is above b33. Actually (on b4 b33) means b4 is on b33. So b4 above b33. Then we have b60 on b4, so b60 is on b4, above b4. So chain: ... -> b33 -> b4 -> b60. Then above b60: no block above because b60 is top? Wait no block on b60? The initial state had (clear b60) but that indicates no block on top. So b60 is top. So the chain from b5: b5 bottom -> b84 -> b57 -> b19 -> b22 -> b51 -> b16 -> b21 -> b53 -> b46 -> b33 -> b4 -> b60.
+
+Thus chain starting at b5 has length 12? Let's count: b5, b84, b57, b19, b22, b51, b16, b21, b53, b46, b33, b4, b60? Actually count again: b5 (1), b84 (2), b57 (3), b19 (4), b22 (5), b51 (6), b16 (7), b21 (8), b53 (9), b46 (10), b33 (11), b4 (12), b60 (13). Wait check if b60 is above b4? Yes. So chain length 13 blocks. Actually we need to verify if any of these blocks have other blocks on top. The top block b60 is clear. That matches (clear b60). Good.
+
+Now, we see b60 has no block on top. So chain b5 chain includes 13 blocks.
+
+Now let's examine chain that starts at b33: Actually we already have chain above. That chain is a subchain of b5 chain. Wait maybe we had double counting? Let's ensure no duplicates. We'll now list all blocks and the chains they belong to. Let's parse systematically:
+
+List each block's bottom (on-table) and then find chain upwards.
+
+We will create a dictionary mapping each block to its below block (the block it's on). The "on" facts are of the form (on X Y) meaning X on Y. So below block of X is Y.
+
+Additionally, we have (on-table X) meaning X on table, so X is bottom of its stack.
+
+We'll parse all "on" facts and store mapping below_of[X] = Y. Then we can find chain by following below_of up to an on-table block. We'll also have mapping above_of[Y] maybe a set.
+
+Given the list, let's systematically gather below_of mapping:
+
+We'll parse all "on" facts from the init:
+
+- (on b83 b15) => below_of[b83] = b15
+- (on b15 b94) => below_of[b15] = b94
+- (on b94 b3) => below_of[b94] = b3
+- (on b3 b2) => below_of[b3] = b2
+- (on b2 b31) => below_of[b2] = b31
+- (on b31 b23) => below_of[b31] = b23
+- (on b23 b10) => below_of[b23] = b10
+- (on b10 b37) => below_of[b10] = b37
+- (on b37 b26) => below_of[b37] = b26
+
+- (on b73 b90) => below_of[b73] = b90
+- (on b90 b62) => below_of[b90] = b62
+- (on b62 b36) => below_of[b62] = b36
+
+- (on b60 b4) => below_of[b60] = b4
+- (on b4 b33) => below_of[b4] = b33
+- (on b33 b46) => below_of[b33] = b46
+- (on b46 b53) => below_of[b46] = b53
+- (on b53 b21) => below_of[b53] = b21
+- (on b21 b16) => below_of[b21] = b16
+- (on b16 b51) => below_of[b16] = b51
+- (on b51 b22) => below_of[b51] = b22
+- (on b22 b19) => below_of[b22] = b19
+- (on b19 b57) => below_of[b19] = b57
+- (on b57 b84) => below_of[b57] = b84
+- (on b84 b5) => below_of[b84] = b5
+
+- (on b17 b76) => below_of[b17] = b76
+- (on b76 b24) => below_of[b76] = b24
+
+- (on b6 b93) => below_of[b6] = b93
+
+- (on b39 b70) => below_of[b39] = b70
+- (on b70 b54) => below_of[b70] = b54
+
+- (on b42 b34) => below_of[b42] = b34
+- (on b34 b28) => below_of[b34] = b28
+
+- (on b92 b50) => below_of[b92] = b50
+- (on b50 b78) => below_of[b50] = b78
+- (on b78 b48) => below_of[b78] = b48
+- (on b48 b52) => below_of[b48] = b52
+
+- (on b66 b27) => below_of[b66] = b27
+- (on b27 b8) => below_of[b27] = b8
+- (on b8 b96) => below_of[b8] = b96
+- (on b96 b65) => below_of[b96] = b65
+- (on b65 b14) => below_of[b65] = b14
+- (on b14 b40) => below_of[b14] = b40
+- (on b40 b58) => below_of[b40] = b58
+- (on b58 b71) => below_of[b58] = b71
+
+- (on b67 b38) => below_of[b67] = b38
+- (on b38 b63) => below_of[b38] = b63
+- (on b63 b18) => below_of[b63] = b18
+- (on b18 b77) => below_of[b18] = b77
+- (on b77 b59) => below_of[b77] = b59
+- (on b59 b80) => below_of[b59] = b80
+
+- (on b7 b79) => below_of[b7] = b79
+- (on b79 b87) => below_of[b79] = b87
+- (on b87 b95) => below_of[b87] = b95
+- (on b95 b44) => below_of[b95] = b44
+- (on b44 b30) => below_of[b44] = b30
+- (on b30 b1) => below_of[b30] = b1
+- (on b1 b56) => below_of[b1] = b56
+- (on b56 b74) => below_of[b56] = b74
+- (on b74 b75) => below_of[b74] = b75
+- (on b75 b12) => below_of[b75] = b12
+- (on b12 b55) => below_of[b12] = b55
+- (on b55 b91) => below_of[b55] = b91
+- (on b91 b9) => below_of[b91] = b9
+- (on b9 b25) => below_of[b9] = b25
+- (on b25 b85) => below_of[b25] = b85
+
+- (on b86 b81) => below_of[b86] = b81
+- (on b81 b13) => below_of[b81] = b13
+- (on b13 b45) => below_of[b13] = b45
+- (on b45 b20) => below_of[b45] = b20
+- (on b20 b88) => below_of[b20] = b88
+- (on b88 b72) => below_of[b88] = b72
+- (on b72 b29) => below_of[b72] = b29
+- (on b29 b41) => below_of[b29] = b41
+- (on b41 b69) => below_of[b41] = b69
+- (on b69 b11) => below_of[b69] = b11
+- (on b11 b43) => below_of[b11] = b43
+- (on b43 b61) => below_of[b43] = b61
+- (on b61 b89) => below_of[b61] = b89
+- (on b89 b32) => below_of[b89] = b32
+- (on b32 b82) => below_of[b32] = b82
+
+- (on b47 b35) => below_of[b47] = b35
+- (on b35 b64) => below_of[b35] = b64
+
+Additionally, we might have missed any other "on" facts:
+
+- (on b24?) Actually no.
+
+- (on b6)? We had (on b6 b93). Yes.
+
+- (on b68?) No.
+
+- (on b28)? we had (on b34 b28). Yes.
+
+- (on b29?) Yes above.
+
+- (on b30?) Yes.
+
+- (on b52?) We have (on b52?) Actually there's no on b52, but b52 is on-table. Ok.
+
+Now we also have (on b21?) earlier: yes.
+
+Now we have mapping for all "on" facts.
+
+Also we need to track "on-table" facts: these list bottom blocks. Let's list them: (on-table b26), (on-table b49), (on-table b36), (on-table b5), (on-table b24), (on-table b93), (on-table b54), (on-table b28), (on-table b52), (on-table b71), (on-table b80), (on-table b85), (on-table b82), (on-table b64). Are there any others? Let's check the init list for more (on-table <block>) facts. Yes, we see those. Also maybe there is (on-table b48)? Wait we have (on b48 b52). That means b48 is on b52. So not on-table.
+
+Also (on-table b36) etc. So there are 14 bottom blocks? Wait we counted 14 earlier: b26, b49, b36, b5, b24, b93, b54, b28, b52, b71, b80, b85, b82, b64. That's 14 bottom blocks. Confirm.
+
+Now, we must check if any bottom blocks not listed: e.g., b86? There is (clear b86) but no on-table; b86 is not bottom. So 14 stacks initially.
+
+Goal bottom blocks are: b18, b34, b71, b58, b77, b65, b51, b49, b15, b24. That's 10 bottom blocks. So initial bottom blocks: 14 stacks; goal bottom blocks: 10 stacks. But some bottom blocks may be moved from one stack to another.
+
+Now we need to devise a plan to transform all stacks into goal configuration.
+
+One naive approach: Move all blocks to table, then build all goal stacks. This ensures we start from a known state: all blocks clear and on-table. Then we can stack them to match goal. But we need to produce 96 actions, which may be too many but still possible.
+
+But we must produce a valid plan. The easiest way: Use a plan that empties everything to table, then builds all chains.
+
+However, we need to account that some bottom blocks already are on-table initially. But it's fine: If we want to empty everything to table, those bottom blocks are already on-table. They are clear if no block on them. But if they have blocks on them, they might not be clear. But they will be eventually cleared by unstacking the topmost block. However, we need to ensure that when we unstack from top, the block above might be clear (topmost). So we can unstack that block, put down. That will free the block below, etc. We'll eventually have bottom block as clear.
+
+Thus we can proceed.
+
+Now the challenge: We need to produce a valid sequence of actions. That requires referencing each action with correct parameters.
+
+We can produce a plan of many actions, maybe ~2*(96-10)+2*(96-10) = 4*(86)=344 actions. That's a lot but maybe within constraints? However, the final answer must be printed as plan inside <plan> tags. 344 lines might be too long but still possible. There's no limit. However, might exceed some size? But likely acceptable.
+
+But we might produce a simpler plan: Instead of unstacking all blocks, we could simply directly perform the required goal actions by picking up blocks and stacking them correctly, perhaps without putting them back to table. But that may be more complex because we need to manage preconditions. But we can still do it.
+
+However, due to time, maybe easiest: produce a plan that empties all blocks and rebuilds goal. But we need to ensure we use correct actions: We can only use pickup, putdown, stack, unstack. But we don't have "pickup" for on-table blocks, just "pickup" requires arm-empty, clear, and on-table. So to move a block that is on-table, we can use pickup. But we could also use stack if we want to stack it onto another block. But we could also putdown if we want to put a held block onto table.
+
+But our plan: For each block that is not on table, we need to unstack it, put down.
+
+But unstack requires arm-empty, block is clear, and on block. So we need to ensure we start with arm-empty and block is clear. Initially arm-empty is true. So we can unstack topmost blocks. After unstacking, we hold the block, then putdown it, which makes it on-table and clear.
+
+Thus our plan for emptying:
+
+- While there are blocks not on table:
+
+  - Find a block that is clear and on another block. That is, find a block that is topmost. The block below is currently not clear? Wait it's below, but may not be clear. But after we unstack the top, the block below becomes clear. So we can unstack again.
+
+Thus the order of unstacking must follow each stack from top to bottom. We can process stacks one by one.
+
+To implement, we could list all chains with their topmost block, then produce unstack+putdown actions from top to bottom.
+
+Let's identify all chains for the initial state and their topmost blocks:
+
+We have 14 stacks:
+
+1. Stack A: bottom b26, chain: b26 -> b37 -> b10 -> b23 -> b2 -> b3 -> b94 -> b15 -> b83. Topmost: b83. b83 is clear in init. Good. So unstack b83 onto b15? Wait unstack: (unstack b83 b15) will hold b83 and remove b83 from b15, making b15 clear. After that, we will putdown b83 onto table. Then b15 will become clear. Then we can unstack b15 onto b94, etc. So we can stack this chain.
+
+2. Stack B: bottom b49, no block on top (single). Topmost: b49. But b49 is on-table. We need to treat as block to putdown? Actually b49 is already on-table. But to have all blocks on-table eventually, we want b49 to remain on-table; we can leave it or not manipulate.
+
+But we want all blocks on table at end of emptying. So b49 is already on-table. But we might need to unstack any blocks above it, but none. So b49 remains.
+
+But to unify, we might not need to remove b49 because it's already on-table.
+
+3. Stack C: bottom b36, chain: b36 -> b62 -> b90 -> b73. Topmost: b73. b73 is clear. So unstack b73 onto b90, then putdown, etc.
+
+4. Stack D: bottom b5 chain we identified: b5 -> b84 -> b57 -> b19 -> b22 -> b51 -> b16 -> b21 -> b53 -> b46 -> b33 -> b4 -> b60. Topmost: b60. Actually check topmost: b60 is clear. So unstack b60 onto b4, putdown, etc. But note: b4 is on b33? Wait b4 on b33. So unstack b60 onto b4; we then put down b60, leaving b4 clear. Then unstack b4 onto b33, etc. This will eventually make b5 clear.
+
+5. Stack E: bottom b17, chain: b17 -> b76 -> b24. Topmost: b24. Wait b24 is on-table. But b24 is bottom. Wait check: initial state has (on b17 b76) and (on b76 b24). So b24 bottom on-table, b76 on b24, b17 on b76. So topmost is b17. Actually b17 is on b76, and b76 is on b24. So the chain: b24 bottom -> b76 -> b17 topmost? Wait check: We need to double-check: "on b17 b76" means b17 on b76. So b17 on top. Then "on b76 b24" means b76 on b24. So chain: b24 bottom -> b76 -> b17 top. Topmost is b17. Good.
+
+So topmost: b17. But initial state has (clear b17)? Actually init has (clear b17) yes. So b17 is clear.
+
+Thus we need to unstack b17 onto b76, putdown, then unstack b76 onto b24, putdown.
+
+After that, b24 will be clear (unless something else on top). b24 bottom on table remains on table.
+
+6. Stack F: bottom b6, chain: b6 -> b93. Topmost: b93. b93 on-table? Wait initial state has (on-table b93). And b6 on b93. So topmost block is b6. Actually b6 is on b93; b93 on-table. So topmost is b6. But b6 is clear? In init we have (clear b6). Yes. So unstack b6 onto b93, putdown. After that, b93 becomes clear. b93 on-table.
+
+7. Stack G: bottom b39: b39 -> b70 -> b54. Topmost: b54. b54 on-table? Actually (on-table b54). Yes. So b54 bottom. Wait check: b54 on-table. b70 on b54. b39 on b70. So topmost: b39. But check: In init we have (clear b39). Yes. So topmost is b39. So unstack b39 onto b70, putdown. Then unstack b70 onto b54, putdown. After that, b54 clear.
+
+8. Stack H: bottom b42: b42 -> b34 -> b28. Topmost: b42. b28 on-table. (on-table b28). So b42 is topmost. b42 clear? Yes (clear b42). So unstack b42 onto b34, putdown. Then unstack b34 onto b28, putdown. After that, b28 clear.
+
+9. Stack I: bottom b92: b92 -> b50 -> b78 -> b48 -> b52. Topmost: b92? Wait we have: b92 on b50, b50 on b78, b78 on b48, b48 on b52. Topmost block is b92, because it's on b50. So topmost: b92. b92 clear? Yes (clear b92). So unstack b92 onto b50, putdown. Then unstack b50 onto b78, putdown. Then unstack b78 onto b48, putdown. Then unstack b48 onto b52, putdown. After that, b52 clear.
+
+But note: b52 is bottom on-table. Good.
+
+10. Stack J: bottom b66: b66 -> b27 -> b8 -> b96 -> b65 -> b14 -> b40 -> b58 -> b71. Wait check: We have on b66 b27, b27 b8, b8 b96, b96 b65, b65 b14, b14 b40, b40 b58, b58 b71. Topmost: b66. b71 on-table? Yes (on-table b71). So topmost is b66. Clear? Yes (clear b66). So unstack b66 onto b27, putdown. Then unstack b27 onto b8, putdown. Then unstack b8 onto b96, putdown. Then unstack b96 onto b65, putdown. Then unstack b65 onto b14, putdown. Then unstack b14 onto b40, putdown. Then unstack b40 onto b58, putdown. Then unstack b58 onto b71, putdown. After that, b71 clear.
+
+Now, after these operations, we will have all bottom blocks of original stacks remain on-table and clear. The other blocks will be on-table and clear as well after putdown. So all 96 blocks will be on-table and clear.
+
+Now the second phase: Build all goal stacks.
+
+Goal stacks: Let's identify each chain in the goal, including bottom blocks. We'll need to stack each block onto its below block.
+
+Goal chains:
+
+1. Chain G1: bottom b18. Then b28 on b18, then b82 on b28, then b20 on b82, then b69 on b20, then b5 on b69, then b93 on b5, then b74 on b93, then b88 on b74, then b62 on b88, then b33 on b62, then b9 on b33, then b54 on b9, then b38 on b54, then b92 on b38, then b12 on b92, then b45 on b12, then b42 on b45, then b54 on b42? Wait check: In the goal, we have (on b42 b54) but we already have b54 used earlier. Wait let's parse carefully.
+
+The goal has chain that includes many blocks. Let's write out the first part more systematically.
+
+From the goal:
+
+- (clear b19)
+- (on b19 b35)
+- (on b35 b27)
+- (on b27 b39)
+- (on b39 b38)
+- (on b38 b92)
+- (on b92 b12)
+- (on b12 b45)
+- (on b45 b42)
+- (on b42 b54)
+- (on b54 b9)
+- (on b9 b33)
+- (on b33 b62)
+- (on b62 b88)
+- (on b88 b74)
+- (on b74 b93)
+- (on b93 b5)
+- (on b5 b69)
+- (on b69 b20)
+- (on b20 b82)
+- (on b82 b28)
+- (on b28 b18)
+- (on-table b18)
+
+Wait that seems reversed: They list "on b19 b35" meaning b19 on b35. So b19 is on b35. So b19's below block is b35. So the chain from bottom up: b18 bottom -> b28 on b18 -> b82 on b28 -> b20 on b82 -> b69 on b20 -> b5 on b69 -> b93 on b5 -> b74 on b93 -> b88 on b74 -> b62 on b88 -> b33 on b62 -> b9 on b33 -> b54 on b9 -> b42 on b54? Wait no, they have (on b42 b54). So b42 on b54, meaning b42 is above b54. But earlier we had b54 above b9, so chain: b9 on b33, b33 on b62, etc. Let's be careful: Actually the order is from top to bottom; the 'on' fact says block X on block Y. So the chain reads from top to bottom: b19 on b35, b35 on b27, b27 on b39, b39 on b38, b38 on b92, b92 on b12, b12 on b45, b45 on b42, b42 on b54, b54 on b9, b9 on b33, b33 on b62, b62 on b88, b88 on b74, b74 on b93, b93 on b5, b5 on b69, b69 on b20, b20 on b82, b82 on b28, b28 on b18. That's the chain from top to bottom. But the bottom is b18, which is on-table. So the chain goes from top: b19 (topmost) -> b35 -> b27 -> b39 -> b38 -> b92 -> b12 -> b45 -> b42 -> b54 -> b9 -> b33 -> b62 -> b88 -> b74 -> b93 -> b5 -> b69 -> b20 -> b82 -> b28 -> b18 (bottom). This chain has 22 blocks? Let's count: b19(1), b35(2), b27(3), b39(4), b38(5), b92(6), b12(7), b45(8), b42(9), b54(10), b9(11), b33(12), b62(13), b88(14), b74(15), b93(16), b5(17), b69(18), b20(19), b82(20), b28(21), b18(22). Yes 22 blocks in this chain.
+
+We also have other chains.
+
+Now second chain: "clear b48; on b48 b66; on b66 b50; on b50 b55; on b55 b76; on b76 b91; on b91 b41; on b41 b34; on-table b34". Wait check: There is an "on b41 b34"? Wait in goal we have (on b41 b34) - yes. So chain2: bottom b34 on-table, above that b41 on b34, above that b91 on b41, above that b76 on b91, above that b55 on b76, above that b50 on b55, above that b66 on b50, above that b48 on b66. Topmost is b48. So chain length 8.
+
+Third chain: "clear b52; on b52 b75; on b75 b95; on b95 b73; on b73 b61; on b61 b59; on b59 b71; on-table b71". So chain length 7? Let's count: b71 bottom, above b59, above b61, above b73, above b95, above b75, above b52. Actually b71 bottom on-table. Wait "on b52 b75" means b52 on b75, so b75 is below b52. So chain from top to bottom: b52 (top), b75, b95, b73, b61, b59, b71. So chain length 7? Let's count: b52(1), b75(2), b95(3), b73(4), b61(5), b59(6), b71(7). Yes.
+
+Fourth chain: "clear b44; on b44 b57; on b57 b53; on b53 b81; on b81 b78; on b78 b79; on b79 b96; on b96 b11; on b11 b83; on b83 b32; on b32 b47; on b47 b17; on b17 b8; on b8 b29; on b29 b46; on b46 b80; on b80 b10; on b10 b67; on b67 b6; on b6 b85; on b85 b87; on b87 b2; on b2 b23; on b23 b3; on b3 b58; on-table b58". This is a long chain. Let's parse bottom: b58 bottom on-table, above that b3 on b58? Wait we have (on b3 b58) in goal. Actually "on b3 b58" means b3 on b58. Yes. So bottom b58 on-table. Above b58: b3 on b58. But the chain includes many above b3. So from top to bottom:
+
+We need to write the chain from topmost block to bottom.
+
+We have: on b44 b57: b44 on b57.
+on b57 b53: b57 on b53.
+on b53 b81: b53 on b81.
+on b81 b78: b81 on b78.
+on b78 b79: b78 on b79.
+on b79 b96: b79 on b96.
+on b96 b11: b96 on b11.
+on b11 b83: b11 on b83.
+on b83 b32: b83 on b32.
+on b32 b47: b32 on b47.
+on b47 b17: b47 on b17.
+on b17 b8: b17 on b8.
+on b8 b29: b8 on b29.
+on b29 b46: b29 on b46.
+on b46 b80: b46 on b80.
+on b80 b10: b80 on b10.
+on b10 b67: b10 on b67.
+on b67 b6: b67 on b6.
+on b6 b85: b6 on b85.
+on b85 b87: b85 on b87.
+on b87 b2: b87 on b2.
+on b2 b23: b2 on b23.
+on b23 b3: b23 on b3.
+on b3 b58: b3 on b58. Good.
+
+Thus chain length: count them: b44(1), b57(2), b53(3), b81(4), b78(5), b79(6), b96(7), b11(8), b83(9), b32(10), b47(11), b17(12), b8(13), b29(14), b46(15), b80(16), b10(17), b67(18), b6(19), b85(20), b87(21), b2(22), b23(23), b3(24), b58(25). So chain length 25. Good.
+
+Fifth chain: "clear b14; on b14 b94; on b94 b60; on b60 b89; on b89 b77; on-table b77". So chain length 5? Actually chain: b14(1), b94(2), b60(3), b89(4), b77(5) bottom on-table. Wait we should include bottom block: b77 bottom on-table. So chain length 5? Let's count: b14(1), b94(2), b60(3), b89(4), b77(5). Yes.
+
+Sixth chain: "clear b25; on b25 b84; on b84 b4; on b4 b26; on b26 b65; on-table b65". Chain length 5? Let's parse: b25(1), b84(2), b4(3), b26(4), b65(5) bottom on-table. Wait but in init b26 is bottom of other chain. But in goal, b26 is above b65? Wait we need to check: (on b26 b65) meaning b26 on b65. Yes. So bottom block b65 is on-table. So chain length 5.
+
+Seventh chain: "clear b43; on b43 b22; on b22 b86; on b86 b16; on b16 b64; on b64 b40; on b40 b68; on b68 b7; on b7 b70; on b70 b51; on-table b51". This chain: bottom b51 on-table, above that b70 on b51, above that b7 on b70, above that b68 on b7, above that b40 on b68, above that b64 on b40, above that b16 on b64, above that b86 on b16, above that b22 on b86, above that b43 on b22. So chain length: b43(1), b22(2), b86(3), b16(4), b64(5), b40(6), b68(7), b7(8), b70(9), b51(10). Actually check: b70 on b51, so b70 above b51. So yes.
+
+Eighth chain: "clear b63; on b63 b30; on b30 b56; on b56 b21; on b21 b13; on b13 b72; on b72 b37; on b37 b1; on b1 b49; on-table b49". This chain: bottom b49 on-table, above that b1 on b49, above that b37 on b1, above that b72 on b37, above that b13 on b72, above that b21 on b13, above that b56 on b21, above that b30 on b56, above that b63 on b30. So chain length: b63(1), b30(2), b56(3), b21(4), b13(5), b72(6), b37(7), b1(8), b49(9). So length 9.
+
+Ninth chain: "clear b36; on b36 b90; on b90 b15; on-table b15". Actually chain: bottom b15 on-table, above that b90 on b15, above that b36 on b90. So chain length: b36(1), b90(2), b15(3). Wait check: top to bottom: b36 on b90, b90 on b15, b15 on-table.
+
+Tenth chain: "clear b31; on b31 b24; on-table b24". Chain: bottom b24 on-table, above that b31 on b24. So chain length 2.
+
+So goal has 10 chains: one chain of length 22, one chain of length 8, one chain of length 7, one chain of length 25, one chain of length 5, one chain of length 5, one chain of length 10, one chain of length 9, one chain of length 3, one chain of length 2.
+
+Now, our plan to build them will need to stack them accordingly: start with bottom blocks on-table (they are already on-table after emptying). Then we need to stack each block onto its below block, in the order from bottom to top? Actually we need to stack top blocks onto below block. That means we need to stack from bottom up: we need to stack b28 onto b18, then b82 onto b28, etc., until we get to the topmost block b19. Wait we need to be careful: The "stack" action requires the block we want to stack is currently holding (and clear) and the under block is clear. Actually the stack action defined: :effect (and (arm-empty) (clear ?ob) (on ?ob ?underob) (not (clear ?underob)) (not (holding ?ob)). So to stack a block onto another block, the under block must be clear, and we must be holding the block to put down. But we also need the block to be clear? Actually we need to stack onto clear block. So we need to ensure that the block we want to stack onto is clear.
+
+Thus the process for building a chain: Suppose we have bottom b18 on-table and clear. We need to stack b28 onto b18. To do that, we must have the arm holding b28. So we need to pickup b28 from table. But b28 is currently on-table and clear. So we can do pickup b28. That makes holding b28, arm-empty becomes false, etc. Then we stack b28 onto b18. Under block b18 is clear. That will stack b28 on top of b18, making b18 not clear, b28 clear, and arm empty.
+
+Then we want to stack b82 onto b28. Under block b28 is now clear, but it has b28 clear. Yes. So we need to pickup b82 from table. Then stack onto b28. That will make b28 not clear, b82 clear, etc.
+
+Proceed up chain. Each step requires the under block to be clear. When we stack a block onto the under block, the under block becomes not clear, and the new block becomes clear.
+
+Thus if we process chain from bottom to top, at each step we can stack the next block onto the last stacked block (which is currently clear). Because after stacking block b28 onto b18, b28 becomes clear. So we can stack b82 onto b28. Then b82 becomes clear. Then we can stack b20 onto b82, etc.
+
+Thus building chain from bottom to top is fine.
+
+Now, there are many chains, but they can be built independently as long as all involved blocks are clear and on-table initially. After emptying, all blocks are on-table and clear. So we can start building chain by chain, each block picking up from table.
+
+But we have to maintain arm-empty between each pickup/stack. After stacking, arm becomes empty, so we can pickup next block.
+
+Now we need to produce a plan: after emptying, we have all blocks on table and clear, arm-empty. Then we can start building each chain:
+
+We can process chains in any order. However, we must be careful to not inadvertently use a block that is needed as the lower block in another chain as an upper block before we stack it onto its goal block. But if we process chains one by one, we will stack each block onto its goal block. Since all blocks are clear and on-table, we can pick them up and stack onto the appropriate block. When we stack, we will clear that block and set the new block to clear. This may interfere with other chains if we use the same block in multiple chains incorrectly. But since each block appears in only one chain in the goal, we won't misplace them.
+
+We need to also ensure that the bottom blocks of each chain remain on-table and not moved accidentally.
+
+So the plan: after emptying, we will run a series of pickup+stack for each block in each goal chain except bottom blocks.
+
+We will need to be careful with block naming: we need to match the correct blocks exactly.
+
+Thus the plan will be extremely long but doable.
+
+But we need to produce an actual plan.
+
+The question might be more about a very large plan. But we might attempt to produce a compact plan by using a sequence of "putdown" to drop onto table then "stack" to build the goal. But we can produce a large plan with 344 lines, maybe 344 actions. That is big, but it's okay.
+
+However, we must ensure we produce a valid plan and not rely on unsatisfied preconditions.
+
+Given that this is extremely long, maybe there is a trick: Use the domain's "pickup", "putdown", "stack", "unstack" actions. We can produce a plan that uses each action only once per block, as described.
+
+The plan will start with "unstack" actions to empty all blocks. But we have to order them correctly by top-of-stack.
+
+Thus we need to list the unstack actions for each chain from top to bottom, and after each unstack we must "putdown". After finishing all unstack/putdown for all stacks, we will have all blocks on table.
+
+But we need to produce that order. We can process each chain sequentially. The order of chains does not matter because all blocks are independent.
+
+Now we need to produce a list of actions. This is extremely large but we can produce them.
+
+However, there is an easier approach: Instead of unstacking, we could just put all blocks on table directly by performing a "pickup" on each block that's on table? But blocks that are not on table must be unstacked first, because we cannot pick up a block that is not on-table (clear). Wait, "pickup" action has precondition: (and (clear ?ob) (on-table ?ob) (arm-empty)). So we can only pickup a block that's on-table. But for non-table blocks, we must first unstack them. So we cannot skip that step.
+
+Thus we must unstack all blocks that are not on table initially.
+
+List all chains again with their top blocks:
+
+Chain A: top block b83
+Chain B: top block b49 (but it's on-table, so no unstack needed).
+Chain C: top block b73
+Chain D: top block b60
+Chain E: top block b17
+Chain F: top block b6
+Chain G: top block b39
+Chain H: top block b42
+Chain I: top block b92
+Chain J: top block b66
+
+Also, is there any chain with top block that is on-table? For B and maybe other stacks? Let's check each bottom: The bottom blocks of each chain are on-table. The top block is always the topmost. We need to unstack all non-table blocks. So we need to unstack for all stacks except those whose bottom block is the only block and is on-table. That includes stack B (b49) and stack ? maybe others? Let's check: b24 is on-table? Yes, but it has above b76 and b17. So not. So for stack E (b17 chain), we need to unstack b17 and b76. So yes.
+
+Thus all chains except B require unstack operations.
+
+But we also need to consider stack from top to bottom for each chain:
+
+Let's write top-to-bottom sequences for each chain:
+
+Chain A: 
+- b83 (top)
+- b15
+- b94
+- b3
+- b2
+- b31
+- b23
+- b10
+- b37
+- b26 bottom (on-table) but we don't need to unstack bottom; after unstacking all above, b26 remains on-table.
+
+Chain C:
+- b73
+- b90
+- b62
+- b36 bottom on-table
+
+Chain D:
+- b60
+- b4
+- b33
+- b46
+- b53
+- b21
+- b16
+- b51
+- b22
+- b19
+- b57
+- b84
+- b68
+- b5 bottom on-table
+
+Chain E:
+- b17
+- b76
+- b24 bottom
+
+Chain F:
+- b6
+- b93 bottom
+
+Chain G:
+- b39
+- b70
+- b54 bottom
+
+Chain H:
+- b42
+- b34
+- b28 bottom
+
+Chain I:
+- b92
+- b50
+- b78
+- b48
+- b52 bottom
+
+Chain J:
+- b66
+- b27
+- b8
+- b96
+- b65
+- b14
+- b40
+- b58
+- b71 bottom
+
+Also, there might be a chain that has only one block: b49, b24? Actually chain E has b24 bottom and above b76 and b17. So chain E includes b17 top. So indeed we need to unstack b17, then b76.
+
+Thus total unstack/putdown pairs:
+
+Chain A: 9-1 = 8 unstack? Actually chain A has 9 blocks, top to bottom: b83, b15, b94, b3, b2, b31, b23, b10, b37, b26. That's 10 blocks? Wait let's recount. The sequence list: b83, b15, b94, b3, b2, b31, b23, b10, b37, b26. That's 10 blocks. Wait earlier we counted 9 blocks. Let's double-check. Actually from bottom: b26 bottom, then b37, then b10, then b23, then b2, then b3, then b94, then b15, then b83 top. That's 9 blocks? Let's recount: bottom b26 (1), b37 (2), b10 (3), b23 (4), b2 (5), b3 (6), b94 (7), b15 (8), b83 (9). Wait we missed b36? No. So there are 9 blocks. So top-to-bottom sequence: top b83, b15, b94, b3, b2, b31, b23, b10, b37, b26? Wait we may have mis-ordered. Let's recalc chain A properly: According to init facts:
+
+- (on b26 b37) means b37 on b26. So b26 bottom, b37 above it.
+
+- (on b10 b37) => b10 on b37, above.
+
+- (on b23 b10) => b23 on b10, above.
+
+- (on b2 b31) => b2 on b31.
+
+- (on b31 b23) => b31 on b23.
+
+- (on b3 b2) => b3 on b2.
+
+- (on b94 b3) => b94 on b3.
+
+- (on b15 b94) => b15 on b94.
+
+- (on b83 b15) => b83 on b15.
+
+Thus chain is: b26 bottom -> b37 -> b10 -> b23 -> b31 -> b2 -> b3 -> b94 -> b15 -> b83 top. Yes 10 blocks? Wait we must check: That includes b26, b37, b10, b23, b31, b2, b3, b94, b15, b83. That's 10 blocks. But earlier we counted 9 blocks? We had 9. Let's recount carefully: After b26, we have b37. That's 2. Then b10 (3). Then b23 (4). Then b31 (5). Then b2 (6). Then b3 (7). Then b94 (8). Then b15 (9). Then b83 (10). Yes 10 blocks. So chain A has 10 blocks, not 9. Good.
+
+Thus unstack/putdown pairs: top b83 first, then b15, b94, b3, b2, b31, b23, b10, b37, then done. Because after unstacking b37, b26 will become clear. b26 remains on-table. So we have 9 unstack+putdown actions for chain A.
+
+But we need to confirm the order: We unstack b83, then putdown. Then unstack b15, putdown. Then b94, etc. This will leave b26 at bottom on-table, clear after the last unstack.
+
+Now chain C: bottom b36 -> b62 -> b90 -> b73 top? Wait check mapping: (on b62 b36) => b62 on b36. (on b90 b62) => b90 on b62. (on b73 b90) => b73 on b90. So chain: b36 bottom -> b62 -> b90 -> b73 top. So top to bottom: b73, b90, b62, b36. So unstack b73, b90, b62. That's 3 unstack+putdown actions.
+
+Chain D: bottom b5 -> b68 -> b84 -> b57 -> b19 -> b22 -> b51 -> b16 -> b21 -> b53 -> b46 -> b33 -> b4 -> b60 top. Let's verify mapping: (on b68 b5), (on b84 b68), (on b57 b84), (on b19 b57), (on b22 b19), (on b51 b22), (on b16 b51), (on b21 b16), (on b53 b21), (on b46 b53), (on b33 b46), (on b4 b33), (on b60 b4). So bottom b5, top b60. So top-to-bottom sequence: b60, b4, b33, b46, b53, b21, b16, b51, b22, b19, b57, b84, b68, b5. That's 14 blocks? Let's count: b60(1), b4(2), b33(3), b46(4), b53(5), b21(6), b16(7), b51(8), b22(9), b19(10), b57(11), b84(12), b68(13), b5(14). Yes 14. So 13 unstack+putdown actions (excluding the bottom). Actually we need to unstack 13 blocks? Wait we will unstack top 13 blocks. After unstacking b5, the bottom block is b5? Actually bottom is b5. But after we unstack all above, b5 will become clear and on-table. But b5 is top after unstacking? Actually b5 is bottom; we don't need to unstack it because it's on-table. But we need to unstack all above it, which are 13 blocks. So 13 actions pairs.
+
+Chain E: bottom b24 -> b76 -> b17 top. So top-to-bottom: b17, b76, b24. So unstack b17 and b76. That's 2 unstack+putdown actions.
+
+Chain F: bottom b93 -> b6 top. So top-to-bottom: b6, b93? Wait (on b6 b93) means b6 on b93. So b93 bottom, b6 top. So unstack b6. That's 1 unstack+putdown action.
+
+Chain G: bottom b54 -> b70 -> b39 top? Wait mapping: (on b70 b54) b70 on b54; (on b39 b70) b39 on b70. So bottom b54, top b39. So top-to-bottom: b39, b70, b54. So unstack b39 and b70. That's 2 actions pairs.
+
+Chain H: bottom b28 -> b34 -> b42 top. So top-to-bottom: b42, b34, b28. So unstack b42 and b34. That's 2 action pairs.
+
+Chain I: bottom b52 -> b48 -> b78 -> b50 -> b92 top. Wait mapping: (on b48 b52) => b48 on b52, (on b78 b48) => b78 on b48, (on b50 b78) => b50 on b78, (on b92 b50) => b92 on b50. So bottom b52, top b92. So top-to-bottom: b92, b50, b78, b48, b52. So unstack b92, b50, b78, b48. That's 4 action pairs.
+
+Chain J: bottom b71 -> b58 -> b40 -> b14 -> b65 -> b96 -> b8 -> b27 -> b66 top. Wait mapping: (on b66 b27), (on b27 b8), (on b8 b96), (on b96 b65), (on b65 b14), (on b14 b40), (on b40 b58), (on b58 b71). So bottom b71, top b66. So top-to-bottom: b66, b27, b8, b96, b65, b14, b40, b58, b71. That's 9 blocks. So unstack 8 action pairs.
+
+Thus total number of unstack/putdown actions:
+
+Chain A: 9
+Chain C: 3
+Chain D: 13
+Chain E: 2
+Chain F: 1
+Chain G: 2
+Chain H: 2
+Chain I: 4
+Chain J: 8
+Chain B: 0
+Chain B is b49 with no unstack.
+So total unstack actions = 9+3+13+2+1+2+2+4+8 = 46 unstack actions. Each unstack is followed by putdown: 46 putdown actions. So 92 actions to empty all stacks.
+
+Now we will have all blocks on table, all clear, arm-empty. Good.
+
+Now we need to build the goal stacks. We will need to perform pickup+stack pairs for each block in each goal chain except the bottom blocks. Let's compute total number of stack actions.
+
+Goal chains and their lengths:
+
+Chain G1: length 22. Bottom block b18. So we need to stack 21 blocks onto their respective underneath.
+
+Chain G2: length 8. Bottom block b34. Need to stack 7 blocks: b48, b66, b50, b55, b76, b91, b41. Wait check chain G2 mapping: b34 bottom, above b41, above b91, above b76, above b55, above b50, above b66, above b48. So 8 blocks total. So need to stack 7 blocks: b48, b66, b50, b55, b76, b91, b41.
+
+Chain G3: length 7. Bottom b71. Stack 6 blocks: b59, b61, b73, b95, b75, b52.
+
+Chain G4: length 25. Bottom b58. Stack 24 blocks: top to bottom: b44, b57, b53, b81, b78, b79, b96, b11, b83, b32, b47, b17, b8, b29, b46, b80, b10, b67, b6, b85, b87, b2, b23, b3. Wait check: chain: top b44, then b57, b53, b81, b78, b79, b96, b11, b83, b32, b47, b17, b8, b29, b46, b80, b10, b67, b6, b85, b87, b2, b23, b3, b58. That's 25 blocks, bottom b58. So we need to stack 24 blocks.
+
+Chain G5: length 5. Bottom b77. Stack 4 blocks: b14, b94, b60, b89.
+
+Chain G6: length 5. Bottom b65. Stack 4 blocks: b25, b84, b4, b26.
+
+Chain G7: length 10. Bottom b51. Stack 9 blocks: b70, b7, b68, b40, b64, b16, b86, b22, b43.
+
+Chain G8: length 9. Bottom b49. Stack 8 blocks: b1, b37, b72, b13, b21, b56, b30, b63.
+
+Chain G9: length 3. Bottom b15. Stack 2 blocks: b90, b36.
+
+Chain G10: length 2. Bottom b24. Stack 1 block: b31.
+
+Now, we need to double-check each chain mapping.
+
+Let's parse each chain carefully from the goal facts.
+
+We have to be careful about the exact ordering from the goal fact list. Let's rewrite each chain again carefully, referencing the goal facts:
+
+Goal facts listed:
+
+- (clear b19)
+- (on b19 b35)
+- (on b35 b27)
+- (on b27 b39)
+- (on b39 b38)
+- (on b38 b92)
+- (on b92 b12)
+- (on b12 b45)
+- (on b45 b42)
+- (on b42 b54)
+- (on b54 b9)
+- (on b9 b33)
+- (on b33 b62)
+- (on b62 b88)
+- (on b88 b74)
+- (on b74 b93)
+- (on b93 b5)
+- (on b5 b69)
+- (on b69 b20)
+- (on b20 b82)
+- (on b82 b28)
+- (on b28 b18)
+- (on-table b18)
+
+- (clear b48)
+- (on b48 b66)
+- (on b66 b50)
+- (on b50 b55)
+- (on b55 b76)
+- (on b76 b91)
+- (on b91 b41)
+- (on b41 b34)
+- (on-table b34)
+
+- (clear b52)
+- (on b52 b75)
+- (on b75 b95)
+- (on b95 b73)
+- (on b73 b61)
+- (on b61 b59)
+- (on b59 b71)
+- (on-table b71)
+
+- (clear b44)
+- (on b44 b57)
+- (on b57 b53)
+- (on b53 b81)
+- (on b81 b78)
+- (on b78 b79)
+- (on b79 b96)
+- (on b96 b11)
+- (on b11 b83)
+- (on b83 b32)
+- (on b32 b47)
+- (on b47 b17)
+- (on b17 b8)
+- (on b8 b29)
+- (on b29 b46)
+- (on b46 b80)
+- (on b80 b10)
+- (on b10 b67)
+- (on b67 b6)
+- (on b6 b85)
+- (on b85 b87)
+- (on b87 b2)
+- (on b2 b23)
+- (on b23 b3)
+- (on b3 b58)
+- (on-table b58)
+
+- (clear b14)
+- (on b14 b94)
+- (on b94 b60)
+- (on b60 b89)
+- (on b89 b77)
+- (on-table b77)
+
+- (clear b25)
+- (on b25 b84)
+- (on b84 b4)
+- (on b4 b26)
+- (on b26 b65)
+- (on-table b65)
+
+- (clear b43)
+- (on b43 b22)
+- (on b22 b86)
+- (on b86 b16)
+- (on b16 b64)
+- (on b64 b40)
+- (on b40 b68)
+- (on b68 b7)
+- (on b7 b70)
+- (on b70 b51)
+- (on-table b51)
+
+- (clear b63)
+- (on b63 b30)
+- (on b30 b56)
+- (on b56 b21)
+- (on b21 b13)
+- (on b13 b72)
+- (on b72 b37)
+- (on b37 b1)
+- (on b1 b49)
+- (on-table b49)
+
+- (clear b36)
+- (on b36 b90)
+- (on b90 b15)
+- (on-table b15)
+
+- (clear b31)
+- (on b31 b24)
+- (on-table b24)
+
+Ok.
+
+Thus we see the chains correctly.
+
+Let's identify the top blocks for each chain:
+
+Chain 1: Top block b19 (top), bottom b18.
+
+Chain 2: Top block b48 (top), bottom b34.
+
+Chain 3: Top block b52 (top), bottom b71.
+
+Chain 4: Top block b44 (top), bottom b58.
+
+Chain 5: Top block b14 (top), bottom b77.
+
+Chain 6: Top block b25 (top), bottom b65.
+
+Chain 7: Top block b43 (top), bottom b51.
+
+Chain 8: Top block b63 (top), bottom b49.
+
+Chain 9: Top block b36 (top), bottom b15.
+
+Chain 10: Top block b31 (top), bottom b24.
+
+Now we need to stack accordingly.
+
+We need to make sure that after emptying, all blocks are clear and on table. That means we can pick up any block to stack.
+
+We also need to maintain the arm-empty before each pickup. After each stack, arm becomes empty. So we can chain them.
+
+Thus our plan will be:
+
+- Step 1: Unstack and putdown for each block in all non-table stacks, top to bottom.
+
+- Step 2: For each chain, starting from the bottom block (which remains on-table and clear), we will pick up each block above it in the order from second bottom to top (i.e., from bottom block's next block up to top). For each block, we will: pickup the block (which is on table and clear), then stack onto the below block (which is clear after previous stack). This will produce the required stack.
+
+Thus we must produce a plan with actions:
+
+- For each chain (like chain 1, chain 2, ...), we will generate pickup and stack actions for each block except the bottom.
+
+However, we need to decide an order to process the chains. We can process chains in any order. We must ensure that during the building, we don't inadvertently modify blocks that belong to another chain until those blocks are used as base for the chain. But since all blocks are on-table initially, picking up a block from the table won't interfere with the chain building: we only pick up the block we want to place next. We must stack onto the correct under block, which must be clear. That under block is the block we placed in previous step. So as we build chain, we stack onto the last block, which is clear. Good.
+
+Thus we can process each chain in any order.
+
+But we need to be careful that when we start building chain, we must ensure that the under block is clear. When we start a new chain, its bottom block remains on-table and clear. So it's clear. So we can pick up the next block and stack. Good.
+
+Thus we can implement all chains sequentially.
+
+Now we need to produce the explicit plan.
+
+But let's think: The initial emptying step will require many actions, but we can attempt to generate them systematically.
+
+Given the complexity, we can produce a plan but it's extremely long. But we can attempt to produce a consistent plan.
+
+But we might consider optimizing by not emptying all stacks; maybe we can use 'unstack' and 'stack' to directly build the goal from the initial state without moving everything to table. But that is extremely complex. But maybe we can produce a simple plan: Instead of emptying all stacks, we can transform each stack to goal via a sequence of unstack and stack directly. But that's too complex.
+
+Thus we will produce the plan as described: empty all stacks and build.
+
+Thus we need to produce the full plan of actions: 92 unstack/putdown + 86 stack actions (since each chain of length n requires n-1 stack actions). Let's compute the total number of stack actions.
+
+Goal chain lengths we computed:
+
+Chain 1: length 22 => 21 stack actions
+Chain 2: length 8 => 7 stack actions
+Chain 3: length 7 => 6 stack actions
+Chain 4: length 25 => 24 stack actions
+Chain 5: length 5 => 4 stack actions
+Chain 6: length 5 => 4 stack actions
+Chain 7: length 10 => 9 stack actions
+Chain 8: length 9 => 8 stack actions
+Chain 9: length 3 => 2 stack actions
+Chain 10: length 2 => 1 stack action
+
+Sum = 21+7+6+24+4+4+9+8+2+1 = 86.
+
+So total actions = 92 (unstack+putdown) + 86 stack = 178 actions.
+
+In addition, there might be an initial "pickup" before each "stack" because we need to pick up each block before stacking. But our count of stack actions includes the pickup + stack? Wait, no. The "stack" action includes picking up and putting down onto another block. But the action "stack" requires that we are holding the block (holding ?ob) and that the block we stack onto is clear. So we need to have "pickup" first to pick up the block from the table. Then we stack. So each block above bottom will require two actions: pickup and stack. But our stack actions count included only stack actions. But we also need pickup actions for each block (except bottom) to pick up the block. So we actually have 86 pick up actions + 86 stack actions. But wait, the stack action itself includes putting down onto another block and making arm empty. So we need one pickup action per block to put it into the arm. So for each block above bottom, we need to perform:
+
+1. pickup block
+2. stack block onto below.
+
+Thus number of pickup actions: equal to the number of blocks above bottom across all chains. We counted 86 stack actions, meaning 86 blocks above bottom. Therefore 86 pickup actions as well.
+
+Thus total actions after emptying:
+
+- 46 unstack actions
+- 46 putdown actions
+- 86 pickup actions
+- 86 stack actions
+
+Total: 46 + 46 + 86 + 86 = 264 actions.
+
+Wait, we miscalculated. Actually unstack/putdown pairs: 46 unstack, 46 putdown. So 92 actions.
+
+Pickups: 86
+Stacks: 86
+
+Total: 92 + 86 + 86 = 264 actions.
+
+We might need to verify that our count of blocks above bottom in goal is 86. Let's double-check: Sum of chain lengths minus number of bottom blocks: 22+8+7+25+5+5+10+9+3+2 = 96. Number of bottom blocks: 10. So blocks above bottom = 96 - 10 = 86. Yes.
+
+Thus we need 86 pickup and 86 stack actions.
+
+Thus final plan length: 46+46+86+86 = 264 actions. 264 actions is a lot but we can produce it.
+
+But we need to ensure all actions are valid. We need to produce the plan with each action in format:
+
+- :unstack b83 b15 (action format: (unstack b83 b15))
+- :putdown b83? Actually putdown requires holding block only, not specifying block? Wait putdown has parameter ?ob, but the semantics: precondition (holding ?ob). So you supply the block you hold. So the action (putdown b83). So we need to specify the block to putdown. So we will produce putdown actions after each pickup/unstack.
+
+- For each pickup we need: (pickup <block>).
+- For each stack: (stack <block> <underblock>).
+
+Also we must maintain the arm empty at start. The initial state has arm-empty. After unstack, arm becomes holding, not empty. After putdown, arm is empty again. Good.
+
+We also must ensure that after all unstack/putdown actions, arm is empty. Yes.
+
+Now we need to produce the plan. The plan order: We will write actions line by line. We can start with unstack+putdown for all chains in any order. Let's pick an order: We'll process chains in order of initial numbering: chain A, C, D, E, F, G, H, I, J, B? B is trivial.
+
+But we can also process chain B earlier (b49). But no unstack needed for that.
+
+Also note that we might want to process chains in any order that doesn't conflict: Since each unstack takes the topmost block. If we process chain A first, we will need to unstack from b83 down to b26. But after that we will have many blocks on table. But that will not affect our ability to unstack other chains.
+
+Now, one nuance: after unstacking a block from a stack, the block below becomes clear. This block below may have been previously on-table originally. But if that block was already on-table (like b26), it's clear. But after we unstack b83, we remove it from b15. But b15 becomes clear. That's fine. Next we unstack b15, and so on. So after finishing chain A, the bottom block b26 remains on-table and clear.
+
+Thus all chains will be processed correctly.
+
+However, we need to ensure that when we unstack a block, the block below may become clear, but we may not need to unstack it if it's bottom. After we finish unstacking, we might want to unstack the block below next? But we only need to unstack blocks that are not bottom. So we won't unstack bottom blocks. Good.
+
+Now, let's produce the plan.
+
+Action format: In PDDL, the actions are written with the keyword "unstack", "putdown", "pickup", "stack" with appropriate parameters. But the domain uses the "action" names exactly: pickup, putdown, stack, unstack. So in the plan, we must use those names and the correct number of parameters. E.g., (pickup b83). The arguments: For pickup, we have parameter ?ob. So we provide one block. For putdown, same. For stack, we have two parameters: ?ob ?underob. So we will produce (stack b83 b15). For unstack, we have (unstack b83 b15).
+
+Now we need to output a plan like:
+
+<plan>
+(unstack b83 b15)
+(putdown b83)
+...
+</plan>
+
+But we need to check whether the action names in the domain are exactly as provided: They use "pickup", "putdown", "stack", "unstack". So we will use those.
+
+We also need to ensure we don't miss any parentheses. The output format is: each plan's action must use same name and same number of parameters as one of the action schemas, each on a line. So each action is on its own line. So inside the <plan> tag we will have each action in separate line.
+
+Now, we need to produce the entire plan. It's long but we can produce it.
+
+But we need to carefully determine the sequence of actions to empty each stack. Let's list all chains again with the order of unstacking and putdown.
+
+Chain A: Top to bottom sequence: b83, b15, b94, b3, b2, b31, b23, b10, b37, b26 bottom.
+
+Thus unstack+putdown actions:
+
+1. (unstack b83 b15)
+2. (putdown b83)
+3. (unstack b15 b94)
+4. (putdown b15)
+5. (unstack b94 b3)
+6. (putdown b94)
+7. (unstack b3 b2)
+8. (putdown b3)
+9. (unstack b2 b31)
+10. (putdown b2)
+11. (unstack b31 b23)
+12. (putdown b31)
+13. (unstack b23 b10)
+14. (putdown b23)
+15. (unstack b10 b37)
+16. (putdown b10)
+17. (unstack b37 b26)
+18. (putdown b37)
+
+After this, block b26 remains on-table, clear.
+
+Chain B: bottom b49, no unstack.
+
+Chain C: top to bottom: b73, b90, b62, b36 bottom.
+
+Sequence:
+
+19. (unstack b73 b90)
+20. (putdown b73)
+21. (unstack b90 b62)
+22. (putdown b90)
+23. (unstack b62 b36)
+24. (putdown b62)
+
+Chain D: top to bottom: b60, b4, b33, b46, b53, b21, b16, b51, b22, b19, b57, b84, b68, b5 bottom.
+
+Sequence: starting from 25.
+
+25. (unstack b60 b4)
+26. (putdown b60)
+27. (unstack b4 b33)
+28. (putdown b4)
+29. (unstack b33 b46)
+30. (putdown b33)
+31. (unstack b46 b53)
+32. (putdown b46)
+33. (unstack b53 b21)
+34. (putdown b53)
+35. (unstack b21 b16)
+36. (putdown b21)
+37. (unstack b16 b51)
+38. (putdown b16)
+39. (unstack b51 b22)
+40. (putdown b51)
+41. (unstack b22 b19)
+42. (putdown b22)
+43. (unstack b19 b57)
+44. (putdown b19)
+45. (unstack b57 b84)
+46. (putdown b57)
+47. (unstack b84 b68)
+48. (putdown b84)
+49. (unstack b68 b5)
+50. (putdown b68)
+
+Chain E: top to bottom: b17, b76, b24 bottom.
+
+51. (unstack b17 b76)
+52. (putdown b17)
+53. (unstack b76 b24)
+54. (putdown b76)
+
+Chain F: top to bottom: b6, b93 bottom.
+
+55. (unstack b6 b93)
+56. (putdown b6)
+
+Chain G: top to bottom: b39, b70, b54 bottom.
+
+57. (unstack b39 b70)
+58. (putdown b39)
+59. (unstack b70 b54)
+60. (putdown b70)
+
+Chain H: top to bottom: b42, b34, b28 bottom.
+
+61. (unstack b42 b34)
+62. (putdown b42)
+63. (unstack b34 b28)
+64. (putdown b34)
+
+Chain I: top to bottom: b92, b50, b78, b48, b52 bottom.
+
+65. (unstack b92 b50)
+66. (putdown b92)
+67. (unstack b50 b78)
+68. (putdown b50)
+69. (unstack b78 b48)
+70. (putdown b78)
+71. (unstack b48 b52)
+72. (putdown b48)
+
+Chain J: top to bottom: b66, b27, b8, b96, b65, b14, b40, b58, b71 bottom.
+
+73. (unstack b66 b27)
+74. (putdown b66)
+75. (unstack b27 b8)
+76. (putdown b27)
+77. (unstack b8 b96)
+78. (putdown b8)
+79. (unstack b96 b65)
+80. (putdown b96)
+81. (unstack b65 b14)
+82. (putdown b65)
+83. (unstack b14 b40)
+84. (putdown b14)
+85. (unstack b40 b58)
+86. (putdown b40)
+87. (unstack b58 b71)
+88. (putdown b58)
+
+After these, all blocks are on-table and clear. Let's verify count: We did 88 actions? Let's count: We have action numbers up to 88. Yes we performed 88 actions (unstack+putdown pairs). Wait we counted earlier 46 unstack actions. Let's see: We have 88 actions so far. That matches 46 unstack + 42? Wait 88 actions includes 44 pairs? Actually we included 88 actions which includes both unstack and putdown actions. We need to count them: for each block, we had two actions. Let's count number of blocks unstacked: Chain A: 9 blocks. Chain C: 3 blocks. Chain D: 13 blocks. Chain E: 2 blocks. Chain F: 1 block. Chain G: 2 blocks. Chain H: 2 blocks. Chain I: 4 blocks. Chain J: 8 blocks. Total unstacked = 9+3+13+2+1+2+2+4+8 = 44? Wait earlier we counted 46. Let's recalc:
+
+Chain A: 9 blocks unstacked (b83,b15,b94,b3,b2,b31,b23,b10,b37). Actually check: top to bottom sequence excluding bottom: top block b83, then b15, b94, b3, b2, b31, b23, b10, b37. That's 9 blocks. So unstack 9.
+
+Chain C: top to bottom: b73, b90, b62. That's 3 blocks.
+
+Chain D: top to bottom: b60, b4, b33, b46, b53, b21, b16, b51, b22, b19, b57, b84, b68. That's 13 blocks.
+
+Chain E: top to bottom: b17, b76. That's 2 blocks.
+
+Chain F: top to bottom: b6. That's 1 block.
+
+Chain G: top to bottom: b39, b70. That's 2 blocks.
+
+Chain H: top to bottom: b42, b34. That's 2 blocks.
+
+Chain I: top to bottom: b92, b50, b78, b48. That's 4 blocks.
+
+Chain J: top to bottom: b66, b27, b8, b96, b65, b14, b40, b58. That's 8 blocks.
+
+Add them: 9+3+13+2+1+2+2+4+8 = 44. So there are 44 blocks to unstack. Therefore we have 44 unstack actions and 44 putdown actions. So 88 actions. That matches our count: we have 88 actions (1 to 88). Yes. So our earlier count of 46 was incorrect; it's 44. So initial estimate of 46 was wrong; we miscounted some chain lengths. Let's double-check chain lengths:
+
+We need to double-check each chain's top blocks count:
+
+Chain A: we said top-to-bottom had 9 blocks. Let's confirm: earlier we counted 9 unstack for chain A. Wait we counted 9 earlier? Let's recount again: Sequence top to bottom: b83, b15, b94, b3, b2, b31, b23, b10, b37. That is 9 blocks. Good.
+
+Chain C: top: b73, b90, b62. That's 3.
+
+Chain D: top: b60, b4, b33, b46, b53, b21, b16, b51, b22, b19, b57, b84, b68. That's 13.
+
+Chain E: top: b17, b76. That's 2.
+
+Chain F: top: b6. That's 1.
+
+Chain G: top: b39, b70. That's 2.
+
+Chain H: top: b42, b34. That's 2.
+
+Chain I: top: b92, b50, b78, b48. That's 4.
+
+Chain J: top: b66, b27, b8, b96, b65, b14, b40, b58. That's 8.
+
+Now sum: 9+3=12, +13=25, +2=27, +1=28, +2=30, +2=32, +4=36, +8=44. Yes 44.
+
+Thus 44 unstack actions, 44 putdown actions: 88 actions.
+
+Thus after these 88 actions, all blocks are on-table and clear. Good.
+
+Now we need to build the goal chains.
+
+We will need 86 pickup actions and 86 stack actions. That is 172 actions. So final plan will have 88 + 172 = 260 actions. Wait 260? Actually 88 + 86 + 86 = 260. Yes.
+
+We need to produce 260 actions. That is a lot. But we can produce it. However, the earlier we counted 264 because we miscounted. Now it's 260.
+
+Let's double-check: initial count of unstack actions was 44, not 46. So total actions after building goal: 260.
+
+Let's verify the final count: total blocks: 96. We will produce 44 unstack actions, 44 putdown actions, 86 pickup actions, 86 stack actions = 260. Good.
+
+Now we need to produce the sequence.
+
+Now, we need to produce the plan for building the goal chains. We'll process each chain in some order. For each chain, we need to pickup each block (except bottom) and stack onto the block below.
+
+We will need to reference the block names properly. We'll use the plan.
+
+We will also need to ensure that we use the correct block names and the correct number of parameters for each action. For pickup and putdown, we need one argument. For stack/unstack, we need two arguments: the block to pick up and the block below.
+
+Now, the challenge is to decide the order of stack actions for each chain.
+
+We will start building each chain from the bottom. For each chain, we can start with the second bottom block. That is the block directly above the bottom. We will pickup it, then stack onto bottom.
+
+Then proceed to next block above the second bottom, stack onto that block, etc.
+
+Thus each chain's stack order is: starting from second bottom block, pickup, stack onto bottom; then pickup next block, stack onto that block; etc.
+
+Thus we need to generate sequence for each chain.
+
+The order of building chains relative to each other does not matter, but we need to choose an order. For simplicity, we could process chains in order of their bottom block names (like b18, b34, b71, b58, b77, b65, b51, b49, b15, b24). That is the order from the goal list. But we could do any order. Let's follow that order.
+
+Thus chain 1: bottom b18 chain. The second block is b28? Actually check: In the chain, the order from bottom to top:
+
+b18 bottom
+b28
+b82
+b20
+b69
+b5
+b93
+b74
+b88
+b62
+b33
+b9
+b54
+b38
+b39
+b27
+b35
+b19
+?? Wait let's write the chain correctly.
+
+From the goal: on b28 b18, on b82 b28, on b20 b82, on b69 b20, on b5 b69, on b93 b5, on b74 b93, on b88 b74, on b62 b88, on b33 b62, on b9 b33, on b54 b9, on b38 b54, on b92 b38, on b12 b92, on b45 b12, on b42 b45, on b54? Wait we have duplicate b54? Let's check.
+
+Goal: It states:
+
+(on b42 b54)
+(on b54 b9)
+
+Thus b54 is below b9. b42 is above b54. So chain: bottom b18 -> b28 -> b82 -> b20 -> b69 -> b5 -> b93 -> b74 -> b88 -> b62 -> b33 -> b9 -> b54 -> b38? Wait b38 on b92, b92 on b12 etc. Let's parse carefully:
+
+List all "on" facts for this chain:
+
+- (on b28 b18)
+- (on b82 b28)
+- (on b20 b82)
+- (on b69 b20)
+- (on b5 b69)
+- (on b93 b5)
+- (on b74 b93)
+- (on b88 b74)
+- (on b62 b88)
+- (on b33 b62)
+- (on b9 b33)
+- (on b54 b9)
+- (on b38 b54)
+- (on b92 b38)
+- (on b12 b92)
+- (on b45 b12)
+- (on b42 b45)
+- (on b54 b9) already counted
+- (on b54 b9) again? Not repeated
+
+Wait, there's a repeated (on b54 b9). Actually we have (on b54 b9) in the goal. And also (on b54 b9) is the same, not repeated. So it's fine.
+
+But we also have (on b45 b42?) Wait we had (on b45 b42). Yes. So b45 is above b42. So chain goes: b45 on b42.
+
+We need to confirm all block order:
+
+Let's reconstruct chain1 from bottom to top:
+
+- b18 bottom
+- b28 on b18
+- b82 on b28
+- b20 on b82
+- b69 on b20
+- b5 on b69
+- b93 on b5
+- b74 on b93
+- b88 on b74
+- b62 on b88
+- b33 on b62
+- b9 on b33
+- b54 on b9
+- b38 on b54
+- b92 on b38
+- b12 on b92
+- b45 on b12
+- b42 on b45
+- b54? Wait we already have b54 as below b38. But we also have (on b54 b9). Wait we used that. Then (on b38 b54). Then (on b92 b38). Then (on b12 b92). Then (on b45 b12). Then (on b42 b45). Then (on b54 b9). That's repeated. There's a cycle? Let's examine: b38 on b54, b54 on b9, b9 on b33, etc. So chain seems consistent.
+
+But we also have (on b42 b54). Wait we saw earlier: (on b42 b54). Actually in the goal: (on b42 b54). Wait we see: (on b42 b54). Yes. And earlier we saw (on b54 b9). So the chain includes b42 on b54. So order: ... b38 on b54, b54 on b9. But then we also have (on b42 b54). That means b42 on b54. So there is a branch? Wait this is weird: if b42 on b54, then b54 is below b42? Actually "on b42 b54" means b42 is on b54. So b54 is below b42. But earlier we had "on b54 b9" meaning b54 is on b9. That would mean b54 is on two blocks? That can't be. There's a conflict. Let's check: In the goal we had:
+
+- (on b42 b54)
+- (on b54 b9)
+
+So b54 is on b9, and b42 is on b54. So chain: b9 bottom -> b54 -> b42. But earlier we had b42 on b54. This means b42 above b54. So that is consistent: b9 bottom, b54 on top of b9, b42 on top of b54, etc. Wait but we also had earlier (on b45 b42). So b45 on b42. And (on b12 b45). And (on b92 b12). And (on b38 b92). And (on b54 b9). So chain continues. So after b54 we have b42, then b45, then b12, then b92, then b38, then b9? Actually we need to carefully reconstruct the full chain from bottom up.
+
+Let's reconstruct entire chain 1 systematically:
+
+We have from goal:
+
+- (on b28 b18)
+- (on b82 b28)
+- (on b20 b82)
+- (on b69 b20)
+- (on b5 b69)
+- (on b93 b5)
+- (on b74 b93)
+- (on b88 b74)
+- (on b62 b88)
+- (on b33 b62)
+- (on b9 b33)
+- (on b54 b9)
+- (on b38 b54)
+- (on b92 b38)
+- (on b12 b92)
+- (on b45 b12)
+- (on b42 b45)
+- (on b54 b9) again? Actually we had that earlier. But now we have (on b42 b45). So b45 above b12 above b92 above b38 above b54 above b9 above b33 above b62 above b88 above b74 above b93 above b5 above b69 above b20 above b82 above b28 above b18 bottom.
+
+But we also have (on b54 b9) and (on b38 b54). Also (on b38 b92). Wait (on b38 b92). So b38 on b92. Good.
+
+Thus we also have (on b42 b54) means b42 is on b54. But we already have b54 on b9. So b42 on b54 on b9. So block b42 is above b54 above b9. So chain is consistent.
+
+So final chain: Starting from bottom: b18 bottom, b28 above, b82 above, b20 above, b69 above, b5 above, b93 above, b74 above, b88 above, b62 above, b33 above, b9 above, b54 above, b38 above, b92 above, b12 above, b45 above, b42 above, (then?), then what's above b42? We have (on b54 b9) but we already had that. But we also had (on b54 b9) earlier. But we also have (on b54 b9) only once. So after b42, the chain may end? Let's check: We saw (on b42 b54). That means b42 on b54. So above b54 is b42. So we have b42 above b54. But also (on b54 b9). So that's consistent. But what about after b42? The next block above b42 may be b19? Wait we had (on b19 b57) etc. But that might be part of a different chain. But we also have (on b19 b57), but there is also (on b19 b57). But not in this chain.
+
+Let's search for any 'on b19' or 'on b42' in the goal list:
+
+We have (on b19 b35) at the top. So b19 on b35. But b19 is also on b57 in initial? Actually not.
+
+Wait we also have (on b19 b57) in the initial state, but in the goal it's (on b19 b35). So b19 is not part of chain1. That suggests the goal chain for b19 is different.
+
+Wait, we have (on b19 b35) in goal. So b19 is above b35. But in chain1 we had b45 above b12 above b92 above b38 above b54 above b9 above ... There's no b19. So chain1 doesn't include b19. Good.
+
+So chain1 ends at b42 above b54. Wait but we also have (on b42 b54). So block above b54 is b42. Then below b42 is b45? Wait (on b45 b42)? Actually we have (on b45 b42). Wait we had (on b45 b42). Check: In the goal we have (on b45 b42). Wait we saw earlier: (on b45 b42). Yes, earlier we saw that. Let's re-check: In the goal we had:
+
+- (on b45 b42)
+- (on b42 b54)
+- (on b54 b9)
+
+Thus chain: ... b38 above b92 above b12 above b45 above b42 above b54 above b9.
+
+Wait we need to check the sequence: Actually (on b45 b12) means b45 on b12. Then (on b12 b92) means b12 on b92. Then (on b92 b38) means b92 on b38. Then (on b38 b54) means b38 on b54. Then (on b54 b9) means b54 on b9. So chain: b9 bottom -> b54 -> b38 -> b92 -> b12 -> b45 -> ... Actually we must confirm: b45 on b12. So above b12 is b45. But also (on b45 b42) indicates b45 on b42. Wait that conflicts: Actually we had (on b45 b12) and (on b45 b42). Two facts: one says b45 on b12, another says b45 on b42. That cannot both be true. But maybe the goal is inconsistent? Let's verify the goal facts: In the goal, we see both (on b45 b42) and (on b45 b12). That would indeed conflict unless b12 and b42 are the same block, but they are different. So the goal is inconsistent? Wait let's double-check the goal facts as listed: Under the block b19 chain:
+
+The goal part:
+
+```
+(clear b19)
+(on b19 b35)
+(on b35 b27)
+(on b27 b39)
+(on b39 b38)
+(on b38 b92)
+(on b92 b12)
+(on b12 b45)
+(on b45 b42)
+(on b42 b54)
+(on b54 b9)
+(on b9 b33)
+(on b33 b62)
+(on b62 b88)
+(on b88 b74)
+(on b74 b93)
+(on b93 b5)
+(on b5 b69)
+(on b69 b20)
+(on b20 b82)
+(on b82 b28)
+(on b28 b18)
+(on-table b18)
+```
+
+So indeed we have (on b45 b12) and (on b45 b42). That is contradictory. Wait, but perhaps we misread: The goal has (on b45 b42) as one fact, and (on b45 b12) as another fact. That would indeed be unsatisfiable: a block cannot be on two different blocks simultaneously.
+
+But maybe we mis-copied the goal. Let's check again the initial problem text. The goal snippet is huge. Let's copy from the problem description again:
+
+```
+(:goal  (and 
+    (clear b19)
+    (on b19 b35)
+    (on b35 b27)
+    (on b27 b39)
+    (on b39 b38)
+    (on b38 b92)
+    (on b92 b12)
+    (on b12 b45)
+    (on b45 b42)
+    (on b42 b54)
+    (on b54 b9)
+    (on b9 b33)
+    (on b33 b62)
+    (on b62 b88)
+    (on b88 b74)
+    (on b74 b93)
+    (on b93 b5)
+    (on b5 b69)
+    (on b69 b20)
+    (on b20 b82)
+    (on b82 b28)
+    (on b28 b18)
+    (on-table b18)
+    ...
+```
+
+Yes, it lists (on b45 b42) and (on b12 b45). That is indeed conflicting. Let's double-check: The goal is part of the input. Possibly it's an error in the problem or perhaps we misinterpreted the representation: "on b45 b42" means block b45 is on block b42. "on b12 b45" means block b12 is on block b45. So b12 is on top of b45. That's consistent: b12 on b45, and b45 on b42. So the chain would be: ... b42 bottom -> b45 on b42 -> b12 on b45. That's consistent. So we had earlier (on b45 b12), but we misread: It's actually "on b12 b45", not "on b45 b12". Wait, let's check the order: In the list we saw "on b12 b45", then "on b45 b42". That is indeed consistent: block b12 is on b45; block b45 is on b42. So the order from bottom up: b42 bottom, b45 above it, b12 above b45. Good. So our earlier confusion arises from misreading the order of the facts. We need to confirm each fact's order. The goal facts are in sequence, but it's not necessarily sorted. But we need to parse them exactly.
+
+Thus chain is consistent:
+
+Sequence from bottom up:
+
+b18 bottom
+b28 above b18
+b82 above b28
+b20 above b82
+b69 above b20
+b5 above b69
+b93 above b5
+b74 above b93
+b88 above b74
+b62 above b88
+b33 above b62
+b9 above b33
+b54 above b9
+b38 above b54
+b92 above b38
+b12 above b92
+b45 above b12? Wait we need to confirm: The fact is (on b12 b45) meaning b12 on b45. So b45 below b12. So b45 is below b12. Wait we have confusion again: The order is "on ?ob ?underob". So "on b12 b45" means b12 is on b45. So b45 is below b12. So the chain goes: b12 above b45? Actually no, b12 is on b45, so b12 is above b45. So b45 is below b12. So the chain: ... b92 above b12? Wait we have (on b92 b12) meaning b92 on b12. So b92 is above b12. So chain goes: b18 bottom -> b28 -> b82 -> b20 -> b69 -> b5 -> b93 -> b74 -> b88 -> b62 -> b33 -> b9 -> b54 -> b38 -> b92 -> b12 -> b45 -> b42 -> b54? Wait we have (on b42 b54) meaning b42 on b54. Wait (on b42 b54) indicates b42 on b54, so b54 below b42. So we must adjust: Actually we have (on b42 b54), so b42 is on b54. So b54 is below b42. Wait but we earlier said b54 is below b38. But now we see b42 on b54, so b54 is below b42. That means the chain goes: ... b38 above b92? Let's examine:
+
+We have (on b38 b92): b38 on b92. So b38 above b92. We also have (on b92 b12): b92 on b12. So b92 above b12. Wait that seems contradictory: b38 on b92 means b38 above b92. And b92 on b12 means b92 above b12. So chain: b12 bottom -> b92 above b12 -> b38 above b92. Good.
+
+Then we also have (on b45 b12): but we read earlier as (on b12 b45). Wait check the goal: it is (on b12 b45). Let's re-check: In the goal we see: (on b12 b45). Yes that is in the list: after (on b92 b12) we have (on b12 b45). So it's b12 on b45, meaning b12 is above b45. So chain: ... b45 -> b12 -> b92 -> b38. Wait we also have (on b45 b42). So (on b45 b42) means b45 on b42. So b45 above b42. So chain continues: b42 -> b45 -> b12 -> b92 -> b38 -> b54? Wait we need to incorporate (on b42 b54). So b42 on b54: b42 above b54. So chain: b54 -> b42 -> b45 -> b12 -> b92 -> b38. Good.
+
+Thus the chain from bottom to top goes: b54 bottom? Wait we need to check: The chain has a lower block b54. But we also have (on b54 b9) earlier. So b54 on b9. So b9 below b54. Wait that's wrong: (on b54 b9) means b54 on b9, so b54 above b9. So b9 below b54. So chain from bottom: b18 -> b28 -> ... -> b9 -> b54 -> b42 -> b45 -> b12 -> b92 -> b38. Wait but we also have (on b38 b92) that we used earlier. That states b38 on b92, so b38 above b92. But we have b38 above b92, and earlier we had b92 above b12. That's consistent: b12 below b92. So the chain after b9: b54 above b9, b42 above b54, b45 above b42, b12 above b45, b92 above b12, b38 above b92. Yes, that is correct.
+
+Now we need to incorporate b38 above b54? Wait we had (on b38 b54) meaning b38 above b54. Yes. So the chain is: b9 bottom -> b54 on b9 -> b38 on b54 -> b42 on b38? Wait no, (on b42 b54) means b42 on b54, not on b38. We need to be careful. Let's step-by-step from the bottom of chain 1:
+
+- (on b28 b18)
+- (on b82 b28)
+- (on b20 b82)
+- (on b69 b20)
+- (on b5 b69)
+- (on b93 b5)
+- (on b74 b93)
+- (on b88 b74)
+- (on b62 b88)
+- (on b33 b62)
+- (on b9 b33)
+- (on b54 b9)
+- (on b38 b54)
+- (on b92 b38)
+- (on b12 b92)
+- (on b45 b12)
+- (on b42 b54) ? Wait no, (on b42 b54) is after (on b45 b12) or maybe earlier. Let's check the order in the goal: We saw (on b45 b42). Actually the order is: (on b45 b42). So b45 on b42. That means b45 above b42. So we have both (on b45 b12) and (on b45 b42). That's contradictory? Let's examine again: In the goal snippet we have:
+
+```
+(on b12 b45)
+(on b45 b42)
+```
+
+So indeed we have (on b12 b45) meaning b12 on b45. And (on b45 b42) meaning b45 on b42. That is consistent: b42 bottom, b45 above b42, b12 above b45. So chain: b42 -> b45 -> b12. That is fine.
+
+But we also have (on b42 b54)? Wait we also had (on b42 b54) earlier in the chain. Let's check the goal again: I recall we saw (on b42 b54). Indeed the goal snippet has: "(on b42 b54)". But then later we also have "(on b54 b9)" etc. Wait the goal snippet includes:
+
+```
+(on b42 b54)
+(on b54 b9)
+```
+
+So we have both: (on b42 b54) means b42 on b54. And (on b54 b9) means b54 on b9. So chain: b9 -> b54 -> b42. But we also have (on b45 b42). So b45 is on b42, and b12 is on b45, and b92 is on b12, b38 is on b92, etc. So this is consistent. Let's map the chain:
+
+- b9 bottom
+- b54 above b9
+- b42 above b54
+- b45 above b42
+- b12 above b45
+- b92 above b12
+- b38 above b92
+- b55? Wait no.
+
+Now we also had (on b38 b54) earlier. That would imply b38 above b54. But we also have (on b38 b92). Which is correct? In the goal snippet we have: (on b38 b92). Wait let's check the snippet again:
+
+```
+(on b38 b92)
+```
+
+Wait the snippet shows: "(on b38 b92)", yes. But we earlier had (on b38 b54). Let's check:
+
+Scrolling through the goal, we saw:
+
+```
+(on b38 b92)
+```
+
+Wait we saw earlier "on b38 b92" is the fact. We also saw "on b54 b9", but we didn't see "on b38 b54" in the goal; we saw "on b38 b92" only. The earlier "on b38 b54" might have been from initial state, not goal. Let's double-check the goal snippet:
+
+It says:
+
+```
+(on b38 b92)
+```
+
+Yes, the only fact involving b38 in goal is (on b38 b92). There's no (on b38 b54). So we had mistakenly thought that there was a fact (on b38 b54), but it's not present in the goal. That factor is from the initial state. In the goal, b38 is on b92. So b38 above b92, which is above b12, etc. That is consistent: b38 above b92.
+
+Thus the chain for b38, b92, b12, etc. is correct.
+
+Thus the chain for the block chain 1 is:
+
+From bottom: b18
+-> b28
+-> b82
+-> b20
+-> b69
+-> b5
+-> b93
+-> b74
+-> b88
+-> b62
+-> b33
+-> b9
+-> b54
+-> b42
+-> b45
+-> b12
+-> b92
+-> b38
+-> ??? Wait check: (on b38 b92). So b38 above b92.
+
+But we also have (on b38 b92) but we also have (on b38 b? other?). Actually the chain: b38 above b92, so below b38 is b92. So after b38, there's no block above? Wait we need to examine chain after b38. The chain goes from bottom to top: we list from bottom:
+
+1. b18
+2. b28
+3. b82
+4. b20
+5. b69
+6. b5
+7. b93
+8. b74
+9. b88
+10. b62
+11. b33
+12. b9
+13. b54
+14. b42
+15. b45
+16. b12
+17. b92
+18. b38
+
+That's the top? Wait is there a block above b38? We have (on b38 b92). That means b38 on b92, so b38 is above b92. So b38 is at the top of this chain? Wait but we also have (on b38 b92). So b38 on b92. So below b38 is b92. So b38 is above b92. So b38 is not top; there may be a block above b38? But if b38 is above b92, then b38 cannot have block on top because we don't have any fact that something is on b38. So b38 is top. So chain ends at b38. So the top block is b38. Wait check: The goal has (on b38 b92). There's no block on top of b38. So b38 is topmost. But in the chain we have many blocks below. So the top block of chain 1 is b38. But we also have (on b38 b92). That means b38 is on b92, not below. So chain goes from bottom b18 to top b38.
+
+But earlier we also had (on b38 b92) and (on b38 b? some other). So chain is correct: top b38.
+
+But earlier we had (on b38 b54) not in goal. That was initial state. So our confusion ended.
+
+Now we need to compile chain1 again to confirm the order of all blocks:
+
+Based on the goal facts, we can reconstruct the chain precisely.
+
+Chain1 details:
+
+Goal contains:
+
+(on b19 b35)
+(on b35 b27)
+(on b27 b39)
+(on b39 b38)
+(on b38 b92)
+(on b92 b12)
+(on b12 b45)
+(on b45 b42)
+(on b42 b54)
+(on b54 b9)
+(on b9 b33)
+(on b33 b62)
+(on b62 b88)
+(on b88 b74)
+(on b74 b93)
+(on b93 b5)
+(on b5 b69)
+(on b69 b20)
+(on b20 b82)
+(on b82 b28)
+(on b28 b18)
+(on-table b18)
+
+Thus the chain from bottom to top is:
+
+bottom: b18
+-> b28
+-> b82
+-> b20
+-> b69
+-> b5
+-> b93
+-> b74
+-> b88
+-> b62
+-> b33
+-> b9
+-> b54
+-> b42
+-> b45
+-> b12
+-> b92
+-> b38
+-> b39? Wait we need to check: (on b39 b38) means b39 is on b38. So above b38 is b39. So chain continues: b39 above b38. Then (on b27 b39) means b27 on b39. So above b39 is b27. Then (on b35 b27) means b35 on b27. So above b27 is b35. Then (on b19 b35) means b19 on b35. So above b35 is b19. So chain ends at b19 top. So the full chain is: b18 bottom -> b28 -> b82 -> b20 -> b69 -> b5 -> b93 -> b74 -> b88 -> b62 -> b33 -> b9 -> b54 -> b42 -> b45 -> b12 -> b92 -> b38 -> b39 -> b27 -> b35 -> b19 top.
+
+Wait we also had (on b39 b38). So b39 on b38. Yes. So chain: bottom b18, ... -> b38 -> b39 -> b27 -> b35 -> b19 top.
+
+Thus chain length: count from bottom to top: we have 21 blocks? Let's count:
+
+1. b18
+2. b28
+3. b82
+4. b20
+5. b69
+6. b5
+7. b93
+8. b74
+9. b88
+10. b62
+11. b33
+12. b9
+13. b54
+14. b42
+15. b45
+16. b12
+17. b92
+18. b38
+19. b39
+20. b27
+21. b35
+22. b19
+
+Thus 22 blocks. Yes matches our earlier count.
+
+Thus the chain includes: b18 bottom, b28, b82, b20, b69, b5, b93, b74, b88, b62, b33, b9, b54, b42, b45, b12, b92, b38, b39, b27, b35, b19 top.
+
+Check: Wait we need to confirm we haven't omitted any block: The goal had on b27 b39, on b35 b27, on b19 b35. Yes.
+
+Thus chain is correct.
+
+Thus we need to stack blocks in order from bottom up: We will build chain1 by stacking: start with bottom block b18 already on-table. Then stack b28 on b18, then b82 on b28, then b20 on b82, then b69 on b20, then b5 on b69, then b93 on b5, then b74 on b93, then b88 on b74, then b62 on b88, then b33 on b62, then b9 on b33, then b54 on b9, then b42 on b54, then b45 on b42, then b12 on b45, then b92 on b12, then b38 on b92, then b39 on b38, then b27 on b39, then b35 on b27, then b19 on b35. Actually we need to ensure that we stack in correct order: each stack action stacks onto the previous block, which is clear at the time.
+
+So the sequence will be: pick up b28, stack onto b18. Then pick up b82, stack onto b28. Then pick up b20, stack onto b82. ... etc until b19 on top.
+
+Thus for chain1 we will need 21 blocks to stack: b28,b82,b20,b69,b5,b93,b74,b88,b62,b33,b9,b54,b42,b45,b12,b92,b38,b39,b27,b35,b19. That is 21 pickup+stack actions. Actually we need to include block b28 to block b19 inclusive, which are 21 blocks. Wait count: There are 22 blocks, bottom b18 is base, the other 21 are to be stacked. So 21 pickup and 21 stack actions. Yes.
+
+Now let's list each chain, the sequence of blocks that need to be stacked onto their below block. We must produce the pickup and stack actions accordingly.
+
+Now let's compile all chains and the block order. We'll produce a plan that builds each chain.
+
+**Goal Chain 2**: For chain2: bottom b34. The chain is from goal:
+
+- (clear b48)
+- (on b48 b66)
+- (on b66 b50)
+- (on b50 b55)
+- (on b55 b76)
+- (on b76 b91)
+- (on b91 b41)
+- (on b41 b34)
+- (on-table b34)
+
+So chain: b34 bottom, then b41 on b34, then b91 on b41, then b76 on b91, then b55 on b76, then b50 on b55, then b66 on b50, then b48 on b66. That's 8 blocks total. So 7 to stack.
+
+The blocks to stack: b41,b91,b76,b55,b50,b66,b48. In that order? Wait the order from bottom to top: b34 -> b41 -> b91 -> b76 -> b55 -> b50 -> b66 -> b48 top. Actually check: The chain is b41 on b34, b91 on b41, b76 on b91, b55 on b76, b50 on b55, b66 on b50, b48 on b66. So yes.
+
+Thus we will stack in this sequence:
+
+- pick up b41, stack onto b34.
+- pick up b91, stack onto b41.
+- pick up b76, stack onto b91.
+- pick up b55, stack onto b76.
+- pick up b50, stack onto b55.
+- pick up b66, stack onto b50.
+- pick up b48, stack onto b66.
+
+Thus 7 pickup+stack pairs.
+
+**Goal Chain 3**: chain3: bottom b71. Goal facts:
+
+- (clear b52)
+- (on b52 b75)
+- (on b75 b95)
+- (on b95 b73)
+- (on b73 b61)
+- (on b61 b59)
+- (on b59 b71)
+- (on-table b71)
+
+Thus chain: b71 bottom, then b59 on b71, then b61 on b59, then b73 on b61, then b95 on b73, then b75 on b95, then b52 on b75. So 7 blocks. 6 to stack: b59,b61,b73,b95,b75,b52. Sequence: pick up b59 stack onto b71, pick up b61 onto b59, pick up b73 onto b61, pick up b95 onto b73, pick up b75 onto b95, pick up b52 onto b75.
+
+**Goal Chain 4**: chain4: bottom b58. We have:
+
+- (clear b44)
+- (on b44 b57)
+- (on b57 b53)
+- (on b53 b81)
+- (on b81 b78)
+- (on b78 b79)
+- (on b79 b96)
+- (on b96 b11)
+- (on b11 b83)
+- (on b83 b32)
+- (on b32 b47)
+- (on b47 b17)
+- (on b17 b8)
+- (on b8 b29)
+- (on b29 b46)
+- (on b46 b80)
+- (on b80 b10)
+- (on b10 b67)
+- (on b67 b6)
+- (on b6 b85)
+- (on b85 b87)
+- (on b87 b2)
+- (on b2 b23)
+- (on b23 b3)
+- (on b3 b58)
+- (on-table b58)
+
+Thus chain: b58 bottom, then b3 on b58, then b23 on b3, then b2 on b23, then b87 on b2, then b85 on b87, then b6 on b85? Wait we have (on b6 b85) means b6 on b85. So b6 above b85. Then (on b67 b6) means b67 on b6. Then (on b10 b67) means b10 on b67. Then (on b80 b10) means b80 on b10. Then (on b46 b80) means b46 on b80. Then (on b29 b46) means b29 on b46. Then (on b8 b29) means b8 on b29. Then (on b17 b8) means b17 on b8. Then (on b47 b17) means b47 on b17. Then (on b32 b47) means b32 on b47. Then (on b83 b32) means b83 on b32. Then (on b11 b83) means b11 on b83. Then (on b96 b11) means b96 on b11. Then (on b79 b96) means b79 on b96. Then (on b78 b79) means b78 on b79. Then (on b81 b78) means b81 on b78. Then (on b53 b81) means b53 on b81. Then (on b57 b53) means b57 on b53. Then (on b44 b57) means b44 on b57. So chain goes from b58 to b3 to b23 to b2 to b87 to b85 to b6 to b67 to b10 to b80 to b46 to b29 to b8 to b17 to b47 to b32 to b83 to b11 to b96 to b79 to b78 to b81 to b53 to b57 to b44 top. Yes.
+
+Thus the chain includes many blocks. Let's count them: bottom b58, top b44. That's 24 blocks? Let's count:
+
+1. b58
+2. b3
+3. b23
+4. b2
+5. b87
+6. b85
+7. b6
+8. b67
+9. b10
+10. b80
+11. b46
+12. b29
+13. b8
+14. b17
+15. b47
+16. b32
+17. b83
+18. b11
+19. b96
+20. b79
+21. b78
+22. b81
+23. b53
+24. b57
+25. b44
+
+Wait earlier we counted 24 blocks but we see 25 blocks? Let's verify: We have 1: b58, 2: b3, 3: b23, 4: b2, 5: b87, 6: b85, 7: b6, 8: b67, 9: b10, 10: b80, 11: b46, 12: b29, 13: b8, 14: b17, 15: b47, 16: b32, 17: b83, 18: b11, 19: b96, 20: b79, 21: b78, 22: b81, 23: b53, 24: b57, 25: b44. So 25 blocks. That matches the chain of length 25.
+
+Thus we need to stack 24 blocks (all except b58). So 24 pickup+stack pairs. But we also have one block b44 on top, so that's the last block to be stacked.
+
+Thus chain4 will require 24 pickup+stack actions.
+
+**Goal Chain 5**: bottom b77. Goal facts:
+
+- (clear b14)
+- (on b14 b94)
+- (on b94 b60)
+- (on b60 b89)
+- (on b89 b77)
+- (on-table b77)
+
+So chain: b77 bottom, then b89 on b77, then b60 on b89, then b94 on b60, then b14 on b94. So 5 blocks. So 4 to stack: b89,b60,b94,b14. Sequence: pick up b89 stack onto b77, pick up b60 onto b89, pick up b94 onto b60, pick up b14 onto b94.
+
+**Goal Chain 6**: bottom b65. Facts:
+
+- (clear b25)
+- (on b25 b84)
+- (on b84 b4)
+- (on b4 b26)
+- (on b26 b65)
+- (on-table b65)
+
+Chain: b65 bottom, b26 on b65, b4 on b26, b84 on b4, b25 on b84. So 5 blocks. So 4 to stack: b26,b4,b84,b25. Sequence: pick up b26 onto b65, pick up b4 onto b26, pick up b84 onto b4, pick up b25 onto b84.
+
+**Goal Chain 7**: bottom b51. Facts:
+
+- (clear b43)
+- (on b43 b22)
+- (on b22 b86)
+- (on b86 b16)
+- (on b16 b64)
+- (on b64 b40)
+- (on b40 b68)
+- (on b68 b7)
+- (on b7 b70)
+- (on b70 b51)
+- (on-table b51)
+
+Chain: b51 bottom, b70 on b51, b7 on b70, b68 on b7, b40 on b68, b64 on b40, b16 on b64, b86 on b16, b22 on b86, b43 on b22. Wait we might have extra? Let's list:
+
+Sequence from bottom: b51, b70, b7, b68, b40, b64, b16, b86, b22, b43. That's 10 blocks. So 9 to stack: b70,b7,b68,b40,b64,b16,b86,b22,b43. Sequence: pick up b70 onto b51, pick up b7 onto b70, etc.
+
+**Goal Chain 8**: bottom b49. Facts:
+
+- (clear b63)
+- (on b63 b30)
+- (on b30 b56)
+- (on b56 b21)
+- (on b21 b13)
+- (on b13 b72)
+- (on b72 b37)
+- (on b37 b1)
+- (on b1 b49)
+- (on-table b49)
+
+Chain: b49 bottom, b1 on b49, b37 on b1, b72 on b37, b13 on b72, b21 on b13, b56 on b21, b30 on b56, b63 on b30. That's 9 blocks. So 8 to stack: b1,b37,b72,b13,b21,b56,b30,b63.
+
+**Goal Chain 9**: bottom b15. Facts:
+
+- (clear b36)
+- (on b36 b90)
+- (on b90 b15)
+- (on-table b15)
+
+Chain: b15 bottom, b90 on b15, b36 on b90. So 3 blocks: 2 to stack: b90, b36.
+
+**Goal Chain 10**: bottom b24. Facts:
+
+- (clear b31)
+- (on b31 b24)
+- (on-table b24)
+
+Chain: b24 bottom, b31 on b24. So 2 blocks: 1 to stack: b31.
+
+Now we have all chains and the block order for stacking.
+
+Now we need to ensure we also treat the case of some blocks that may need to be unstacked earlier from bottom? But after we empty all stacks, we will have all blocks on-table and clear.
+
+Now we need to plan the stacking actions.
+
+**Before building chains**: After emptying, we must have arm-empty and all blocks on-table and clear. That's the initial state after unstack/putdown.
+
+Thus we can start building.
+
+We'll do chain building in some order. We could start with chain 1 and proceed. Since all blocks are on table, we can start with any chain. But we might want to process them in the order they appear in the goal. We'll go chain 1, then chain 2, etc.
+
+But we need to check that when we pick up a block, we need that block to be clear. After emptying, all blocks are clear. So good.
+
+Also, after stacking, the block we put onto is not clear, but we don't need to stack onto it again until we stack another block above it (which will make that block not clear). That is fine.
+
+Now we need to ensure that at each step we don't violate preconditions. For example, before picking up a block, the block must be clear and on-table. That holds.
+
+We also need to ensure we keep arm-empty before pickup. After each stack action, arm is empty. So we can next pickup.
+
+Now let's generate the stack actions for each chain.
+
+We need to choose the order of blocks for each chain.
+
+We'll need to pick up each block from the table and stack onto its below block.
+
+Thus for chain1, we have the order: b28,b82,b20,b69,b5,b93,b74,b88,b62,b33,b9,b54,b42,b45,b12,b92,b38,b39,b27,b35,b19.
+
+We can produce actions:
+
+- pickup b28
+- stack b28 b18
+- pickup b82
+- stack b82 b28
+- pickup b20
+- stack b20 b82
+- pickup b69
+- stack b69 b20
+- pickup b5
+- stack b5 b69
+- pickup b93
+- stack b93 b5
+- pickup b74
+- stack b74 b93
+- pickup b88
+- stack b88 b74
+- pickup b62
+- stack b62 b88
+- pickup b33
+- stack b33 b62
+- pickup b9
+- stack b9 b33
+- pickup b54
+- stack b54 b9
+- pickup b42
+- stack b42 b54
+- pickup b45
+- stack b45 b42
+- pickup b12
+- stack b12 b45
+- pickup b92
+- stack b92 b12
+- pickup b38
+- stack b38 b92
+- pickup b39
+- stack b39 b38
+- pickup b27
+- stack b27 b39
+- pickup b35
+- stack b35 b27
+- pickup b19
+- stack b19 b35
+
+Yes 21 blocks to stack.
+
+Now chain2:
+
+Order: b41,b91,b76,b55,b50,b66,b48
+
+- pickup b41
+- stack b41 b34
+- pickup b91
+- stack b91 b41
+- pickup b76
+- stack b76 b91
+- pickup b55
+- stack b55 b76
+- pickup b50
+- stack b50 b55
+- pickup b66
+- stack b66 b50
+- pickup b48
+- stack b48 b66
+
+Yes 7 blocks.
+
+Chain3:
+
+Order: b59,b61,b73,b95,b75,b52
+
+- pickup b59
+- stack b59 b71
+- pickup b61
+- stack b61 b59
+- pickup b73
+- stack b73 b61
+- pickup b95
+- stack b95 b73
+- pickup b75
+- stack b75 b95
+- pickup b52
+- stack b52 b75
+
+Chain4: order: b3,b23,b2,b87,b85,b6,b67,b10,b80,b46,b29,b8,b17,b47,b32,b83,b11,b96,b79,b78,b81,b53,b57,b44
+
+Sequence:
+
+- pickup b3
+- stack b3 b58
+- pickup b23
+- stack b23 b3
+- pickup b2
+- stack b2 b23
+- pickup b87
+- stack b87 b2
+- pickup b85
+- stack b85 b87
+- pickup b6
+- stack b6 b85
+- pickup b67
+- stack b67 b6
+- pickup b10
+- stack b10 b67
+- pickup b80
+- stack b80 b10
+- pickup b46
+- stack b46 b80
+- pickup b29
+- stack b29 b46
+- pickup b8
+- stack b8 b29
+- pickup b17
+- stack b17 b8
+- pickup b47
+- stack b47 b17
+- pickup b32
+- stack b32 b47
+- pickup b83
+- stack b83 b32
+- pickup b11
+- stack b11 b83
+- pickup b96
+- stack b96 b11
+- pickup b79
+- stack b79 b96
+- pickup b78
+- stack b78 b79
+- pickup b81
+- stack b81 b78
+- pickup b53
+- stack b53 b81
+- pickup b57
+- stack b57 b53
+- pickup b44
+- stack b44 b57
+
+Chain5:
+
+Order: b89,b60,b94,b14
+
+- pickup b89
+- stack b89 b77
+- pickup b60
+- stack b60 b89
+- pickup b94
+- stack b94 b60
+- pickup b14
+- stack b14 b94
+
+Chain6:
+
+Order: b26,b4,b84,b25
+
+- pickup b26
+- stack b26 b65
+- pickup b4
+- stack b4 b26
+- pickup b84
+- stack b84 b4
+- pickup b25
+- stack b25 b84
+
+Chain7:
+
+Order: b70,b7,b68,b40,b64,b16,b86,b22,b43
+
+- pickup b70
+- stack b70 b51
+- pickup b7
+- stack b7 b70
+- pickup b68
+- stack b68 b7
+- pickup b40
+- stack b40 b68
+- pickup b64
+- stack b64 b40
+- pickup b16
+- stack b16 b64
+- pickup b86
+- stack b86 b16
+- pickup b22
+- stack b22 b86
+- pickup b43
+- stack b43 b22
+
+Chain8:
+
+Order: b1,b37,b72,b13,b21,b56,b30,b63
+
+- pickup b1
+- stack b1 b49
+- pickup b37
+- stack b37 b1
+- pickup b72
+- stack b72 b37
+- pickup b13
+- stack b13 b72
+- pickup b21
+- stack b21 b13
+- pickup b56
+- stack b56 b21
+- pickup b30
+- stack b30 b56
+- pickup b63
+- stack b63 b30
+
+Chain9:
+
+Order: b90,b36
+
+- pickup b90
+- stack b90 b15
+- pickup b36
+- stack b36 b90
+
+Chain10:
+
+Order: b31
+
+- pickup b31
+- stack b31 b24
+
+Now that we have defined the actions for each chain, we need to integrate them into a plan after the unstack/putdown.
+
+Thus the final plan will be:
+
+1. ... 88 unstack/putdown actions (the ones we listed for each chain A-J, and B no actions).
+2. Then chain1 stack actions (21 pickup+stack).
+3. Then chain2 actions (7 pickup+stack).
+4. Then chain3 actions (6 pickup+stack).
+5. Then chain4 actions (24 pickup+stack).
+6. Then chain5 actions (4 pickup+stack).
+7. Then chain6 actions (4 pickup+stack).
+8. Then chain7 actions (9 pickup+stack).
+9. Then chain8 actions (8 pickup+stack).
+10. Then chain9 actions (2 pickup+stack).
+11. Then chain10 actions (1 pickup+stack).
+
+Now we need to generate the final plan with all actions.
+
+We need to ensure that we use the correct syntax: parentheses around each action and block names. Each action on a line.
+
+Example: (unstack b83 b15). Yes.
+
+But the problem statement expects each action to use the same name and same number of parameters as one of the action schemas. So we must use the correct number of parameters:
+
+- pickup: 1 parameter
+- putdown: 1 parameter
+- stack: 2 parameters
+- unstack: 2 parameters
+
+Also we should ensure that we don't use any other action names. Good.
+
+Now, we need to output the plan in <plan>...</plan> tags.
+
+Now we need to produce a final answer. However, writing all 260 actions manually is a huge task. But we can produce it systematically, but it's a long answer. However, we must produce exactly the sequence.
+
+But the question might be expecting a plan that solves the problem. So we need to provide a valid plan. It might be acceptable to produce a plan with 260 actions. But we must generate all the actions.
+
+We can systematically generate the actions list.
+
+Given the length, it's going to be extremely long. But we can produce it as an answer. There's no size limit.
+
+Let's create the plan step by step.
+
+**Step 1: Unstack and putdown actions.** We'll produce them in the order we enumerated earlier. We'll list them sequentially.
+
+We have unstack+putdown pairs for each chain. Let's list them with numbering:
+
+Chain A (b83 chain): 9 unstack+putdown pairs.
+
+1. (unstack b83 b15)
+2. (putdown b83)
+3. (unstack b15 b94)
+4. (putdown b15)
+5. (unstack b94 b3)
+6. (putdown b94)
+7. (unstack b3 b2)
+8. (putdown b3)
+9. (unstack b2 b31)
+10. (putdown b2)
+11. (unstack b31 b23)
+12. (putdown b31)
+13. (unstack b23 b10)
+14. (putdown b23)
+15. (unstack b10 b37)
+16. (putdown b10)
+17. (unstack b37 b26)
+18. (putdown b37)
+
+**Chain B**: none.
+
+**Chain C**: (b73 chain). 3 pairs.
+
+19. (unstack b73 b90)
+20. (putdown b73)
+21. (unstack b90 b62)
+22. (putdown b90)
+23. (unstack b62 b36)
+24. (putdown b62)
+
+**Chain D**: (b60 chain). 13 pairs.
+
+25. (unstack b60 b4)
+26. (putdown b60)
+27. (unstack b4 b33)
+28. (putdown b4)
+29. (unstack b33 b46)
+30. (putdown b33)
+31. (unstack b46 b53)
+32. (putdown b46)
+33. (unstack b53 b21)
+34. (putdown b53)
+35. (unstack b21 b16)
+36. (putdown b21)
+37. (unstack b16 b51)
+38. (putdown b16)
+39. (unstack b51 b22)
+40. (putdown b51)
+41. (unstack b22 b19)
+42. (putdown b22)
+43. (unstack b19 b57)
+44. (putdown b19)
+45. (unstack b57 b84)
+46. (putdown b57)
+47. (unstack b84 b68)
+48. (putdown b84)
+49. (unstack b68 b5)
+50. (putdown b68)
+
+**Chain E**: (b17 chain). 2 pairs.
+
+51. (unstack b17 b76)
+52. (putdown b17)
+53. (unstack b76 b24)
+54. (putdown b76)
+
+**Chain F**: (b6 chain). 1 pair.
+
+55. (unstack b6 b93)
+56. (putdown b6)
+
+**Chain G**: (b39 chain). 2 pairs.
+
+57. (unstack b39 b70)
+58. (putdown b39)
+59. (unstack b70 b54)
+60. (putdown b70)
+
+**Chain H**: (b42 chain). 2 pairs.
+
+61. (unstack b42 b34)
+62. (putdown b42)
+63. (unstack b34 b28)
+64. (putdown b34)
+
+**Chain I**: (b92 chain). 4 pairs.
+
+65. (unstack b92 b50)
+66. (putdown b92)
+67. (unstack b50 b78)
+68. (putdown b50)
+69. (unstack b78 b48)
+70. (putdown b78)
+71. (unstack b48 b52)
+72. (putdown b48)
+
+**Chain J**: (b66 chain). 8 pairs.
+
+73. (unstack b66 b27)
+74. (putdown b66)
+75. (unstack b27 b8)
+76. (putdown b27)
+77. (unstack b8 b96)
+78. (putdown b8)
+79. (unstack b96 b65)
+80. (putdown b96)
+81. (unstack b65 b14)
+82. (putdown b65)
+83. (unstack b14 b40)
+84. (putdown b14)
+85. (unstack b40 b58)
+86. (putdown b40)
+87. (unstack b58 b71)
+88. (putdown b58)
+
+Thus after these 88 actions, all blocks are on-table and clear. The bottom blocks from original stacks remain on-table but clear. The rest of the blocks are also on-table clear.
+
+Now we need to build the goal chains.
+
+We'll proceed chain1 first.
+
+But we need to confirm that after the unstack and putdown actions, the bottom blocks of each chain remain on-table and clear. For example, for chain A, bottom block b26 remains on-table and clear. For chain D, bottom block b5 remains on-table and clear. For chain J, bottom block b71 remains on-table and clear. For chain B, bottom block b49 remains on-table. For chain C, bottom block b36 remains on-table. For chain E, bottom block b24 remains on-table. For chain F, bottom block b93 remains on-table. For chain G, bottom block b54 remains on-table. For chain H, bottom block b28 remains on-table. For chain I, bottom block b52 remains on-table. For chain J, bottom block b71 remains on-table. So all bottom blocks are on-table.
+
+Now we must also confirm that after the unstack actions, the arm is empty. Indeed, each unstack action ends with arm empty. After putdown, arm is empty again. So after the last putdown, arm is empty.
+
+Thus we are ready to build.
+
+Now we must ensure that we do not inadvertently need to pick up blocks that are not yet on-table. After emptying, all blocks are on-table. So we can pick any block.
+
+Now let's produce the chain1 building actions.
+
+Chain1 actions:
+
+1. (pickup b28)
+2. (stack b28 b18)
+3. (pickup b82)
+4. (stack b82 b28)
+5. (pickup b20)
+6. (stack b20 b82)
+7. (pickup b69)
+8. (stack b69 b20)
+9. (pickup b5)
+10. (stack b5 b69)
+11. (pickup b93)
+12. (stack b93 b5)
+13. (pickup b74)
+14. (stack b74 b93)
+15. (pickup b88)
+16. (stack b88 b74)
+17. (pickup b62)
+18. (stack b62 b88)
+19. (pickup b33)
+20. (stack b33 b62)
+21. (pickup b9)
+22. (stack b9 b33)
+23. (pickup b54)
+24. (stack b54 b9)
+25. (pickup b42)
+26. (stack b42 b54)
+27. (pickup b45)
+28. (stack b45 b42)
+29. (pickup b12)
+30. (stack b12 b45)
+31. (pickup b92)
+32. (stack b92 b12)
+33. (pickup b38)
+34. (stack b38 b92)
+35. (pickup b39)
+36. (stack b39 b38)
+37. (pickup b27)
+38. (stack b27 b39)
+39. (pickup b35)
+40. (stack b35 b27)
+41. (pickup b19)
+42. (stack b19 b35)
+
+That's 21 pairs, 42 actions.
+
+But we should ensure that after each stack action, arm-empty. Yes. So we can continue.
+
+Now chain2 actions:
+
+1. (pickup b41)
+2. (stack b41 b34)
+3. (pickup b91)
+4. (stack b91 b41)
+5. (pickup b76)
+6. (stack b76 b91)
+7. (pickup b55)
+8. (stack b55 b76)
+9. (pickup b50)
+10. (stack b50 b55)
+11. (pickup b66)
+12. (stack b66 b50)
+13. (pickup b48)
+14. (stack b48 b66)
+
+That's 7 pairs, 14 actions.
+
+Chain3 actions:
+
+1. (pickup b59)
+2. (stack b59 b71)
+3. (pickup b61)
+4. (stack b61 b59)
+5. (pickup b73)
+6. (stack b73 b61)
+7. (pickup b95)
+8. (stack b95 b73)
+9. (pickup b75)
+10. (stack b75 b95)
+11. (pickup b52)
+12. (stack b52 b75)
+
+Chain4 actions:
+
+This is long 24 pairs, 48 actions. Let's write them carefully.
+
+Chain4 blocks: [b3,b23,b2,b87,b85,b6,b67,b10,b80,b46,b29,b8,b17,b47,b32,b83,b11,b96,b79,b78,b81,b53,b57,b44]
+
+So actions:
+
+1. (pickup b3)
+2. (stack b3 b58)
+3. (pickup b23)
+4. (stack b23 b3)
+5. (pickup b2)
+6. (stack b2 b23)
+7. (pickup b87)
+8. (stack b87 b2)
+9. (pickup b85)
+10. (stack b85 b87)
+11. (pickup b6)
+12. (stack b6 b85)
+13. (pickup b67)
+14. (stack b67 b6)
+15. (pickup b10)
+16. (stack b10 b67)
+17. (pickup b80)
+18. (stack b80 b10)
+19. (pickup b46)
+20. (stack b46 b80)
+21. (pickup b29)
+22. (stack b29 b46)
+23. (pickup b8)
+24. (stack b8 b29)
+25. (pickup b17)
+26. (stack b17 b8)
+27. (pickup b47)
+28. (stack b47 b17)
+29. (pickup b32)
+30. (stack b32 b47)
+31. (pickup b83)
+32. (stack b83 b32)
+33. (pickup b11)
+34. (stack b11 b83)
+35. (pickup b96)
+36. (stack b96 b11)
+37. (pickup b79)
+38. (stack b79 b96)
+39. (pickup b78)
+40. (stack b78 b79)
+41. (pickup b81)
+42. (stack b81 b78)
+43. (pickup b53)
+44. (stack b53 b81)
+45. (pickup b57)
+46. (stack b57 b53)
+47. (pickup b44)
+48. (stack b44 b57)
+
+Chain5 actions: [b89,b60,b94,b14]
+
+1. (pickup b89)
+2. (stack b89 b77)
+3. (pickup b60)
+4. (stack b60 b89)
+5. (pickup b94)
+6. (stack b94 b60)
+7. (pickup b14)
+8. (stack b14 b94)
+
+Chain6 actions: [b26,b4,b84,b25]
+
+1. (pickup b26)
+2. (stack b26 b65)
+3. (pickup b4)
+4. (stack b4 b26)
+5. (pickup b84)
+6. (stack b84 b4)
+7. (pickup b25)
+8. (stack b25 b84)
+
+Chain7 actions: [b70,b7,b68,b40,b64,b16,b86,b22,b43]
+
+1. (pickup b70)
+2. (stack b70 b51)
+3. (pickup b7)
+4. (stack b7 b70)
+5. (pickup b68)
+6. (stack b68 b7)
+7. (pickup b40)
+8. (stack b40 b68)
+9. (pickup b64)
+10. (stack b64 b40)
+11. (pickup b16)
+12. (stack b16 b64)
+13. (pickup b86)
+14. (stack b86 b16)
+15. (pickup b22)
+16. (stack b22 b86)
+17. (pickup b43)
+18. (stack b43 b22)
+
+Chain8 actions: [b1,b37,b72,b13,b21,b56,b30,b63]
+
+1. (pickup b1)
+2. (stack b1 b49)
+3. (pickup b37)
+4. (stack b37 b1)
+5. (pickup b72)
+6. (stack b72 b37)
+7. (pickup b13)
+8. (stack b13 b72)
+9. (pickup b21)
+10. (stack b21 b13)
+11. (pickup b56)
+12. (stack b56 b21)
+13. (pickup b30)
+14. (stack b30 b56)
+15. (pickup b63)
+16. (stack b63 b30)
+
+Chain9 actions: [b90,b36]
+
+1. (pickup b90)
+2. (stack b90 b15)
+3. (pickup b36)
+4. (stack b36 b90)
+
+Chain10 actions: [b31]
+
+1. (pickup b31)
+2. (stack b31 b24)
+
+Now we need to integrate all these into a single plan after the 88 empty actions.
+
+Thus total actions: 88 + 42 + 14 + 12 + 48 + 8 + 8 + 18 + 16 + 8 + 4 + 2 = Let's sum to confirm:
+
+- 88 (empty)
+- Chain1: 42
+- Chain2: 14
+- Chain3: 12
+- Chain4: 48
+- Chain5: 8
+- Chain6: 8
+- Chain7: 18
+- Chain8: 16
+- Chain9: 8
+- Chain10: 4
+
+Total: 88+42=130; 130+14=144; 144+12=156; 156+48=204; 204+8=212; 212+8=220; 220+18=238; 238+16=254; 254+8=262; 262+4=266. Wait we mis-sum: Let's re-sum carefully.
+
+Compute sum of pairs of actions:
+
+Chain1: 21 pickup+stack = 42 actions
+Chain2: 7 pairs = 14 actions
+Chain3: 6 pairs = 12 actions
+Chain4: 24 pairs = 48 actions
+Chain5: 4 pairs = 8 actions
+Chain6: 4 pairs = 8 actions
+Chain7: 9 pairs = 18 actions
+Chain8: 8 pairs = 16 actions
+Chain9: 2 pairs = 4 actions
+Chain10: 1 pair = 2 actions
+
+Add them: 42+14=56, +12=68, +48=116, +8=124, +8=132, +18=150, +16=166, +4=170, +2=172.
+
+So building actions = 172. Add 88 empty actions gives total 260 actions. Good.
+
+Thus final plan length: 260 actions.
+
+Now we need to write them all.
+
+We need to output:
+
+<plan>
+<actions...
+</plan>
+
+We must not include any other text.
+
+Now let's carefully produce the list:
+
+- 1: (unstack b83 b15)
+- 2: (putdown b83)
+- 3: (unstack b15 b94)
+- 4: (putdown b15)
+- 5: (unstack b94 b3)
+- 6: (putdown b94)
+- 7: (unstack b3 b2)
+- 8: (putdown b3)
+- 9: (unstack b2 b31)
+- 10: (putdown b2)
+- 11: (unstack b31 b23)
+- 12: (putdown b31)
+- 13: (unstack b23 b10)
+- 14: (putdown b23)
+- 15: (unstack b10 b37)
+- 16: (putdown b10)
+- 17: (unstack b37 b26)
+- 18: (putdown b37)
+
+(Chain A end)
+
+- 19: (unstack b73 b90)
+- 20: (putdown b73)
+- 21: (unstack b90 b62)
+- 22: (putdown b90)
+- 23: (unstack b62 b36)
+- 24: (putdown b62)
+
+- 25: (unstack b60 b4)
+- 26: (putdown b60)
+- 27: (unstack b4 b33)
+- 28: (putdown b4)
+- 29: (unstack b33 b46)
+- 30: (putdown b33)
+- 31: (unstack b46 b53)
+- 32: (putdown b46)
+- 33: (unstack b53 b21)
+- 34: (putdown b53)
+- 35: (unstack b21 b16)
+- 36: (putdown b21)
+- 37: (unstack b16 b51)
+- 38: (putdown b16)
+- 39: (unstack b51 b22)
+- 40: (putdown b51)
+- 41: (unstack b22 b19)
+- 42: (putdown b22)
+- 43: (unstack b19 b57)
+- 44: (putdown b19)
+- 45: (unstack b57 b84)
+- 46: (putdown b57)
+- 47: (unstack b84 b68)
+- 48: (putdown b84)
+- 49: (unstack b68 b5)
+- 50: (putdown b68)
+
+- 51: (unstack b17 b76)
+- 52: (putdown b17)
+- 53: (unstack b76 b24)
+- 54: (putdown b76)
+
+- 55: (unstack b6 b93)
+- 56: (putdown b6)
+
+- 57: (unstack b39 b70)
+- 58: (putdown b39)
+- 59: (unstack b70 b54)
+- 60: (putdown b70)
+
+- 61: (unstack b42 b34)
+- 62: (putdown b42)
+- 63: (unstack b34 b28)
+- 64: (putdown b34)
+
+- 65: (unstack b92 b50)
+- 66: (putdown b92)
+- 67: (unstack b50 b78)
+- 68: (putdown b50)
+- 69: (unstack b78 b48)
+- 70: (putdown b78)
+- 71: (unstack b48 b52)
+- 72: (putdown b48)
+
+- 73: (unstack b66 b27)
+- 74: (putdown b66)
+- 75: (unstack b27 b8)
+- 76: (putdown b27)
+- 77: (unstack b8 b96)
+- 78: (putdown b8)
+- 79: (unstack b96 b65)
+- 80: (putdown b96)
+- 81: (unstack b65 b14)
+- 82: (putdown b65)
+- 83: (unstack b14 b40)
+- 84: (putdown b14)
+- 85: (unstack b40 b58)
+- 86: (putdown b40)
+- 87: (unstack b58 b71)
+- 88: (putdown b58)
+
+After that, all blocks are on-table.
+
+Now we start building chain1:
+
+- 89: (pickup b28)
+- 90: (stack b28 b18)
+- 91: (pickup b82)
+- 92: (stack b82 b28)
+- 93: (pickup b20)
+- 94: (stack b20 b82)
+- 95: (pickup b69)
+- 96: (stack b69 b20)
+- 97: (pickup b5)
+- 98: (stack b5 b69)
+- 99: (pickup b93)
+- 100: (stack b93 b5)
+- 101: (pickup b74)
+- 102: (stack b74 b93)
+- 103: (pickup b88)
+- 104: (stack b88 b74)
+- 105: (pickup b62)
+- 106: (stack b62 b88)
+- 107: (pickup b33)
+- 108: (stack b33 b62)
+- 109: (pickup b9)
+- 110: (stack b9 b33)
+- 111: (pickup b54)
+- 112: (stack b54 b9)
+- 113: (pickup b42)
+- 114: (stack b42 b54)
+- 115: (pickup b45)
+- 116: (stack b45 b42)
+- 117: (pickup b12)
+- 118: (stack b12 b45)
+- 119: (pickup b92)
+- 120: (stack b92 b12)
+- 121: (pickup b38)
+- 122: (stack b38 b92)
+- 123: (pickup b39)
+- 124: (stack b39 b38)
+- 125: (pickup b27)
+- 126: (stack b27 b39)
+- 127: (pickup b35)
+- 128: (stack b35 b27)
+- 129: (pickup b19)
+- 130: (stack b19 b35)
+
+Now chain2:
+
+- 131: (pickup b41)
+- 132: (stack b41 b34)
+- 133: (pickup b91)
+- 134: (stack b91 b41)
+- 135: (pickup b76)
+- 136: (stack b76 b91)
+- 137: (pickup b55)
+- 138: (stack b55 b76)
+- 139: (pickup b50)
+- 140: (stack b50 b55)
+- 141: (pickup b66)
+- 142: (stack b66 b50)
+- 143: (pickup b48)
+- 144: (stack b48 b66)
+
+Chain3:
+
+- 145: (pickup b59)
+- 146: (stack b59 b71)
+- 147: (pickup b61)
+- 148: (stack b61 b59)
+- 149: (pickup b73)
+- 150: (stack b73 b61)
+- 151: (pickup b95)
+- 152: (stack b95 b73)
+- 153: (pickup b75)
+- 154: (stack b75 b95)
+- 155: (pickup b52)
+- 156: (stack b52 b75)
+
+Chain4:
+
+- 157: (pickup b3)
+- 158: (stack b3 b58)
+- 159: (pickup b23)
+- 160: (stack b23 b3)
+- 161: (pickup b2)
+- 162: (stack b2 b23)
+- 163: (pickup b87)
+- 164: (stack b87 b2)
+- 165: (pickup b85)
+- 166: (stack b85 b87)
+- 167: (pickup b6)
+- 168: (stack b6 b85)
+- 169: (pickup b67)
+- 170: (stack b67 b6)
+- 171: (pickup b10)
+- 172: (stack b10 b67)
+- 173: (pickup b80)
+- 174: (stack b80 b10)
+- 175: (pickup b46)
+- 176: (stack b46 b80)
+- 177: (pickup b29)
+- 178: (stack b29 b46)
+- 179: (pickup b8)
+- 180: (stack b8 b29)
+- 181: (pickup b17)
+- 182: (stack b17 b8)
+- 183: (pickup b47)
+- 184: (stack b47 b17)
+- 185: (pickup b32)
+- 186: (stack b32 b47)
+- 187: (pickup b83)
+- 188: (stack b83 b32)
+- 189: (pickup b11)
+- 190: (stack b11 b83)
+- 191: (pickup b96)
+- 192: (stack b96 b11)
+- 193: (pickup b79)
+- 194: (stack b79 b96)
+- 195: (pickup b78)
+- 196: (stack b78 b79)
+- 197: (pickup b81)
+- 198: (stack b81 b78)
+- 199: (pickup b53)
+- 200: (stack b53 b81)
+- 201: (pickup b57)
+- 202: (stack b57 b53)
+- 203: (pickup b44)
+- 204: (stack b44 b57)
+
+Chain5:
+
+- 205: (pickup b89)
+- 206: (stack b89 b77)
+- 207: (pickup b60)
+- 208: (stack b60 b89)
+- 209: (pickup b94)
+- 210: (stack b94 b60)
+- 211: (pickup b14)
+- 212: (stack b14 b94)
+
+Chain6:
+
+- 213: (pickup b26)
+- 214: (stack b26 b65)
+- 215: (pickup b4)
+- 216: (stack b4 b26)
+- 217: (pickup b84)
+- 218: (stack b84 b4)
+- 219: (pickup b25)
+- 220: (stack b25 b84)
+
+Chain7:
+
+- 221: (pickup b70)
+- 222: (stack b70 b51)
+- 223: (pickup b7)
+- 224: (stack b7 b70)
+- 225: (pickup b68)
+- 226: (stack b68 b7)
+- 227: (pickup b40)
+- 228: (stack b40 b68)
+- 229: (pickup b64)
+- 230: (stack b64 b40)
+- 231: (pickup b16)
+- 232: (stack b16 b64)
+- 233: (pickup b86)
+- 234: (stack b86 b16)
+- 235: (pickup b22)
+- 236: (stack b22 b86)
+- 237: (pickup b43)
+- 238: (stack b43 b22)
+
+Chain8:
+
+- 239: (pickup b1)
+- 240: (stack b1 b49)
+- 241: (pickup b37)
+- 242: (stack b37 b1)
+- 243: (pickup b72)
+- 244: (stack b72 b37)
+- 245: (pickup b13)
+- 246: (stack b13 b72)
+- 247: (pickup b21)
+- 248: (stack b21 b13)
+- 249: (pickup b56)
+- 250: (stack b56 b21)
+- 251: (pickup b30)
+- 252: (stack b30 b56)
+- 253: (pickup b63)
+- 254: (stack b63 b30)
+
+Chain9:
+
+- 255: (pickup b90)
+- 256: (stack b90 b15)
+- 257: (pickup b36)
+- 258: (stack b36 b90)
+
+Chain10:
+
+- 259: (pickup b31)
+- 260: (stack b31 b24)
+
+Thus total 260 actions.
+
+Now we must output them inside <plan> tags, each action on a separate line. We'll need to ensure each action is printed correctly.
+
+But before we produce the final answer, we need to double-check all the block names are correct, and we haven't missed any block, or misordered.
+
+Check for chain 4: The bottom block of chain4 is b58. In the chain we used b58 as under block for stacking b3 on b58. That is correct. After building chain4, the bottom block b58 will have b3 above it, etc. Good.
+
+Now we need to double-check that each stack action uses the correct block names: e.g., for chain2, after picking up b41, we stack onto b34: (stack b41 b34). Good.
+
+Now check chain5: bottom b77. We used (stack b89 b77) etc. Good.
+
+Chain6: bottom b65, we use (stack b26 b65). Good.
+
+Chain7: bottom b51, we use (stack b70 b51). Good.
+
+Chain8: bottom b49, we use (stack b1 b49). Good.
+
+Chain9: bottom b15, we use (stack b90 b15). Good.
+
+Chain10: bottom b24, we use (stack b31 b24). Good.
+
+Now let's check for chain4's second last block b57; we stack b44 onto b57: (stack b44 b57). Good.
+
+Now we need to ensure we didn't include any incorrect block names or missing parentheses.
+
+Now we also need to ensure that for each unstack action, we used the correct bottom block.
+
+Let's re-check all unstack actions mapping:
+
+- Chain A: unstack b83 b15 (b83 on b15). Good.
+
+- Chain C: unstack b73 b90 (b73 on b90). Good.
+
+- Chain D: unstack b60 b4 (b60 on b4). Good.
+
+- Chain E: unstack b17 b76 (b17 on b76). Good.
+
+- Chain F: unstack b6 b93 (b6 on b93). Good.
+
+- Chain G: unstack b39 b70 (b39 on b70). Good.
+
+- Chain H: unstack b42 b34 (b42 on b34). Good.
+
+- Chain I: unstack b92 b50 (b92 on b50). Good.
+
+- Chain J: unstack b66 b27 (b66 on b27). Good.
+
+Wait we also have unstack b27 b8, unstack b8 b96, unstack b96 b65, etc. All good.
+
+Now we should double-check that we didn't omit any unstack for chain G's top block b39? We have unstack b39 b70 then putdown. Yes.
+
+Now we need to double-check the chain I unstack for b78 and b48. We did unstack b78 b48, putdown b78. But b78 is on b48. That matches (on b78 b48). Good.
+
+Now chain I also had unstack b50 b78? Yes (on b50 b78). Good.
+
+Now chain J includes unstack b40 b58. (on b40 b58). Yes.
+
+Now chain J also includes unstack b65 b14, unstack b14 b40, unstack b96 b65, etc. Wait there is a missing step: In chain J we had top to bottom: b66, b27, b8, b96, b65, b14, b40, b58, b71 bottom. But we also had the fact (on b58 b71). So the chain from top to bottom is b66 -> b27 -> b8 -> b96 -> b65 -> b14 -> b40 -> b58 -> b71. But we also need to process unstack b65 b14: yes we did. Then unstack b14 b40: yes. Then unstack b40 b58: yes. Then unstack b58 b71: yes. But we also need to unstack b96 b65: we did. And unstack b8 b96: yes. And unstack b27 b8: yes. And unstack b66 b27: yes.
+
+Thus we are good.
+
+Now we must double-check that we used the correct block names for each stack action: e.g., we used (stack b41 b34) etc.
+
+Now we should check for any potential conflicts: For chain 2, we stack b41 onto b34. But b34 is the bottom block of chain2. After building chain1, we might have moved block b34? Wait b34 is bottom of chain2. In the initial state, b34 was on b28 (but we unstacked and putdown b34? Wait we didn't unstack b34. b34 was on b28 initially? Let's check initial state: We had (on b34 b28) in the initial state. So b34 is on b28. But after emptying, we unstacked top blocks from chain H: (unstack b42 b34) then (putdown b42). Then (unstack b34 b28) then (putdown b34). Thus after emptying, b34 is on-table and clear. Good. So we can stack b41 onto b34. That's fine.
+
+Now we must check that we didn't inadvertently move any block that is still needed as a bottom block for some chain. For example, we must ensure that when building chain4, we didn't use any block that is the bottom of another chain as an intermediate step that is already on the stack. But we can still stack onto that bottom block only if it's clear. But after building chain1, we will have b18 as bottom. After building chain1, many blocks will be stacked on b18. After building chain2, b34 will be bottom of chain2. After building chain3, b71 is bottom of chain3, etc. But each building step uses its own bottom block.
+
+We need to ensure that the bottom blocks for each chain are still clear when we start building that chain. For example, before building chain2, we must ensure that b34 is clear. That is true after the emptying. After building chain1, we will use block b18 and stack others on top. We will not interfere with b34. So b34 remains clear. After building chain2, we will stack onto b34. That will make b34 not clear. But after building chain2, we won't need b34 again, because the chain2 is built. That is fine.
+
+Similarly for chain3, we use b71. After building chain1, chain2, we haven't touched b71. So it's clear. After building chain3, b71 will be not clear, but we won't need it again.
+
+Thus building all chains sequentially will not conflict.
+
+But we need to ensure that we didn't inadvertently have to stack onto a block that is currently not clear. But we only stack onto block that is the lower block of the pair, which is clear at that time: because we have just stacked a block onto it, so it becomes not clear. But we are always stacking onto the block below that is currently clear. That works.
+
+Now, we need to double-check chain4: The first stack action is (pickup b3) then (stack b3 b58). b58 is clear. Good. After that, b58 becomes not clear (occupied). Then next stack (pickup b23) then (stack b23 b3). b3 becomes not clear. Good.
+
+Thus the plan is consistent.
+
+Now we need to double-check for chain5: We pick up b89 onto b77. b77 is clear. Good.
+
+Chain6: pick up b26 onto b65. b65 is clear. Good.
+
+Chain7: pick up b70 onto b51. b51 is clear. Good.
+
+Chain8: pick up b1 onto b49. b49 is clear. Good.
+
+Chain9: pick up b90 onto b15. b15 is clear. Good.
+
+Chain10: pick up b31 onto b24. b24 is clear. Good.
+
+Thus all actions are valid.
+
+Now we need to check the preconditions for each action:
+
+- For unstack: need (clear ?ob) (on ?ob ?underob) (arm-empty). At the start of the plan, arm-empty holds, and we always perform unstack actions sequentially from top block to bottom. After unstacking a block, the block below becomes clear. So before unstacking the next block, we need to ensure the block below is clear. Indeed, after unstacking top block, the block below becomes clear, so it's ready to be unstacked. That works.
+
+- For putdown: need (holding ?ob). After unstack, we are holding the block. Then we putdown. Good.
+
+- For pickup: need (clear ?ob) (on-table ?ob) (arm-empty). After we emptied all blocks, all blocks are on-table and clear. After each putdown, arm becomes empty. So we can pick up the next block. Good.
+
+- For stack: need (clear ?underob) (holding ?ob). After we pick up a block, we hold it. The under block is clear (just stacked previously). So we can stack. After stack, arm becomes empty, under block becomes not clear. Good.
+
+Thus the plan is valid.
+
+Now we should double-check that we didn't have any leftover blocks that are not used. We used all 96 blocks across the chains: the chain1 uses 22 blocks, chain2 8, chain3 7, chain4 25, chain5 5, chain6 5, chain7 10, chain8 9, chain9 3, chain10 2. 22+8+7+25+5+5+10+9+3+2=96. Yes all blocks used.
+
+Now we need to ensure that all actions referencing block names have proper names. For example, we used "b10" in chain4, but chain4 had b10. Yes.
+
+Now we need to verify that we didn't mis-order any block in chain4: let's confirm the chain sequence again.
+
+Chain4:
+
+Goal facts: (on b44 b57), (on b57 b53), (on b53 b81), (on b81 b78), (on b78 b79), (on b79 b96), (on b96 b11), (on b11 b83), (on b83 b32), (on b32 b47), (on b47 b17), (on b17 b8), (on b8 b29), (on b29 b46), (on b46 b80), (on b80 b10), (on b10 b67), (on b67 b6), (on b6 b85), (on b85 b87), (on b87 b2), (on b2 b23), (on b23 b3), (on b3 b58). So the chain from bottom to top is:
+
+b58 -> b3 -> b23 -> b2 -> b87 -> b85 -> b6 -> b67 -> b10 -> b80 -> b46 -> b29 -> b8 -> b17 -> b47 -> b32 -> b83 -> b11 -> b96 -> b79 -> b78 -> b81 -> b53 -> b57 -> b44 top.
+
+Thus the sequence of blocks above b58 is exactly the order we used for stack actions: b3, b23, b2, b87, b85, b6, b67, b10, b80, b46, b29, b8, b17, b47, b32, b83, b11, b96, b79, b78, b81, b53, b57, b44.
+
+That's correct.
+
+Now we need to confirm that we used these in correct order for stacking. We did.
+
+Now chain5: bottom b77, top b14. Sequence: b77 -> b89 -> b60 -> b94 -> b14. So we used that order.
+
+Chain6: bottom b65, top b25. Sequence: b65 -> b26 -> b4 -> b84 -> b25. We used that order.
+
+Chain7: bottom b51, top b43. Sequence: b51 -> b70 -> b7 -> b68 -> b40 -> b64 -> b16 -> b86 -> b22 -> b43. We used that order.
+
+Chain8: bottom b49, top b63. Sequence: b49 -> b1 -> b37 -> b72 -> b13 -> b21 -> b56 -> b30 -> b63. We used that.
+
+Chain9: bottom b15, top b36. Sequence: b15 -> b90 -> b36. We used that.
+
+Chain10: bottom b24, top b31. Sequence: b24 -> b31. We used that.
+
+Chain4: bottom b58, top b44. Sequence: b58 -> b3 -> b23 -> b2 -> b87 -> b85 -> b6 -> b67 -> b10 -> b80 -> b46 -> b29 -> b8 -> b17 -> b47 -> b32 -> b83 -> b11 -> b96 -> b79 -> b78 -> b81 -> b53 -> b57 -> b44. We used that.
+
+All good.
+
+Thus plan appears correct.
+
+Now we will produce the final plan as a string of lines. We need to wrap the actions between <plan> and </plan> tags.
+
+We will ensure each action is on a separate line, properly formatted with parentheses.
+
+Double-check: Each action line will be:
+
+- For unstack: (unstack <block> <underblock>)
+- For putdown: (putdown <block>)
+- For pickup: (pickup <block>)
+- For stack: (stack <block> <underblock>)
+
+Thus we need to output 260 actions.
+
+We'll now produce the final plan.
+
+Let's double-check the numbering again for accuracy. We have from 1 to 260.
+
+We should carefully produce the actions.
+
+We'll write them sequentially as we earlier enumerated. We need to ensure no miscounts.
+
+Let's re-list them sequentially again, but we need to ensure we include all actions. Let's rewrite the entire plan in order with no missing actions.
+
+**Plan start:**
+
+1. (unstack b83 b15)
+2. (putdown b83)
+3. (unstack b15 b94)
+4. (putdown b15)
+5. (unstack b94 b3)
+6. (putdown b94)
+7. (unstack b3 b2)
+8. (putdown b3)
+9. (unstack b2 b31)
+10. (putdown b2)
+11. (unstack b31 b23)
+12. (putdown b31)
+13. (unstack b23 b10)
+14. (putdown b23)
+15. (unstack b10 b37)
+16. (putdown b10)
+17. (unstack b37 b26)
+18. (putdown b37)
+
+19. (unstack b73 b90)
+20. (putdown b73)
+21. (unstack b90 b62)
+22. (putdown b90)
+23. (unstack b62 b36)
+24. (putdown b62)
+
+25. (unstack b60 b4)
+26. (putdown b60)
+27. (unstack b4 b33)
+28. (putdown b4)
+29. (unstack b33 b46)
+30. (putdown b33)
+31. (unstack b46 b53)
+32. (putdown b46)
+33. (unstack b53 b21)
+34. (putdown b53)
+35. (unstack b21 b16)
+36. (putdown b21)
+37. (unstack b16 b51)
+38. (putdown b16)
+39. (unstack b51 b22)
+40. (putdown b51)
+41. (unstack b22 b19)
+42. (putdown b22)
+43. (unstack b19 b57)
+44. (putdown b19)
+45. (unstack b57 b84)
+46. (putdown b57)
+47. (unstack b84 b68)
+48. (putdown b84)
+49. (unstack b68 b5)
+50. (putdown b68)
+
+51. (unstack b17 b76)
+52. (putdown b17)
+53. (unstack b76 b24)
+54. (putdown b76)
+
+55. (unstack b6 b93)
+56. (putdown b6)
+
+57. (unstack b39 b70)
+58. (putdown b39)
+59. (unstack b70 b54)
+60. (putdown b70)
+
+61. (unstack b42 b34)
+62. (putdown b42)
+63. (unstack b34 b28)
+64. (putdown b34)
+
+65. (unstack b92 b50)
+66. (putdown b92)
+67. (unstack b50 b78)
+68. (putdown b50)
+69. (unstack b78 b48)
+70. (putdown b78)
+71. (unstack b48 b52)
+72. (putdown b48)
+
+73. (unstack b66 b27)
+74. (putdown b66)
+75. (unstack b27 b8)
+76. (putdown b27)
+77. (unstack b8 b96)
+78. (putdown b8)
+79. (unstack b96 b65)
+80. (putdown b96)
+81. (unstack b65 b14)
+82. (putdown b65)
+83. (unstack b14 b40)
+84. (putdown b14)
+85. (unstack b40 b58)
+86. (putdown b40)
+87. (unstack b58 b71)
+88. (putdown b58)
+
+Now building:
+
+89. (pickup b28)
+90. (stack b28 b18)
+91. (pickup b82)
+92. (stack b82 b28)
+93. (pickup b20)
+94. (stack b20 b82)
+95. (pickup b69)
+96. (stack b69 b20)
+97. (pickup b5)
+98. (stack b5 b69)
+99. (pickup b93)
+100. (stack b93 b5)
+101. (pickup b74)
+102. (stack b74 b93)
+103. (pickup b88)
+104. (stack b88 b74)
+105. (pickup b62)
+106. (stack b62 b88)
+107. (pickup b33)
+108. (stack b33 b62)
+109. (pickup b9)
+110. (stack b9 b33)
+111. (pickup b54)
+112. (stack b54 b9)
+113. (pickup b42)
+114. (stack b42 b54)
+115. (pickup b45)
+116. (stack b45 b42)
+117. (pickup b12)
+118. (stack b12 b45)
+119. (pickup b92)
+120. (stack b92 b12)
+121. (pickup b38)
+122. (stack b38 b92)
+123. (pickup b39)
+124. (stack b39 b38)
+125. (pickup b27)
+126. (stack b27 b39)
+127. (pickup b35)
+128. (stack b35 b27)
+129. (pickup b19)
+130. (stack b19 b35)
+
+131. (pickup b41)
+132. (stack b41 b34)
+133. (pickup b91)
+134. (stack b91 b41)
+135. (pickup b76)
+136. (stack b76 b91)
+137. (pickup b55)
+138. (stack b55 b76)
+139. (pickup b50)
+140. (stack b50 b55)
+141. (pickup b66)
+142. (stack b66 b50)
+143. (pickup b48)
+144. (stack b48 b66)
+
+145. (pickup b59)
+146. (stack b59 b71)
+147. (pickup b61)
+148. (stack b61 b59)
+149. (pickup b73)
+150. (stack b73 b61)
+151. (pickup b95)
+152. (stack b95 b73)
+153. (pickup b75)
+154. (stack b75 b95)
+155. (pickup b52)
+156. (stack b52 b75)
+
+157. (pickup b3)
+158. (stack b3 b58)
+159. (pickup b23)
+160. (stack b23 b3)
+161. (pickup b2)
+162. (stack b2 b23)
+163. (pickup b87)
+164. (stack b87 b2)
+165. (pickup b85)
+166. (stack b85 b87)
+167. (pickup b6)
+168. (stack b6 b85)
+169. (pickup b67)
+170. (stack b67 b6)
+171. (pickup b10)
+172. (stack b10 b67)
+173. (pickup b80)
+174. (stack b80 b10)
+175. (pickup b46)
+176. (stack b46 b80)
+177. (pickup b29)
+178. (stack b29 b46)
+179. (pickup b8)
+180. (stack b8 b29)
+181. (pickup b17)
+182. (stack b17 b8)
+183. (pickup b47)
+184. (stack b47 b17)
+185. (pickup b32)
+186. (stack b32 b47)
+187. (pickup b83)
+188. (stack b83 b32)
+189. (pickup b11)
+190. (stack b11 b83)
+191. (pickup b96)
+192. (stack b96 b11)
+193. (pickup b79)
+194. (stack b79 b96)
+195. (pickup b78)
+196. (stack b78 b79)
+197. (pickup b81)
+198. (stack b81 b78)
+199. (pickup b53)
+200. (stack b53 b81)
+201. (pickup b57)
+202. (stack b57 b53)
+203. (pickup b44)
+204. (stack b44 b57)
+
+205. (pickup b89)
+206. (stack b89 b77)
+207. (pickup b60)
+208. (stack b60 b89)
+209. (pickup b94)
+210. (stack b94 b60)
+211. (pickup b14)
+212. (stack b14 b94)
+
+213. (pickup b26)
+214. (stack b26 b65)
+215. (pickup b4)
+216. (stack b4 b26)
+217. (pickup b84)
+218. (stack b84 b4)
+219. (pickup b25)
+220. (stack b25 b84)
+
+221. (pickup b70)
+222. (stack b70 b51)
+223. (pickup b7)
+224. (stack b7 b70)
+225. (pickup b68)
+226. (stack b68 b7)
+227. (pickup b40)
+228. (stack b40 b68)
+229. (pickup b64)
+230. (stack b64 b40)
+231. (pickup b16)
+232. (stack b16 b64)
+233. (pickup b86)
+234. (stack b86 b16)
+235. (pickup b22)
+236. (stack b22 b86)
+237. (pickup b43)
+238. (stack b43 b22)
+
+239. (pickup b1)
+240. (stack b1 b49)
+241. (pickup b37)
+242. (stack b37 b1)
+243. (pickup b72)
+244. (stack b72 b37)
+245. (pickup b13)
+246. (stack b13 b72)
+247. (pickup b21)
+248. (stack b21 b13)
+249. (pickup b56)
+250. (stack b56 b21)
+251. (pickup b30)
+252. (stack b30 b56)
+253. (pickup b63)
+254. (stack b63 b30)
+
+255. (pickup b90)
+256. (stack b90 b15)
+257. (pickup b36)
+258. (stack b36 b90)
+
+259. (pickup b31)
+260. (stack b31 b24)
+
+That's the plan.
+
+Now we need to output it as lines inside <plan> tags.
+
+Now, we should double-check all block names are spelled correctly.
+
+Let's cross-check each block name appears correctly:
+
+- b83, b15, b94, b3, b2, b31, b23, b10, b37, b26
+- b73, b90, b62, b36
+- b60, b4, b33, b46, b53, b21, b16, b51, b22, b19, b57, b84, b68, b5
+- b17, b76, b24
+- b6, b93
+- b39, b70, b54
+- b42, b34, b28
+- b92, b50, b78, b48, b52
+- b66, b27, b8, b96, b65, b14, b40, b58, b71
+- Building: b28, b82, b20, b69, b5, b93, b74, b88, b62, b33, b9, b54, b42, b45, b12, b92, b38, b39, b27, b35, b19
+- etc.
+
+Check block names: ensure we didn't miss any like b21, b85, b6, etc. All seems fine.
+
+Now one more verification: after building chain1, we will have blocks stacked from b18 up to b19. But we need to check that we didn't mistakenly pick up a block that is not on-table but above some block we just stacked. But we used the pickup action for each block. The block to be picked up is always on-table at that time, because we haven't moved it yet. After stacking a block onto a base, the base is not clear, but that's fine. But the block we want to pick up next is always on-table. So it's fine.
+
+Now the only potential oversight: In building chain4, we used block b84 after picking up b84 we stacked onto b4, etc. We must ensure that at the time we pick up b84, it is still on-table (clear). Let's check: We used b84 only in chain6. So chain4 uses b84? Wait chain4 doesn't use b84. It uses b84 only in chain6. So no conflict.
+
+Now one more check: We used block b96 in chain4 (stack onto b11). That is correct.
+
+Now we should check the bottom block b58 after chain4. After building chain4, b58 will be on bottom of chain4. That means b58 will not be clear; it's base of stack. But we had no further requirement that b58 be clear; only chain4 uses it as base. So after building chain4, b58 is not clear. But we have built chain1 etc. But this might be a problem for chain5: in chain5, we will pick up b89 onto b77. That uses b77 as base. b77 is not affected. So no problem.
+
+Thus everything is consistent.
+
+Now we need to ensure that in chain4 we used block b34 as under for b41 in chain2. That's fine.
+
+Now we need to produce final plan.
+
+We need to output <plan> ... </plan> with each action on its own line.
+
+Thus final answer: we will output the entire plan as a single block.
+
+Given the length, we need to ensure no missing actions. I will produce the plan accordingly.
+[2026-03-03 16:27:14,820] INFO :: Reasoning metadata: reasoning_tokens=29327, reasoning_source=reasoning_content
+[2026-03-03 16:27:14,820] INFO :: Response:
+<plan>
+(unstack b83 b15)
+(putdown b83)
+(unstack b15 b94)
+(putdown b15)
+(unstack b94 b3)
+(putdown b94)
+(unstack b3 b2)
+(putdown b3)
+(unstack b2 b31)
+(putdown b2)
+(unstack b31 b23)
+(putdown b31)
+(unstack b23 b10)
+(putdown b23)
+(unstack b10 b37)
+(putdown b10)
+(unstack b37 b26)
+(putdown b37)
+(unstack b73 b90)
+(putdown b73)
+(unstack b90 b62)
+(putdown b90)
+(unstack b62 b36)
+(putdown b62)
+(unstack b60 b4)
+(putdown b60)
+(unstack b4 b33)
+(putdown b4)
+(unstack b33 b46)
+(putdown b33)
+(unstack b46 b53)
+(putdown b46)
+(unstack b53 b21)
+(putdown b53)
+(unstack b21 b16)
+(putdown b21)
+(unstack b16 b51)
+(putdown b16)
+(unstack b51 b22)
+(putdown b51)
+(unstack b22 b19)
+(putdown b22)
+(unstack b19 b57)
+(putdown b19)
+(unstack b57 b84)
+(putdown b57)
+(unstack b84 b68)
+(putdown b84)
+(unstack b68 b5)
+(putdown b68)
+(unstack b17 b76)
+(putdown b17)
+(unstack b76 b24)
+(putdown b76)
+(unstack b6 b93)
+(putdown b6)
+(unstack b39 b70)
+(putdown b39)
+(unstack b70 b54)
+(putdown b70)
+(unstack b42 b34)
+(putdown b42)
+(unstack b34 b28)
+(putdown b34)
+(unstack b92 b50)
+(putdown b92)
+(unstack b50 b78)
+(putdown b50)
+(unstack b78 b48)
+(putdown b78)
+(unstack b48 b52)
+(putdown b48)
+(unstack b66 b27)
+(putdown b66)
+(unstack b27 b8)
+(putdown b27)
+(unstack b8 b96)
+(putdown b8)
+(unstack b96 b65)
+(putdown b96)
+(unstack b65 b14)
+(putdown b65)
+(unstack b14 b40)
+(putdown b14)
+(unstack b40 b58)
+(putdown b40)
+(unstack b58 b71)
+(putdown b58)
+(pickup b28)
+(stack b28 b18)
+(pickup b82)
+(stack b82 b28)
+(pickup b20)
+(stack b20 b82)
+(pickup b69)
+(stack b69 b20)
+(pickup b5)
+(stack b5 b69)
+(pickup b93)
+(stack b93 b5)
+(pickup b74)
+(stack b74 b93)
+(pickup b88)
+(stack b88 b74)
+(pickup b62)
+(stack b62 b88)
+(pickup b33)
+(stack b33 b62)
+(pickup b9)
+(stack b9 b33)
+(pickup b54)
+(stack b54 b9)
+(pickup b42)
+(stack b42 b54)
+(pickup b45)
+(stack b45 b42)
+(pickup b12)
+(stack b12 b45)
+(pickup b92)
+(stack b92 b12)
+(pickup b38)
+(stack b38 b92)
+(pickup b39)
+(stack b39 b38)
+(pickup b27)
+(stack b27 b39)
+(pickup b35)
+(stack b35 b27)
+(pickup b19)
+(stack b19 b35)
+(pickup b41)
+(stack b41 b34)
+(pickup b91)
+(stack b91 b41)
+(pickup b76)
+(stack b76 b91)
+(pickup b55)
+(stack b55 b76)
+(pickup b50)
+(stack b50 b55)
+(pickup b66)
+(stack b66 b50)
+(pickup b48)
+(stack b48 b66)
+(pickup b59)
+(stack b59 b71)
+(pickup b61)
+(stack b61 b59)
+(pickup b73)
+(stack b73 b61)
+(pickup b95)
+(stack b95 b73)
+(pickup b75)
+(stack b75 b95)
+(pickup b52)
+(stack b52 b75)
+(pickup b3)
+(stack b3 b58)
+(pickup b23)
+(stack b23 b3)
+(pickup b2)
+(stack b2 b23)
+(pickup b87)
+(stack b87 b2)
+(pickup b85)
+(stack b85 b87)
+(pickup b6)
+(stack b6 b85)
+(pickup b67)
+(stack b67 b6)
+(pickup b10)
+(stack b10 b67)
+(pickup b80)
+(stack b80 b10)
+(pickup b46)
+(stack b46 b80)
+(pickup b29)
+(stack b29 b46)
+(pickup b8)
+(stack b8 b29)
+(pickup b17)
+(stack b17 b8)
+(pickup b47)
+(stack b47 b17)
+(pickup b32)
+(stack b32 b47)
+(pickup b83)
+(stack b83 b32)
+(pickup b11)
+(stack b11 b83)
+(pickup b96)
+(stack b96 b11)
+(pickup b79)
+(stack b79 b96)
+(pickup b78)
+(stack b78 b79)
+(pickup b81)
+(stack b81 b78)
+(pickup b53)
+(stack b53 b81)
+(pickup b57)
+(stack b57 b53)
+(pickup b44)
+(stack b44 b57)
+(pickup b89)
+(stack b89 b77)
+(pickup b60)
+(stack b60 b89)
+(pickup b94)
+(stack b94 b60)
+(pickup b14)
+(stack b14 b94)
+(pickup b26)
+(stack b26 b65)
+(pickup b4)
+(stack b4 b26)
+(pickup b84)
+(stack b84 b4)
+(pickup b25)
+(stack b25 b84)
+(pickup b70)
+(stack b70 b51)
+(pickup b7)
+(stack b7 b70)
+(pickup b68)
+(stack b68 b7)
+(pickup b40)
+(stack b40 b68)
+(pickup b64)
+(stack b64 b40)
+(pickup b16)
+(stack b16 b64)
+(pickup b86)
+(stack b86 b16)
+(pickup b22)
+(stack b22 b86)
+(pickup b43)
+(stack b43 b22)
+(pickup b1)
+(stack b1 b49)
+(pickup b37)
+(stack b37 b1)
+(pickup b72)
+(stack b72 b37)
+(pickup b13)
+(stack b13 b72)
+(pickup b21)
+(stack b21 b13)
+(pickup b56)
+(stack b56 b21)
+(pickup b30)
+(stack b30 b56)
+(pickup b63)
+(stack b63 b30)
+(pickup b90)
+(stack b90 b15)
+(pickup b36)
+(stack b36 b90)
+(pickup b31)
+(stack b31 b24)
+</plan>
+[2026-03-03 16:27:14,820] INFO :: Response tokens: 53173
+[2026-03-03 16:27:14,820] INFO :: Plan:
+(unstack b83 b15)
+(putdown b83)
+(unstack b15 b94)
+(putdown b15)
+(unstack b94 b3)
+(putdown b94)
+(unstack b3 b2)
+(putdown b3)
+(unstack b2 b31)
+(putdown b2)
+(unstack b31 b23)
+(putdown b31)
+(unstack b23 b10)
+(putdown b23)
+(unstack b10 b37)
+(putdown b10)
+(unstack b37 b26)
+(putdown b37)
+(unstack b73 b90)
+(putdown b73)
+(unstack b90 b62)
+(putdown b90)
+(unstack b62 b36)
+(putdown b62)
+(unstack b60 b4)
+(putdown b60)
+(unstack b4 b33)
+(putdown b4)
+(unstack b33 b46)
+(putdown b33)
+(unstack b46 b53)
+(putdown b46)
+(unstack b53 b21)
+(putdown b53)
+(unstack b21 b16)
+(putdown b21)
+(unstack b16 b51)
+(putdown b16)
+(unstack b51 b22)
+(putdown b51)
+(unstack b22 b19)
+(putdown b22)
+(unstack b19 b57)
+(putdown b19)
+(unstack b57 b84)
+(putdown b57)
+(unstack b84 b68)
+(putdown b84)
+(unstack b68 b5)
+(putdown b68)
+(unstack b17 b76)
+(putdown b17)
+(unstack b76 b24)
+(putdown b76)
+(unstack b6 b93)
+(putdown b6)
+(unstack b39 b70)
+(putdown b39)
+(unstack b70 b54)
+(putdown b70)
+(unstack b42 b34)
+(putdown b42)
+(unstack b34 b28)
+(putdown b34)
+(unstack b92 b50)
+(putdown b92)
+(unstack b50 b78)
+(putdown b50)
+(unstack b78 b48)
+(putdown b78)
+(unstack b48 b52)
+(putdown b48)
+(unstack b66 b27)
+(putdown b66)
+(unstack b27 b8)
+(putdown b27)
+(unstack b8 b96)
+(putdown b8)
+(unstack b96 b65)
+(putdown b96)
+(unstack b65 b14)
+(putdown b65)
+(unstack b14 b40)
+(putdown b14)
+(unstack b40 b58)
+(putdown b40)
+(unstack b58 b71)
+(putdown b58)
+(pickup b28)
+(stack b28 b18)
+(pickup b82)
+(stack b82 b28)
+(pickup b20)
+(stack b20 b82)
+(pickup b69)
+(stack b69 b20)
+(pickup b5)
+(stack b5 b69)
+(pickup b93)
+(stack b93 b5)
+(pickup b74)
+(stack b74 b93)
+(pickup b88)
+(stack b88 b74)
+(pickup b62)
+(stack b62 b88)
+(pickup b33)
+(stack b33 b62)
+(pickup b9)
+(stack b9 b33)
+(pickup b54)
+(stack b54 b9)
+(pickup b42)
+(stack b42 b54)
+(pickup b45)
+(stack b45 b42)
+(pickup b12)
+(stack b12 b45)
+(pickup b92)
+(stack b92 b12)
+(pickup b38)
+(stack b38 b92)
+(pickup b39)
+(stack b39 b38)
+(pickup b27)
+(stack b27 b39)
+(pickup b35)
+(stack b35 b27)
+(pickup b19)
+(stack b19 b35)
+(pickup b41)
+(stack b41 b34)
+(pickup b91)
+(stack b91 b41)
+(pickup b76)
+(stack b76 b91)
+(pickup b55)
+(stack b55 b76)
+(pickup b50)
+(stack b50 b55)
+(pickup b66)
+(stack b66 b50)
+(pickup b48)
+(stack b48 b66)
+(pickup b59)
+(stack b59 b71)
+(pickup b61)
+(stack b61 b59)
+(pickup b73)
+(stack b73 b61)
+(pickup b95)
+(stack b95 b73)
+(pickup b75)
+(stack b75 b95)
+(pickup b52)
+(stack b52 b75)
+(pickup b3)
+(stack b3 b58)
+(pickup b23)
+(stack b23 b3)
+(pickup b2)
+(stack b2 b23)
+(pickup b87)
+(stack b87 b2)
+(pickup b85)
+(stack b85 b87)
+(pickup b6)
+(stack b6 b85)
+(pickup b67)
+(stack b67 b6)
+(pickup b10)
+(stack b10 b67)
+(pickup b80)
+(stack b80 b10)
+(pickup b46)
+(stack b46 b80)
+(pickup b29)
+(stack b29 b46)
+(pickup b8)
+(stack b8 b29)
+(pickup b17)
+(stack b17 b8)
+(pickup b47)
+(stack b47 b17)
+(pickup b32)
+(stack b32 b47)
+(pickup b83)
+(stack b83 b32)
+(pickup b11)
+(stack b11 b83)
+(pickup b96)
+(stack b96 b11)
+(pickup b79)
+(stack b79 b96)
+(pickup b78)
+(stack b78 b79)
+(pickup b81)
+(stack b81 b78)
+(pickup b53)
+(stack b53 b81)
+(pickup b57)
+(stack b57 b53)
+(pickup b44)
+(stack b44 b57)
+(pickup b89)
+(stack b89 b77)
+(pickup b60)
+(stack b60 b89)
+(pickup b94)
+(stack b94 b60)
+(pickup b14)
+(stack b14 b94)
+(pickup b26)
+(stack b26 b65)
+(pickup b4)
+(stack b4 b26)
+(pickup b84)
+(stack b84 b4)
+(pickup b25)
+(stack b25 b84)
+(pickup b70)
+(stack b70 b51)
+(pickup b7)
+(stack b7 b70)
+(pickup b68)
+(stack b68 b7)
+(pickup b40)
+(stack b40 b68)
+(pickup b64)
+(stack b64 b40)
+(pickup b16)
+(stack b16 b64)
+(pickup b86)
+(stack b86 b16)
+(pickup b22)
+(stack b22 b86)
+(pickup b43)
+(stack b43 b22)
+(pickup b1)
+(stack b1 b49)
+(pickup b37)
+(stack b37 b1)
+(pickup b72)
+(stack b72 b37)
+(pickup b13)
+(stack b13 b72)
+(pickup b21)
+(stack b21 b13)
+(pickup b56)
+(stack b56 b21)
+(pickup b30)
+(stack b30 b56)
+(pickup b63)
+(stack b63 b30)
+(pickup b90)
+(stack b90 b15)
+(pickup b36)
+(stack b36 b90)
+(pickup b31)
+(stack b31 b24)
+[2026-03-03 16:27:14,821] INFO :: Extracted plan tokens: 650
+[2026-03-03 16:27:14,821] INFO :: Response metadata: response_tokens=53173, extracted_plan_tokens=650
+[2026-03-03 16:27:14,821] INFO :: Plan file: logs/blocksworld_nvidia_gpt_oss_20b/medium-p09_lifted_seed1.plan
