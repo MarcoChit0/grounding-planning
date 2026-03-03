@@ -9,6 +9,7 @@ from typing import Callable, List, Optional, Tuple
 
 DOMAIN_NAME = "blocksworld"
 LOG_PATTERN = re.compile(r"^(?P<instance>.+)_(?P<template>[^_]+)_seed(?P<seed>\d+)\.log$")
+DEFAULT_TEMPLATE_ORDER = ("grounded", "lifted", "landmarks")
 
 
 @dataclass
@@ -250,11 +251,11 @@ def generate_latex_table(
     _ = log_file_basename
     seed_order = [1, 2, 3]
     template_set = {result.template for result in results}
-    preferred_templates = [t for t in ["grounded", "lifted"] if t in template_set]
+    preferred_templates = [t for t in DEFAULT_TEMPLATE_ORDER if t in template_set]
     extra_templates = sorted(template_set - set(preferred_templates))
     templates = preferred_templates + extra_templates
     if not templates:
-        templates = ["grounded", "lifted"]
+        templates = list(DEFAULT_TEMPLATE_ORDER)
 
     instances = sorted({result.instance for result in results}, key=natural_sort_key)
 
@@ -313,13 +314,13 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--outdir",
-        default="logs/blocksworld",
+        default="logs/blocksworld_nvidia_gpt_oss_20b",
         help="Directory containing .log/.plan files and where outputs are written.",
     )
     parser.add_argument(
         "--base-dir",
         default="benchmarks/blocksworld",
-        help="Blocksworld benchmark base directory (domain.pddl, grounded/, lifted/).",
+        help="Blocksworld benchmark base directory (domain.pddl, grounded/, lifted/, landmarks/).",
     )
     parser.add_argument(
         "--results-path",

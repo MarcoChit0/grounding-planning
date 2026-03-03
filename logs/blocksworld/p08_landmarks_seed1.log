@@ -1,0 +1,2130 @@
+[2026-02-11 19:53:45,110] INFO :: Stage: plan generation
+[2026-02-11 19:53:45,111] INFO :: Prompt metadata: domain=/content/drive/MyDrive/grounding-planning/benchmarks/blocksworld/domain.pddl, instance=/content/drive/MyDrive/grounding-planning/benchmarks/blocksworld/lifted/p08.pddl, template=landmarks, seed=1, timestamp=2026-02-11T19:53:45Z
+[2026-02-11 19:53:45,112] INFO :: Model metadata: model=Qwen/Qwen3-4B-Thinking-2507, device=cuda, dtype=torch.float16, generation_config=GenerationConfig {
+  "do_sample": true,
+  "eos_token_id": 151645,
+  "max_new_tokens": 81920,
+  "pad_token_id": 151643,
+  "temperature": 0.6,
+  "top_k": 20,
+  "top_p": 0.95
+}
+, library_versions={'python': '3.12.12', 'torch': '2.9.0+cu128', 'transformers': '5.0.0', 'numpy': '2.0.2'}
+[2026-02-11 19:53:46,007] INFO :: Prompt:
+
+<role>
+You are an AI planning expert.
+</role>
+
+<task>
+Given the initial state, the set of goal facts, and a list of available actions, return **a plan** (a sequence of actions) that transforms the initial state into a goal state.
+</task>
+
+<definitions>
+- A state is a set of facts.
+- A goal state is a state that has all goal facts.
+- An action is applicable if, and only if, **all** its preconditions are in the current state.
+- When an action is applied: remove its delete effects from the state, then add its add effects.
+- An action is an **action landmark** if it must appear on every valid plan. 
+</definitions>
+
+<inputs>
+This is the initial state:
+<initial-state>
+(on b2 b3)
+(on-table b1)
+(clear b2)
+(clear b1)
+(on-table b3)
+(arm-empty)
+</initial-state>
+
+These are the goal facts:
+<goal-facts>
+(on b3 b2)
+(on b1 b3)
+</goal-facts>
+
+These are the actions:
+<actions>
+name:  (pickup b1) ; preconditions:  (arm-empty), (clear b1), (on-table b1) ; delete effects:  (arm-empty), (clear b1), (on-table b1) ; add effects:  (holding b1) ; is action landmark:  True
+name:  (pickup b3) ; preconditions:  (arm-empty), (clear b3), (on-table b3) ; delete effects:  (arm-empty), (clear b3), (on-table b3) ; add effects:  (holding b3) ; is action landmark:  True
+name:  (pickup b2) ; preconditions:  (clear b2), (on-table b2), (arm-empty) ; delete effects:  (arm-empty), (clear b2), (on-table b2) ; add effects:  (holding b2) ; is action landmark:  False
+name:  (putdown b1) ; preconditions:  (holding b1) ; delete effects:  (holding b1) ; add effects:  (arm-empty), (clear b1), (on-table b1) ; is action landmark:  False
+name:  (putdown b3) ; preconditions:  (holding b3) ; delete effects:  (holding b3) ; add effects:  (arm-empty), (clear b3), (on-table b3) ; is action landmark:  False
+name:  (putdown b2) ; preconditions:  (holding b2) ; delete effects:  (holding b2) ; add effects:  (arm-empty), (clear b2), (on-table b2) ; is action landmark:  False
+name:  (stack b1 b1) ; preconditions:  (clear b1), (holding b1) ; delete effects:  (holding b1) ; add effects:  (arm-empty), (on b1 b1) ; is action landmark:  False
+name:  (stack b1 b3) ; preconditions:  (clear b3), (holding b1) ; delete effects:  (clear b3), (holding b1) ; add effects:  (arm-empty), (clear b1), (on b1 b3) ; is action landmark:  True
+name:  (stack b1 b2) ; preconditions:  (clear b2), (holding b1) ; delete effects:  (clear b2), (holding b1) ; add effects:  (arm-empty), (clear b1), (on b1 b2) ; is action landmark:  False
+name:  (stack b3 b1) ; preconditions:  (clear b1), (holding b3) ; delete effects:  (clear b1), (holding b3) ; add effects:  (arm-empty), (clear b3), (on b3 b1) ; is action landmark:  False
+name:  (stack b3 b3) ; preconditions:  (clear b3), (holding b3) ; delete effects:  (holding b3) ; add effects:  (arm-empty), (on b3 b3) ; is action landmark:  False
+name:  (stack b3 b2) ; preconditions:  (clear b2), (holding b3) ; delete effects:  (clear b2), (holding b3) ; add effects:  (on b3 b2), (arm-empty), (clear b3) ; is action landmark:  True
+name:  (stack b2 b1) ; preconditions:  (clear b1), (holding b2) ; delete effects:  (clear b1), (holding b2) ; add effects:  (arm-empty), (clear b2), (on b2 b1) ; is action landmark:  False
+name:  (stack b2 b3) ; preconditions:  (clear b3), (holding b2) ; delete effects:  (clear b3), (holding b2) ; add effects:  (on b2 b3), (arm-empty), (clear b2) ; is action landmark:  False
+name:  (stack b2 b2) ; preconditions:  (clear b2), (holding b2) ; delete effects:  (holding b2) ; add effects:  (arm-empty), (on b2 b2) ; is action landmark:  False
+name:  (unstack b1 b1) ; preconditions:  (arm-empty), (clear b1), (on b1 b1) ; delete effects:  (arm-empty), (on b1 b1) ; add effects:  (holding b1) ; is action landmark:  False
+name:  (unstack b1 b3) ; preconditions:  (arm-empty), (clear b1), (on b1 b3) ; delete effects:  (arm-empty), (clear b1), (on b1 b3) ; add effects:  (clear b3), (holding b1) ; is action landmark:  False
+name:  (unstack b1 b2) ; preconditions:  (on b1 b2), (clear b1), (arm-empty) ; delete effects:  (on b1 b2), (clear b1), (arm-empty) ; add effects:  (clear b2), (holding b1) ; is action landmark:  False
+name:  (unstack b3 b1) ; preconditions:  (on b3 b1), (clear b3), (arm-empty) ; delete effects:  (on b3 b1), (clear b3), (arm-empty) ; add effects:  (clear b1), (holding b3) ; is action landmark:  False
+name:  (unstack b3 b3) ; preconditions:  (arm-empty), (clear b3), (on b3 b3) ; delete effects:  (arm-empty), (on b3 b3) ; add effects:  (holding b3) ; is action landmark:  False
+name:  (unstack b3 b2) ; preconditions:  (on b3 b2), (arm-empty), (clear b3) ; delete effects:  (on b3 b2), (arm-empty), (clear b3) ; add effects:  (clear b2), (holding b3) ; is action landmark:  False
+name:  (unstack b2 b1) ; preconditions:  (clear b2), (on b2 b1), (arm-empty) ; delete effects:  (clear b2), (on b2 b1), (arm-empty) ; add effects:  (clear b1), (holding b2) ; is action landmark:  False
+name:  (unstack b2 b3) ; preconditions:  (on b2 b3), (clear b2), (arm-empty) ; delete effects:  (on b2 b3), (clear b2), (arm-empty) ; add effects:  (clear b3), (holding b2) ; is action landmark:  True
+name:  (unstack b2 b2) ; preconditions:  (clear b2), (on b2 b2), (arm-empty) ; delete effects:  (arm-empty), (on b2 b2) ; add effects:  (holding b2) ; is action landmark:  False
+</actions>
+</inputs>
+
+<output-format>
+Return **only** a plan wrapped in "<plan>...</plan>", where each plan's action should be identified by its name on the table, each on a line. Do not include analysis, examples, or commentary outside the plan tags.
+</output-format>
+
+<requirements>
+- The plan must transform the initial state into a goal state.
+- All actions in the plan must be applicable.
+- All action landmarks must be included in the plan.
+- Your plan may include non-landmark actions.
+</requirements>
+[2026-02-11 19:53:46,012] INFO :: Prompt tokens: 1981
+[2026-02-11 20:12:03,159] INFO :: Reasoning trace:
+First, I need to understand the problem. I'm given an initial state, goal facts, and a list of actions. I have to find a sequence of actions that turns the initial state into the goal state. The output should be a plan in the <plan> tags with each action on a new line.
+
+The initial state is:
+- (on b2 b3)
+- (on-table b1)
+- (clear b2)
+- (clear b1)
+- (on-table b3)
+- (arm-empty)
+
+Goal facts are:
+- (on b3 b2)
+- (on b1 b3)
+
+So, I need to end up with b3 on top of b2, and b1 on top of b3.
+
+Now, looking at the actions, I see that some are action landmarks. Specifically, from the list:
+
+- (pickup b1) is an action landmark
+- (pickup b3) is an action landmark
+- (stack b1 b3) is an action landmark
+- (stack b3 b2) is an action landmark
+
+The requirement says: "All action landmarks must be included in the plan." So, I must include these four actions: pickup b1, pickup b3, stack b1 b3, and stack b3 b2.
+
+But I need to check if they are indeed action landmarks. The problem says: "An action is an action landmark if it must appear on every valid plan." So, for this problem, I have to include these specific ones.
+
+Let me list the action landmarks from the input:
+
+- (pickup b1) : is action landmark: True
+- (pickup b3) : is action landmark: True
+- (stack b1 b3) : is action landmark: True
+- (stack b3 b2) : is action landmark: True
+
+Yes, those are the only ones marked as True for is action landmark.
+
+Now, I need to see what the initial state is and what actions I can do.
+
+Initial state facts:
+- (on b2 b3) : so b2 is on b3? Wait, no: (on b2 b3) means b2 is on top of b3? In standard block world, (on X Y) usually means X is on Y, so Y is the table or another block.
+
+In this context, (on b2 b3) means b2 is on b3, so b3 is below b2.
+
+Similarly, (on-table b1) means b1 is on the table.
+
+(clear b2) means b2 is clear (no block on top of it).
+
+(clear b1) means b1 is clear.
+
+(on-table b3) means b3 is on the table.
+
+(arm-empty) means the arm is not holding anything.
+
+Goal: (on b3 b2) and (on b1 b3). So, b3 on b2, and b1 on b3. That means b1 is on top of b3, and b3 is on top of b2. So the stack should be b1 -> b3 -> b2, with b2 on the table? Let's see.
+
+(on b3 b2) means b3 is on b2, so b2 is below.
+
+(on b1 b3) means b1 is on b3, so b3 is below.
+
+So the stack is: b1 on b3, b3 on b2. So b2 is the bottom, then b3, then b1 on top.
+
+In terms of the table, since b2 is on b3, and b3 is on table? Initial state has (on b2 b3) and (on-table b3), so b3 is on table, b2 is on b3.
+
+Similarly, b1 is on table.
+
+Initial state:
+- b1: on table, clear
+- b2: on b3, clear
+- b3: on table
+
+b3 is on table, b2 is on b3, so b2 is not on table.
+
+Now, goal: b1 on b3, b3 on b2.
+
+So I need to move b1 to be on top of b3, and b3 to be on top of b2.
+
+But b2 is currently on b3, so to have b3 on b2, I need to move b3 off b2? That might be tricky.
+
+Let's think step by step.
+
+First, I need to pick up something.
+
+The action landmarks are pickup b1 and pickup b3.
+
+Since b1 is on table and clear, I can pickup b1.
+
+Similarly, b3 is on table and clear? Initial state has (clear b1) and (clear b2), but (on-table b3), so b3 should be clear if it's on table with nothing on it.
+
+In block world, if a block is on table and nothing on top, it's clear.
+
+Initial state: (on b2 b3) so b2 is on b3, so b3 has b2 on it, so b3 is not clear.
+
+(clear b2) means b2 has nothing on top, so it's clear.
+
+(clear b1) means b1 has nothing on top, so clear.
+
+(on-table b3) means b3 is on table.
+
+But since b2 is on b3, b3 is not clear; only b2 is clear.
+
+Let's clarify the clear facts.
+
+In this system, "clear" means that there is no block on top of it.
+
+So for a block to be clear, it must have nothing resting on it.
+
+Initial state:
+- (clear b2): so b2 has nothing on top of it. Since b2 is on b3, b3 has b2 on it, so b3 is not clear.
+- (clear b1): b1 has nothing on top, so it's clear and on table.
+- (on b2 b3): b2 is on b3, so b3 has b2 on it.
+- (on-table b1): b1 is on table.
+- (on-table b3): b3 is on table.
+
+So, b3 is on table with b2 on top, so b3 is not clear.
+
+b2 is clear (no block on top).
+
+b1 is clear and on table.
+
+Now, for pickup actions:
+
+- pickup b1: preconditions: (arm-empty), (clear b1), (on-table b1) — all true initially, so I can pick up b1.
+
+- pickup b3: preconditions: (arm-empty), (clear b3), (on-table b3) — but (clear b3) is false, because b2 is on b3, so b3 is not clear. So I cannot pick up b3 directly.
+
+Similarly, pickup b2: preconditions: (clear b2), (on-table b2) — but b2 is not on table; it's on b3, so (on-table b2) is false. So I cannot pick up b2.
+
+So initially, only pickup b1 is possible.
+
+I need to pick up b1 first.
+
+After picking up b1, what happens?
+
+Action: pickup b1
+
+Delete effects: (arm-empty), (clear b1), (on-table b1)
+
+Add effects: (holding b1)
+
+So after pickup b1:
+- arm is not empty (holding b1)
+- b1 is no longer clear (since being held)
+- b1 is no longer on table
+- add (holding b1)
+
+State becomes:
+- (on b2 b3)  [unchanged]
+- (on-table b3) [unchanged]
+- (clear b2)  [unchanged]
+- (clear b1) is removed, so not clear
+- (on-table b1) is removed, so b1 not on table
+- (arm-empty) is removed, so arm not empty
+- add (holding b1)
+
+So: (on b2 b3), (on-table b3), (clear b2), (holding b1), (arm-not-empty)
+
+Now, I need to do something else.
+
+The action landmarks include pickup b3, but I can't pick up b3 yet because b3 is not clear.
+
+I need to make b3 clear.
+
+How can I make b3 clear? By removing b2 from b3.
+
+b2 is on b3, so I need to unstack b2 from b3.
+
+There is an unstack action.
+
+Look at unstack actions.
+
+For example, unstack b2 b3: preconditions: (on b2 b3), (clear b2), (arm-empty)
+
+In current state, (on b2 b3) is true, (clear b2) is true, but (arm-empty) is false (since holding b1). So arm is not empty, so I cannot unstack b2 from b3.
+
+I need to put down b1 first.
+
+I have b1 being held.
+
+I can put down b1.
+
+Action: putdown b1
+
+Preconditions: (holding b1) — true
+
+Delete effects: (holding b1)
+
+Add effects: (arm-empty), (clear b1), (on-table b1)
+
+So after putdown b1:
+- arm empty
+- b1 clear
+- b1 on table
+
+State: back to initial state? No, because b2 is still on b3.
+
+Initial state had (on b2 b3), etc.
+
+After putdown b1, I'm back to initial state except that I did an extra action.
+
+But I need to move things.
+
+I should pick up b1, then unstack b2 from b3, but I can't unstack because arm not empty.
+
+So I need to put down b1 first to free the arm.
+
+Let's think about the action landmarks.
+
+The action landmarks are: pickup b1, pickup b3, stack b1 b3, stack b3 b2.
+
+I must include all of them in the plan.
+
+First, I need to pick up b1.
+
+Then, I need to pick up b3, but to pick up b3, it must be clear and on table.
+
+Currently, b3 is on table but not clear because b2 is on it.
+
+So I need to remove b2 from b3.
+
+How to remove b2 from b3?
+
+I can unstack b2 from b3.
+
+Unstack b2 b3: preconditions: (on b2 b3), (clear b2), (arm-empty)
+
+In initial state, (on b2 b3) true, (clear b2) true, but (arm-empty) false, so I cannot do it.
+
+So I need to have arm empty first.
+
+I can put down b1 to make arm empty.
+
+So plan so far:
+
+1. pickup b1  (applicable initially)
+
+After this: holding b1, arm not empty, b1 not clear, not on table.
+
+2. putdown b1  (applicable, since holding b1)
+
+After this: arm empty, b1 clear, on table, back to initial state.
+
+But I just did two actions and back to start. Not helpful.
+
+After pickup b1, I need to unstack b2 from b3, but I can't because arm not empty.
+
+So I have to put down b1 first.
+
+But putting down b1 doesn't change the stack; it just puts b1 back on table.
+
+Then I can pick up b1 again, but I need to move b2.
+
+Another idea: perhaps I can use stack actions directly.
+
+For example, there is stack b1 b3, but stack b1 b3 requires (clear b3) and (holding b1).
+
+Initially, b3 is not clear, so I can't.
+
+Similarly, stack b3 b2 requires (clear b2) and (holding b3), but b3 not clear.
+
+Let's list all actions that might be relevant.
+
+I see that unstack b2 b3 is an action, but it requires arm-empty.
+
+So I need to have arm empty to unstack.
+
+To have arm empty, I need to put down something.
+
+Since b1 is on table and clear, I can pick it up and put it down later, but that might not help.
+
+Let's think about the goal.
+
+Goal is (on b3 b2) and (on b1 b3).
+
+So b3 is on b2, and b1 is on b3.
+
+Currently, b2 is on b3, so I need to move b2 to be under b3? No.
+
+In the initial state, b2 is on b3, so for b3 to be on b2, I need to have b3 move to b2's position, but that might mean unstacking b2 from b3 first.
+
+Perhaps the stack actions can be used to build the tower.
+
+Another thought: the action stack b1 b3 might be used to put b1 on b3, but only if b3 is clear.
+
+Similarly, stack b3 b2 to put b3 on b2, but b2 is clear.
+
+Let's see the preconditions for stack actions.
+
+For example, stack b1 b3: preconditions: (clear b3), (holding b1)
+
+But initially, b3 is not clear.
+
+So I need to make b3 clear.
+
+How to make b3 clear? By removing b2 from b3.
+
+So I need to unstack b2 from b3.
+
+Unstack b2 b3: preconditions: (on b2 b3), (clear b2), (arm-empty)
+
+To have arm-empty, I need to put down b1 or something.
+
+But b1 is on table.
+
+So sequence:
+
+- Pick up b1: now holding b1, arm not empty
+
+- Put down b1: arm empty, b1 on table
+
+Now state: initial state
+
+- Unstack b2 b3: preconditions satisfied? (on b2 b3) true, (clear b2) true, (arm-empty) true, so I can unstack b2 b3.
+
+What does unstack b2 b3 do?
+
+Action: unstack b2 b3
+
+Delete effects: (on b2 b3), (clear b2), (arm-empty)
+
+Add effects: (clear b2), (holding b2)  wait no.
+
+From the actions:
+
+unstack b2 b3: preconditions: (on b2 b3), (clear b2), (arm-empty)
+
+Delete effects: (on b2 b3), (clear b2), (arm-empty)
+
+Add effects: (clear b2), (holding b2) ? Let's see the definition.
+
+In the input:
+
+name:  (unstack b2 b3) ; preconditions:  (on b2 b3), (clear b2), (arm-empty) ; delete effects:  (on b2 b3), (clear b2), (arm-empty) ; add effects:  (clear b3), (holding b2) ; is action landmark:  True
+
+Add effects: (clear b3), (holding b2)
+
+Delete effects: (on b2 b3), (clear b2), (arm-empty)
+
+So when I unstack b2 b3, I remove (on b2 b3), (clear b2), (arm-empty), and add (clear b3), (holding b2)
+
+So after unstack b2 b3:
+
+- on b2 b3 is removed, so b2 is not on b3
+
+- clear b2 is removed, so b2 is not clear? But add effects include clear b3 and holding b2.
+
+Let's think carefully.
+
+Before unstack:
+- (on b2 b3) true
+- (clear b2) true
+- (arm-empty) true
+
+After unstack:
+- delete (on b2 b3), so b2 not on b3
+- delete (clear b2), so b2 is no longer clear? But in block world, when you unstack, the block you were holding becomes clear again, but here it's different.
+
+The action says delete effects: (on b2 b3), (clear b2), (arm-empty)
+
+Add effects: (clear b3), (holding b2)
+
+So after unstack:
+- (on b2 b3) is false
+- (clear b2) is false (since deleted)
+- (arm-empty) is false (deleted)
+- add (clear b3) true
+- add (holding b2) true
+
+So b2 is now being held, and b3 is clear (since (clear b3) added).
+
+Also, b2 is not clear because (clear b2) was deleted.
+
+In this state, b3 is clear, and b2 is held.
+
+Now, I can pick up b3? But b3 is clear and on table? Let's see the state.
+
+After unstack b2 b3:
+- b2 is held
+- b3 is clear (add effect)
+- b3 is on table? Initial state had (on-table b3), and unstack doesn't change that, so b3 is still on table.
+
+Initial state: (on-table b3) is true, and unstack doesn't affect it, so b3 is on table and clear.
+
+b2 is held.
+
+Now, I can do pickup b3? But pickup b3 requires (arm-empty), but arm is not empty (holding b2), so I cannot pick up b3.
+
+I need to put down b2 first.
+
+Put down b2: action putdown b2
+
+Preconditions: (holding b2) true
+
+Delete effects: (holding b2)
+
+Add effects: (arm-empty), (clear b2), (on-table b2)  ? From actions.
+
+putdown b2: preconditions: (holding b2) ; delete effects: (holding b2) ; add effects: (arm-empty), (clear b2), (on-table b2)
+
+So after putdown b2:
+- arm empty
+- b2 clear
+- b2 on table
+
+State: (on-table b2), (clear b2), (on-table b3), (clear b3)  [since b3 clear], and b1 is on table clear.
+
+Initial state had b1 on table clear, so now b1, b2, b3 all on table, all clear.
+
+b3 is clear, b2 is clear, b1 is clear.
+
+Now, I can pick up b3.
+
+pickup b3: preconditions: (arm-empty), (clear b3), (on-table b3) all true.
+
+So do pickup b3.
+
+After pickup b3: holding b3, arm not empty, b3 not clear, not on table.
+
+Now, I need to stack b1 on b3.
+
+But b1 is on table, clear.
+
+I can pick up b1.
+
+pickup b1: preconditions satisfied.
+
+After pickup b1: holding b1, arm not empty (but I have b3 held? No, after pickup b3, I have b3 held, so arm not empty.
+
+I have b3 held, so I can't pick up b1 yet.
+
+I need to put down b3 first.
+
+Put down b3: add effects (arm-empty), (clear b3), (on-table b3)
+
+After putdown b3: arm empty, b3 clear, on table.
+
+Then I can pick up b1.
+
+pickup b1: now holding b1.
+
+Then I can do stack b1 b3.
+
+stack b1 b3: preconditions: (clear b3), (holding b1)
+
+After stack b1 b3: delete (clear b3), (holding b1); add (arm-empty), (clear b1), (on b1 b3)
+
+So now (on b1 b3) is true.
+
+But I need (on b3 b2) as well.
+
+b2 is on table, clear.
+
+I have b2 on table.
+
+I need to get b3 on b2.
+
+But b3 is on table, clear.
+
+I can pick up b3 again.
+
+But I have b1 on b3 now.
+
+Current state after stack b1 b3:
+- (on b1 b3) true
+- b3 is not clear (since stack b1 b3 deletes clear b3)
+- b1 is not clear (deleted)
+- arm empty
+- b2 on table clear
+- b3 on table? After stack, b3 is still on table? Stack b1 b3 adds (on b1 b3), but b3 is still on table? The action doesn't change the table position.
+
+In stack actions, the add effects include (on b1 b3), but b3 is still on table, so b3 is not clear.
+
+To have b3 on b2, I need to stack b3 on b2.
+
+But b2 is on table, clear.
+
+So I can pick up b3 and stack it on b2.
+
+But I have b1 on b3, so I need to unstack b1 from b3 first.
+
+This is getting messy.
+
+Let's list the actions I have done so far in my plan.
+
+I started with:
+
+1. pickup b1 (initially applicable)
+
+2. putdown b1 (applicable)
+
+3. unstack b2 b3 (applicable after step 2)
+
+4. putdown b2 (applicable)
+
+Now state: all blocks on table, clear.
+
+5. pickup b3 (applicable)
+
+6. putdown b3 (applicable)  // but I don't need to put down b3 if I want to use it later
+
+After step 4, all on table clear.
+
+I can do:
+
+- pickup b3
+
+- stack b1 b3  but b1 is on table, so I need to pick up b1 first.
+
+Sequence:
+
+After step 4: all on table clear.
+
+Do pickup b1: now holding b1
+
+Then stack b1 b3: but stack b1 b3 requires (clear b3) and (holding b1)
+
+After pickup b1, b3 is clear, so I can do stack b1 b3.
+
+Stack b1 b3: delete (clear b3), (holding b1); add (arm-empty), (clear b1), (on b1 b3)
+
+So after stack b1 b3: (on b1 b3) true, b1 not clear, b3 not clear, arm empty.
+
+Now, b3 is on table? Yes, but not clear.
+
+I need to get b3 on b2.
+
+b2 is on table clear.
+
+So I can pick up b3.
+
+pickup b3: preconditions: (arm-empty), (clear b3), (on-table b3) — but b3 is not clear (since stack b1 b3 deleted clear b3), so (clear b3) false. I cannot pick up b3.
+
+Problem.
+
+After stack b1 b3, b3 is not clear because the stack action deleted clear b3.
+
+To pick up b3, I need b3 clear.
+
+So I need to unstack b1 from b3.
+
+Unstack b1 b3: preconditions: (arm-empty), (clear b1), (on b1 b3)
+
+In current state, (arm-empty) true, (clear b1) true (from stack b1 b3 add effects), (on b1 b3) true.
+
+So I can unstack b1 b3.
+
+Unstack b1 b3: delete effects: (arm-empty), (clear b1), (on b1 b3) ; add effects: (clear b3), (holding b1)
+
+So after unstack b1 b3: arm empty, b1 clear, b3 clear, and holding b1? Add effects: (clear b3), (holding b1)
+
+So b1 is held, b3 is clear.
+
+Then I can pick up b3? But I have b1 held, so arm not empty.
+
+I need to put down b1 first.
+
+Put down b1: add (arm-empty), (clear b1), (on-table b1)
+
+Then I can pick up b3.
+
+Then stack b3 b2.
+
+Stack b3 b2: preconditions: (clear b2), (holding b3)
+
+After stack b3 b2: delete (clear b2), (holding b3); add (arm-empty), (clear b3), (on b3 b2)
+
+So now (on b3 b2) true.
+
+Then I need (on b1 b3), so I have to stack b1 on b3.
+
+But b3 is not clear (since stack b3 b2 deleted clear b3).
+
+So I need to unstack b3 b2 first or something.
+
+This is complicated.
+
+I should focus on the action landmarks.
+
+The action landmarks are: pickup b1, pickup b3, stack b1 b3, stack b3 b2.
+
+I must include all four.
+
+Also, for stack b1 b3 to be applicable, I need (clear b3) and (holding b1) at the time of action.
+
+For stack b3 b2, I need (clear b2) and (holding b3).
+
+In the initial state, b2 is clear, so for stack b3 b2, I need to have b3 held.
+
+But b3 is not clear initially.
+
+So I need to make b3 clear first.
+
+Similarly, for stack b1 b3, I need b3 clear and b1 held.
+
+Let's try to find a sequence that includes the landmarks.
+
+Start with pickup b1 (landmark)
+
+After pickup b1: holding b1, arm not empty
+
+Now, I need to do something to make b3 clear.
+
+b3 is not clear because b2 is on it.
+
+So I need to unstack b2 from b3.
+
+But to unstack b2 b3, I need arm-empty.
+
+So I must put down b1 first.
+
+Put down b1: arm empty, b1 on table clear.
+
+Now state: initial state, but I have b1 back.
+
+Then unstack b2 b3: applicable, as (on b2 b3), (clear b2), (arm-empty) all true.
+
+After unstack b2 b3: (clear b3) true, (holding b2) true, (on b2 b3) false, (clear b2) false, (arm-empty) false
+
+So b2 is held, b3 is clear on table.
+
+Now, I need to do pickup b3 (landmark)
+
+But to pick up b3, I need arm-empty, but arm is not empty (holding b2), so I can't.
+
+So I must put down b2 first.
+
+Put down b2: arm empty, b2 on table clear.
+
+Now state: all blocks on table, all clear.
+
+Now I can do pickup b3 (landmark)
+
+After pickup b3: holding b3, arm not empty
+
+Now, I need to do stack b1 b3 (landmark)
+
+But stack b1 b3 requires (clear b3) and (holding b1)
+
+Currently, b3 is not clear (since picked up), so (clear b3) false.
+
+I need b3 clear.
+
+So I need to put down b3 first.
+
+Put down b3: arm empty, b3 on table clear.
+
+Then pickup b1: holding b1
+
+Then stack b1 b3: now (clear b3) true, (holding b1) true, so stack b1 b3 applicable.
+
+After stack b1 b3: (on b1 b3) true, arm empty, b1 not clear, b3 not clear.
+
+Now, I need stack b3 b2 (landmark)
+
+Stack b3 b2 requires (clear b2) and (holding b3)
+
+b2 is on table clear, so (clear b2) true.
+
+But b3 is not held; it's on table, not clear.
+
+So I need to pick up b3.
+
+But to pick up b3, I need (clear b3) and (on-table b3), but (clear b3) is false (since stack b1 b3 deleted it), so I can't pick up b3.
+
+So I need to unstack b1 from b3.
+
+Unstack b1 b3: preconditions: (arm-empty), (clear b1), (on b1 b3) — all true (arm empty, clear b1, on b1 b3)
+
+After unstack b1 b3: arm empty, clear b1, on b1 b3 false, add clear b3, holding b1.
+
+So b1 held, b3 clear.
+
+Now, I can pick up b3? But arm not empty (holding b1), so no.
+
+Put down b1: arm empty, b1 on table clear.
+
+Then pickup b3: now holding b3.
+
+Then stack b3 b2: preconditions (clear b2) true, (holding b3) true, so applicable.
+
+After stack b3 b2: delete (clear b2), (holding b3); add (arm-empty), (clear b3), (on b3 b2)
+
+So now (on b3 b2) true.
+
+Also, b1 is on table clear.
+
+But I need (on b1 b3), which is not there.
+
+So I have to stack b1 on b3.
+
+But b3 is not clear (stack b3 b2 deleted clear b3).
+
+So I need to unstack b3 b2 first.
+
+Unstack b3 b2: preconditions: (on b3 b2), (clear b3), (arm-empty) — but (clear b3) is false, so not applicable.
+
+The unstack action for b3 b2: from the list, unstack b3 b2 has preconditions: (on b3 b2), (arm-empty), (clear b3) — yes, (clear b3) is required.
+
+But in current state, after stack b3 b2, (clear b3) is false, so I can't unstack.
+
+This is not working.
+
+I think I have a mistake in the goal.
+
+The goal facts are (on b3 b2) and (on b1 b3).
+
+In my current state, I have (on b3 b2) true, but (on b1 b3) is false.
+
+I need to have b1 on b3.
+
+But b3 is on b2, so b3 is not clear, so I can't put b1 on b3.
+
+To put b1 on b3, I need b3 clear, which requires that b3 has nothing on top, but b3 has b2 on it? No, in this state, b3 is on b2, so b2 is below, b3 is on top? Let's clarify.
+
+In the stack, (on b3 b2) means b3 is on b2, so b2 is below, b3 is on top.
+
+So for b3 to be clear, it must have nothing on top, but here it has nothing on top? No, in this state, b3 is on b2, so b2 is the block below, and b3 has nothing on top of it, so b3 should be clear.
+
+Let's think.
+
+In block world, when a block is on another block, the block below is not clear (because it has something on it), and the block on top is clear (if nothing on it).
+
+For example, if b3 is on b2, then b2 has b3 on it, so b2 is not clear, and b3 has nothing on it, so b3 is clear.
+
+In the initial state: (on b2 b3) means b2 is on b3, so b3 has b2 on it, so b3 is not clear, b2 is clear.
+
+After unstack b2 b3, b2 is held, b3 is clear.
+
+Then after stack b3 b2, (on b3 b2) means b3 is on b2, so b2 has b3 on it, so b2 is not clear, b3 is clear.
+
+In the state after stack b3 b2, b3 is clear.
+
+In my earlier sequence, after stack b3 b2, I have (on b3 b2) true, and from the action, add effects: (arm-empty), (clear b3), (on b3 b2)
+
+So (clear b3) is true.
+
+Similarly, (clear b2) is deleted, so b2 is not clear.
+
+So b3 is clear.
+
+Then I can pick up b3? But I have b3 on b2, so to pick up b3, I need it to be on table? No, pickup requires (on-table b3), but b3 is not on table; it's on b2.
+
+So I cannot pick up b3 directly.
+
+To move b3, I need to unstack it from b2.
+
+Unstack b3 b2: preconditions: (on b3 b2), (clear b3), (arm-empty)
+
+In current state, (on b3 b2) true, (clear b3) true, (arm-empty) true, so I can unstack b3 b2.
+
+After unstack b3 b2: delete (on b3 b2), (clear b3), (arm-empty); add (clear b2), (holding b3)
+
+So b3 held, b2 clear.
+
+Then I can pick up b1? b1 is on table clear.
+
+Pick up b1: holding b1
+
+Then stack b1 b3: preconditions (clear b3) and (holding b1)
+
+But after unstack b3 b2, b3 is not clear (since unstack deleted clear b3), so (clear b3) false.
+
+I need to have b3 clear.
+
+This is messy.
+
+Let's list a sequence that includes the landmarks and works.
+
+I recall that for the action landmarks to be used, in this context, stack b1 b3 and stack b3 b2 are the key.
+
+Another idea: perhaps I can do stack b1 b3 first, but I need b3 clear.
+
+So I must unstack b2 from b3 first.
+
+But to unstack b2, I need arm-empty.
+
+So the sequence must start with putting down b1 to free the arm.
+
+Let's write a plan step by step.
+
+Initial state: S0 = { (on b2 b3), (on-table b1), (clear b2), (clear b1), (on-table b3), (arm-empty) }
+
+1. pickup b1 (landmark) : applicable, since all preconditions true.
+
+After: S1 = { (on b2 b3), (on-table b3), (clear b2), (holding b1), (arm-not-empty) }  // (clear b1) and (on-table b1) removed
+
+2. putdown b1 (not landmark) : applicable, since holding b1.
+
+After: S2 = S0  // back to initial
+
+But I did two actions, no progress.
+
+Not good.
+
+1. pickup b1
+
+2. putdown b1  // back to S0
+
+3. unstack b2 b3 (landmark? no, unstack b2 b3 is not a landmark, landmarks are pickup b1, pickup b3, stack b1 b3, stack b3 b2)
+
+unstack b2 b3 is not a landmark.
+
+From S0, unstack b2 b3 is applicable? Precondition: (on b2 b3) true, (clear b2) true, (arm-empty) true? But in S0, arm-empty is true, so yes.
+
+S0: (arm-empty) true, so unstack b2 b3 is applicable.
+
+In S0, I can directly unstack b2 b3.
+
+Why didn't I think of that?
+
+Initial state: arm-empty true, (on b2 b3) true, (clear b2) true, so unstack b2 b3 is applicable.
+
+Action unstack b2 b3: delete (on b2 b3), (clear b2), (arm-empty); add (clear b3), (holding b2)
+
+So after unstack b2 b3: S1 = { (on-table b1), (clear b1), (on-table b3), (clear b3), (holding b2), (arm-not-empty) }  // (on b2 b3) removed, (clear b2) removed, (arm-empty) removed
+
+Now, b3 is clear, b2 is held.
+
+4. putdown b2 (not landmark) : applicable, since holding b2.
+
+After: S2 = { (on-table b1), (clear b1), (on-table b3), (clear b3), (arm-empty), (on-table b2) }  // add (arm-empty), (clear b2), (on-table b2)
+
+So all blocks on table, all clear.
+
+5. pickup b3 (landmark) : applicable.
+
+After: S3 = { (on-table b1), (clear b1), (on-table b3), (clear b3), (holding b3), (arm-not-empty) }  // (clear b3) removed, (on-table b3) removed
+
+6. putdown b3 (not landmark) : applicable, but I don't need to put down; I can go to stack.
+
+But I need stack b1 b3.
+
+7. pickup b1 (landmark) : applicable.
+
+After: S4 = { (on-table b1), (clear b1), (holding b1), (arm-not-empty) }  // (clear b1) removed, (on-table b1) removed
+
+8. stack b1 b3 (landmark) : preconditions: (clear b3), (holding b1) — but in S4, b3 is not clear (since putdown b3 not done), and not held.
+
+In S4, I have b1 held, but b3 is on table, not clear (because I didn't put down b3).
+
+After step 5, I have b3 held, so I can't do pickup b1 without putting down b3 first.
+
+From S3: holding b3, arm not empty.
+
+I need to put down b3 to free arm.
+
+So:
+
+5. pickup b3
+
+6. putdown b3  // arm empty, b3 on table clear
+
+S6 = S0  // all on table clear
+
+7. pickup b1  // landmark
+
+S7 = { (on-table b3), (clear b3), (holding b1), (arm-not-empty) }  // (clear b1) removed, (on-table b1) removed
+
+8. stack b1 b3  // landmark: preconditions (clear b3) true, (holding b1) true, so applicable
+
+After stack b1 b3: delete (clear b3), (holding b1); add (arm-empty), (clear b1), (on b1 b3)
+
+So S8 = { (on b1 b3), (on-table b3), (clear b1), (arm-empty) }  // (clear b3) removed, b3 still on table? (on-table b3) is still true, but b3 has b1 on it, so b3 is not clear.
+
+In S8, (on b1 b3) true, so b3 is not clear.
+
+9. Now, I need stack b3 b2 (landmark)
+
+Stack b3 b2 requires (clear b2) and (holding b3)
+
+b2 is on table clear, so (clear b2) true.
+
+But b3 is not held; it's on table, not clear.
+
+So I need to pick up b3.
+
+But to pick up b3, I need (clear b3) and (on-table b3), but (clear b3) false, so I can't.
+
+So I need to unstack b1 from b3.
+
+Unstack b1 b3: preconditions: (arm-empty), (clear b1), (on b1 b3) — all true in S8.
+
+After unstack b1 b3: delete (arm-empty), (clear b1), (on b1 b3); add (clear b3), (holding b1)
+
+So S9 = { (clear b3), (holding b1), (on-table b3) }  // b3 clear, b1 held
+
+10. putdown b1 (not landmark) : applicable
+
+After: S10 = { (on-table b1), (clear b1), (on-table b3), (clear b3), (arm-empty) }  // back to all on table clear
+
+11. pickup b3 (landmark) : applicable
+
+S11 = { (on-table b3), (clear b3), (holding b3), (arm-not-empty) }
+
+12. stack b3 b2 (landmark) : preconditions (clear b2), (holding b3) — b2 is on table clear, so (clear b2) true, (holding b3) true, so applicable.
+
+After stack b3 b2: delete (clear b2), (holding b3); add (arm-empty), (clear b3), (on b3 b2)
+
+So S12 = { (on b3 b2), (on-table b1), (clear b1), (arm-empty), (clear b3) }  // (clear b2) removed, b2 not clear
+
+Now, I have (on b3 b2) true, but I need (on b1 b3), which is not there.
+
+In S12, b1 is on table, clear.
+
+To have (on b1 b3), I need to stack b1 on b3.
+
+But b3 is not clear (stack b3 b2 deleted clear b3), so I can't.
+
+So I need to unstack b3 b2 first.
+
+Unstack b3 b2: preconditions: (on b3 b2), (clear b3), (arm-empty) — in S12, (on b3 b2) true, (clear b3) true, (arm-empty) true, so applicable.
+
+After unstack b3 b2: delete (on b3 b2), (clear b3), (arm-empty); add (clear b2), (holding b3)
+
+S13 = { (on-table b1), (clear b1), (clear b2), (holding b3), (arm-not-empty) }
+
+14. putdown b3 (not landmark) : applicable
+
+S14 = { (on-table b1), (clear b1), (clear b2), (arm-empty), (on-table b3) }  // b3 on table clear
+
+15. pickup b1 (landmark) : applicable
+
+S15 = { (on-table b3), (clear b3), (holding b1), (arm-not-empty) }
+
+16. stack b1 b3 (landmark) : preconditions (clear b3) true, (holding b1) true, applicable.
+
+After: S16 = { (on b1 b3), (on-table b3), (clear b1), (arm-empty) }  // (clear b3) removed, b3 has b1 on it
+
+Now, I have (on b1 b3) and I need (on b3 b2).
+
+b2 is on table clear.
+
+So I can do stack b3 b2.
+
+But to stack b3 b2, I need b3 held.
+
+In S16, b3 is on table, not clear.
+
+So I need to pick up b3.
+
+But (clear b3) false, so I can't pick up.
+
+Unstack b1 b3: applicable, as before.
+
+This is taking too long.
+
+I think I found a shorter way.
+
+Let's look for the action stack b3 b2, which is a landmark.
+
+Stack b3 b2 requires (clear b2) and (holding b3)
+
+In initial state, b2 is clear, so I need to have b3 held.
+
+b3 is not clear initially.
+
+So I need to make b3 clear first.
+
+To make b3 clear, I need to remove b2 from b3.
+
+So unstack b2 b3.
+
+But unstack b2 b3 requires arm-empty.
+
+So I need to have arm-empty.
+
+The only way is to put down something.
+
+Since b1 is on table clear, I can pick it up and put it down, but that's wasteful.
+
+Another action: there is stack b1 b3, but it requires b3 clear.
+
+Perhaps for this problem, the plan can be:
+
+- First, unstack b2 b3 (to make b3 clear)
+
+- Then, pick up b3
+
+- Then, stack b1 b3 (but b1 is on table, so I need to pick up b1 first)
+
+Let's try:
+
+1. unstack b2 b3 (applicable in initial state)
+
+After: S1 = { (on-table b1), (clear b1), (on-table b3), (clear b3), (holding b2), (arm-not-empty) }
+
+2. putdown b2 (applicable)
+
+S2 = { (on-table b1), (clear b1), (on-table b3), (clear b3), (arm-empty), (on-table b2) }  // all on table clear
+
+3. pickup b3 (landmark)
+
+S3 = { (on-table b1), (clear b1), (on-table b3), (clear b3), (holding b3), (arm-not-empty) }
+
+4. pickup b1 (landmark)  // but I need to have arm empty for pickup b1? No, pickup b1 requires arm-empty? No, pickup actions require arm-empty as precondition.
+
+In the actions, pickup b1: preconditions: (arm-empty), (clear b1), (on-table b1)
+
+In S3, arm not empty, so I cannot pickup b1 yet.
+
+So I need to put down b3 first.
+
+5. putdown b3 (not landmark)
+
+S4 = S2  // all on table clear
+
+6. pickup b1 (landmark)
+
+S5 = { (on-table b3), (clear b3), (holding b1), (arm-not-empty) }
+
+7. stack b1 b3 (landmark) : applicable, since (clear b3) true, (holding b1) true
+
+After: S6 = { (on b1 b3), (on-table b3), (clear b1), (arm-empty) }  // b3 has b1 on it, so not clear
+
+8. Now, I need stack b3 b2 (landmark)
+
+But to stack b3 b2, I need (clear b2) and (holding b3)
+
+b2 is on table clear, so (clear b2) true.
+
+But b3 is not held; it's on table.
+
+So I need to pick up b3.
+
+To pick up b3, I need (clear b3) and (on-table b3), but (clear b3) false, so I can't.
+
+So I must unstack b1 from b3.
+
+9. unstack b1 b3 (applicable)
+
+S7 = { (clear b3), (holding b1), (on-table b3) }  // from unstack
+
+10. putdown b1 (not landmark)
+
+S8 = { (on-table b1), (clear b1), (on-table b3), (clear b3), (arm-empty) }  // all on table clear
+
+11. pickup b3 (landmark)
+
+S9 = { (on-table b1), (clear b1), (on-table b3), (clear b3), (holding b3), (arm-not-empty) }
+
+12. stack b3 b2 (landmark) : applicable, (clear b2) true, (holding b3) true
+
+After: S10 = { (on b3 b2), (on-table b1), (clear b1), (arm-empty), (clear b3) }  // b3 on b2, so b2 not clear, b3 clear
+
+Now, I have (on b3 b2) true, and b1 on table.
+
+I need (on b1 b3), so I need to stack b1 on b3.
+
+But b3 is clear, so I can do it.
+
+13. pickup b1 (landmark) : applicable
+
+S11 = { (on-table b3), (clear b3), (holding b1), (arm-not-empty) }  // b3 has b2 on it? No, in S10, b3 is on b2, so b3 is not on table.
+
+In S10: (on b3 b2) true, so b3 is on b2, not on table.
+
+So (on-table b3) false.
+
+For pickup b1, I need (on-table b1) true, which it is, and (clear b1) true, and (arm-empty) false.
+
+In S10, arm-empty true, so I can pickup b1.
+
+S10: (arm-empty) true, (on-table b1) true, (clear b1) true, so pickup b1 applicable.
+
+After pickup b1: S11 = { (on b3 b2), (clear b1), (holding b1), (arm-not-empty) }  // (clear b1) removed, (on-table b1) removed
+
+14. stack b1 b3 (landmark) : but stack b1 b3 requires (clear b3) and (holding b1)
+
+In S11, b3 is on b2, so not clear, and (clear b3) false.
+
+So not applicable.
+
+I need to have b3 clear.
+
+To have b3 clear, I need to unstack b3 from b2.
+
+Unstack b3 b2: preconditions: (on b3 b2), (clear b3), (arm-empty) — in S10, (on b3 b2) true, (clear b3) true, (arm-empty) true, so applicable.
+
+After unstack b3 b2: S12 = { (on b3 b2) false, (clear b3) false, (arm-empty) false; add (clear b2), (holding b3) }
+
+So S12 = { (on-table b1), (clear b1), (clear b2), (holding b3), (arm-not-empty) }
+
+15. putdown b3 (not landmark)
+
+S13 = { (on-table b1), (clear b1), (clear b2), (arm-empty), (on-table b3) }  // b3 on table clear
+
+16. pickup b1 (landmark)
+
+S14 = { (on-table b3), (clear b3), (holding b1), (arm-not-empty) }
+
+17. stack b1 b3 (landmark) : applicable
+
+S15 = { (on b1 b3), (on-table b3), (clear b1), (arm-empty) }
+
+Now I have (on b1 b3) true, but I need (on b3 b2), which is not there.
+
+In S15, b3 has b1 on it, so b3 is not clear.
+
+b2 is on table clear.
+
+So I need to stack b3 on b2.
+
+But b3 is not held.
+
+So I need to pick up b3.
+
+To pick up b3, I need (clear b3) and (on-table b3), but (clear b3) false.
+
+So unstack b1 b3.
+
+This is infinite loop.
+
+I think I have a mistake in the action landmarks.
+
+Let's read the input again.
+
+For stack b1 b3: is action landmark: True
+
+For stack b3 b2: is action landmark: True
+
+But in the goal, I need (on b3 b2) and (on b1 b3), so stack b3 b2 should be the action that creates (on b3 b2), and stack b1 b3 creates (on b1 b3).
+
+In the sequence, stack b1 b3 is done when b1 is on b3, and stack b3 b2 is done when b3 is on b2.
+
+But for stack b3 b2 to be done, b3 must be held, and b2 must be clear.
+
+In the initial state, b2 is clear.
+
+So the plan should be:
+
+- First, make b3 clear by unstacking b2 from b3.
+
+- Then, pick up b3.
+
+- Then, pick up b1.
+
+- Then, stack b1 on b3.
+
+- Then, stack b3 on b2.
+
+But when I stack b1 on b3, b3 is no longer clear, so I can't stack b3 on b2 directly because b3 is not held at that point.
+
+After stacking b1 on b3, I have b3 with b1 on it, so to stack b3 on b2, I need to first unstack b1 from b3, then stack b3 on b2, then stack b1 on b3 again.
+
+But that might work.
+
+Let's write the plan.
+
+Start:
+
+1. unstack b2 b3 (applicable in initial state)
+
+After: S1 = { (on-table b1), (clear b1), (on-table b3), (clear b3), (holding b2), (arm-not-empty) }
+
+2. putdown b2 (applicable)
+
+S2 = { (on-table b1), (clear b1), (on-table b3), (clear b3), (arm-empty), (on-table b2) }  // all on table clear
+
+3. pickup b3 (landmark)
+
+S3 = { (on-table b1), (clear b1), (on-table b3), (clear b3), (holding b3), (arm-not-empty) }
+
+4. pickup b1 (landmark)  // but arm not empty, so not applicable. Need to put down b3 first.
+
+So:
+
+4. putdown b3 (not landmark)
+
+S4 = S2  // all on table clear
+
+5. pickup b1 (landmark)
+
+S5 = { (on-table b3), (clear b3), (holding b1), (arm-not-empty) }
+
+6. stack b1 b3 (landmark) : applicable
+
+S6 = { (on b1 b3), (on-table b3), (clear b1), (arm-empty) }  // b3 has b1 on it, so not clear
+
+7. unstack b1 b3 (applicable, since arm-empty, clear b1, on b1 b3)
+
+S7 = { (clear b3), (holding b1), (on-table b3) }  // b3 clear, b1 held
+
+8. putdown b1 (not landmark)
+
+S8 = { (on-table b1), (clear b1), (on-table b3), (clear b3), (arm-empty) }  // all on table clear
+
+9. pickup b3 (landmark)
+
+S9 = { (on-table b1), (clear b1), (on-table b3), (clear b3), (holding b3), (arm-not-empty) }
+
+10. stack b3 b2 (landmark) : applicable, since clear b2 true (b2 on table clear), holding b3 true
+
+After: S10 = { (on b3 b2), (on-table b1), (clear b1), (arm-empty), (clear b3) }  // b3 on b2, so b2 not clear, b3 clear
+
+Now, I have (on b3 b2) true, but I need (on b1 b3).
+
+b1 is on table clear.
+
+So I need to stack b1 on b3.
+
+11. pickup b1 (landmark) : applicable, since arm-empty, clear b1, on-table b1
+
+S11 = { (on b3 b2), (clear b1), (holding b1), (arm-not-empty) }
+
+12. stack b1 b3 (landmark) : preconditions (clear b3), (holding b1) — in S11, b3 is on b2, so not clear, (clear b3) false, so not applicable.
+
+Problem.
+
+In S10, b3 is clear, so I can pick up b3 and put it down or something.
+
+From S10: (on b3 b2) true, (clear b3) true, (arm-empty) true.
+
+I can unstack b3 b2 to free b3.
+
+12. unstack b3 b2 (applicable)
+
+S11 = { (on b3 b2) false, (clear b3) false, (arm-empty) false; add (clear b2), (holding b3) }
+
+So S11 = { (on-table b1), (clear b1), (clear b2), (holding b3), (arm-not-empty) }
+
+13. putdown b3 (not landmark)
+
+S12 = { (on-table b1), (clear b1), (clear b2), (arm-empty), (on-table b3) }  // b3 on table clear
+
+14. pickup b1 (landmark)
+
+S13 = { (on-table b3), (clear b3), (holding b1), (arm-not-empty) }
+
+15. stack b1 b3 (landmark) : applicable
+
+S14 = { (on b1 b3), (on-table b3), (clear b1), (arm-empty) }
+
+Now, I have both (on b1 b3) and (on b3 b2) is not there; in S14, b3 has b1 on it, so no b3 on b2.
+
+I need to have b3 on b2.
+
+So from S14, I can do stack b3 b2, but b3 is not held.
+
+So I need to unstack b1 b3 first.
+
+This is not working.
+
+I think for the goal (on b3 b2) and (on b1 b3), it means that b1 is on b3, and b3 is on b2, so b2 is the bottom.
+
+In the initial state, b2 is on b3, so it's like b3 is on table, b2 on b3.
+
+To have b3 on b2, I need to have b3 move to be on top of b2.
+
+So the sequence should be:
+
+- Unstack b2 from b3 (so b2 is free)
+
+- Then, stack b2 on b3? No.
+
+Let's think of the desired stack.
+
+Goal: b1 on b3, b3 on b2.
+
+So the stack is b1 -> b3 -> b2, with b2 on table.
+
+In initial state, it's b2 on b3, with b3 on table, b1 on table.
+
+So I need to move b1 to be on b3, and then b3 to be on b2.
+
+But b2 is currently on b3, so to have b3 on b2, I need to have b2 be the base, so I need to move b2 to the table or something.
+
+Perhaps I can do:
+
+1. Pick up b1
+
+2. Put down b1 (to free arm)
+
+3. Unstack b2 from b3 (so b2 is held, b3 clear)
+
+4. Put down b2 (so b2 on table)
+
+5. Pick up b3
+
+6. Pick up b1
+
+7. Stack b1 on b3
+
+8. Stack b3 on b2
+
+But step 6: after step 5, I have b3 held, so I can't pick up b1 until I put down b3.
+
+So:
+
+1. pickup b1
+
+2. putdown b1
+
+3. unstack b2 b3
+
+4. putdown b2
+
+5. pickup b3
+
+6. putdown b3
+
+7. pickup b1
+
+8. stack b1 b3
+
+9. unstack b1 b3  // to free b3
+
+10. putdown b1
+
+11. pickup b3
+
+12. stack b3 b2
+
+13. unstack b3 b2  // to free b3
+
+14. putdown b3
+
+15. pickup b1
+
+16. stack b1 b3
+
+But this is long, and I have to do unstack and putdown for each.
+
+For the action landmarks, I must include stack b1 b3 and stack b3 b2, but in this sequence, I have stack b1 b3 and stack b3 b2.
+
+In step 8, stack b1 b3 is done, and in step 12, stack b3 b2 is done.
+
+But after step 12, I have b3 on b2, and b1 on table, so I need to stack b1 on b3, which requires unstacking first.
+
+In step 16, stack b1 b3 is done.
+
+So the plan is:
+
+1. pickup b1
+
+2. putdown b1
+
+3. unstack b2 b3
+
+4. putdown b2
+
+5. pickup b3
+
+6. putdown b3
+
+7. pickup b1
+
+8. stack b1 b3
+
+9. unstack b1 b3
+
+10. putdown b1
+
+11. pickup b3
+
+12. stack b3 b2
+
+13. unstack b3 b2
+
+14. putdown b3
+
+15. pickup b1
+
+16. stack b1 b3
+
+But step 16 is stack b1 b3 again? No, in step 8, I stacked b1 on b3, then unstacked it, so step 16 is to stack it again.
+
+But the goal is to have it once.
+
+In this plan, after step 16, I have (on b1 b3) and (on b3 b2), so it should be good.
+
+Let's check if all actions are applicable.
+
+Also, the action landmarks are: pickup b1 (step 1), pickup b3 (step 5), stack b1 b3 (step 8), stack b3 b2 (step 12) — all included.
+
+In step 12, stack b3 b2 is done.
+
+In step 16, stack b1 b3 is done, but stack b1 b3 is a landmark, and it's done twice? No, the landmark is for the action, but the action can be done once.
+
+In this plan, stack b1 b3 is done in step 8 and step 16, but I only need it once.
+
+In step 8, I stack b1 on b3, then unstack it in step 9, so it's not permanent.
+
+Then in step 16, I stack it again.
+
+But for the goal, I need it to be on, so it's fine.
+
+However, the problem might have a shorter way.
+
+I recall that in the action list, there is stack b3 b2 which is a landmark, and it creates (on b3 b2).
+
+Also, for the initial state, since b2 is clear, I can directly stack b3 on b2 if I have b3 held, but I don't have b3 clear.
+
+Another idea: perhaps use the action stack b2 b3 or something, but not.
+
+Let's look for the correct sequence online or think differently.
+
+Since the problem asks for a plan, and I have to output it, I'll go with the sequence I have.
+
+But let's make it shorter.
+
+Notice that after step 4, all blocks are on table clear.
+
+Then I can do:
+
+- pickup b3
+
+- stack b1 b3  // but b1 is on table, so I need to pick up b1 first.
+
+So:
+
+From S2 (all on table clear):
+
+1. pickup b3
+
+2. putdown b3  // not necessary, but to free arm
+
+3. pickup b1
+
+4. stack b1 b3
+
+5. unstack b1 b3
+
+6. pickup b3
+
+7. stack b3 b2
+
+But step 4: stack b1 b3 requires b3 clear, which it is after step 1 putdown? In this sequence, after step 1 pickup b3, b3 is held, so not clear.
+
+So:
+
+From S2:
+
+1. pickup b3  // S3: holding b3
+
+2. putdown b3  // S4: all clear
+
+3. pickup b1  // S5: holding b1
+
+4. stack b1 b3  // S6: on b1 b3, arm empty
+
+5. unstack b1 b3  // S7: holding b1, b3 clear
+
+6. putdown b1  // S8: all clear
+
+7. pickup b3  // S9: holding b3
+
+8. stack b3 b2  // S10: on b3 b2, arm empty
+
+Now I have (on b3 b2) true, but (on b1 b3) false.
+
+So I need to do it again for b1.
+
+9. pickup b1  // S11: holding b1
+
+10. stack b1 b3  // S12: on b1 b3
+
+Done.
+
+So the plan is:
+
+1. pickup b3
+
+2. putdown b3
+
+3. pickup b1
+
+4. stack b1 b3
+
+5. unstack b1 b3
+
+6. putdown b1
+
+7. pickup b3
+
+8. stack b3 b2
+
+9. pickup b1
+
+10. stack b1 b3
+
+But the action landmarks are: pickup b1 (step 3 and step 9), pickup b3 (step 1 and step 7), stack b1 b3 (step 4 and step 10), stack b3 b2 (step 8).
+
+I have stack b1 b3 twice, but the landmark is the action, not the instance.
+
+For the plan, I need to have the action at least once.
+
+In this sequence, stack b1 b3 is done in step 4 and step 10, so it's included.
+
+Similarly for others.
+
+But in step 10, stack b1 b3 is done, and it's the second time, but it's fine.
+
+The problem says "all action landmarks must be included in the plan", so as long as the action is in the plan, it's ok.
+
+Also, in step 5, unstack b1 b3 is done, which is not a landmark.
+
+Now, is this applicable?
+
+Let's verify the states.
+
+Start: S0 = { (on b2 b3), (on-table b1), (clear b2), (clear b1), (on-table b3), (arm-empty) }
+
+1. pickup b3: preconditions (arm-empty) true, (clear b3) false? In S0, b3 is not clear because b2 is on it, so (clear b3) false.
+
+Oh, problem!
+
+In initial state, b3 is not clear, so I cannot pickup b3 directly.
+
+That's why I need to unstack b2 first.
+
+So my earlier sequence is correct.
+
+So the plan must start with unstacking b2 from b3.
+
+So:
+
+1. unstack b2 b3 (applicable in S0)
+
+S1 = { (on-table b1), (clear b1), (on-table b3), (clear b3), (holding b2), (arm-not-empty) }
+
+2. putdown b2 (applicable)
+
+S2 = { (on-table b1), (clear b1), (on-table b3), (clear b3), (arm-empty), (on-table b2) }  // all on table clear
+
+3. pickup b3 (landmark) : applicable
+
+S3 = { (on-table b1), (clear b1), (on-table b3), (clear b3), (holding b3), (arm-not-empty) }
+
+4. putdown b3 (not landmark) : applicable
+
+S4 = S2  // all on table clear
+
+5. pickup b1 (landmark) : applicable
+
+S5 = { (on-table b3), (clear b3), (holding b1), (arm-not-empty) }
+
+6. stack b1 b3 (landmark) : applicable
+
+S6 = { (on b1 b3), (on-table b3), (clear b1), (arm-empty) }
+
+7. unstack b1 b3 (applicable) : preconditions (arm-empty), (clear b1), (on b1 b3) true
+
+S7 = { (clear b3), (holding b1), (on-table b3) }
+
+8. putdown b1 (not landmark) : applicable
+
+S8 = { (on-table b1), (clear b1), (on-table b3), (clear b3), (arm-empty) }  // all on table clear
+
+9. pickup b3 (landmark) : applicable
+
+S9 = { (on-table b1), (clear b1), (on-table b3), (clear b3), (holding b3), (arm-not-empty) }
+
+10. stack b3 b2 (landmark) : applicable, since (clear b2) true (b2 on table), (holding b3) true
+
+S10 = { (on b3 b2), (on-table b1), (clear b1), (arm-empty), (clear b3) }
+
+11. pickup b1 (landmark) : applicable
+
+S11 = { (on b3 b2), (clear b1), (holding b1), (arm-not-empty) }
+
+12. stack b1 b3 (landmark) : preconditions (clear b3), (holding b1) — in S11, b3 is on b2, so (clear b3) false, not applicable.
+
+So I need to unstack b3 b2 first.
+
+12. unstack b3 b2 (applicable in S10)
+
+S11 = { (on b3 b2) false, (clear b3) false, (arm-empty) false; add (clear b2), (holding b3) }
+
+S11 = { (on-table b1), (clear b1), (clear b2), (holding b3), (arm-not-empty) }
+
+13. putdown b3 (not landmark)
+
+S12 = { (on-table b1), (clear b1), (clear b2), (arm-empty), (on-table b3) }
+
+14. pickup b1 (landmark)
+
+S13 = { (on-table b3), (clear b3), (holding b1), (arm-not-empty) }
+
+15. stack b1 b3 (landmark) : applicable
+
+S14 = { (on b1 b3), (on-table b3), (clear b1), (arm-empty) }
+
+Now, S14 has (on b1 b3) true, and I have (on b3 b2) false, but in S14, b3 has b1 on it, so no b3 on b2.
+
+I need to have b3 on b2.
+
+So from S14, I can do nothing to get b3 on b2.
+
+I think I have to accept that for the goal, after step 15, I have (on b1 b3), but not (on b3 b2), so it's not complete.
+
+The only way is to have the stack b3 b2 done before stacking b1 on b3.
+
+In the sequence, after step 10, I have (on b3 b2), so I should stack b1 on b3 before unstacking.
+
+Let's try a different sequence.
+
+After step 10: S10 = { (on b3 b2), (on-table b1), (clear b1), (arm-empty), (clear b3) }
+
+I have b1 on table clear.
+
+I can pick up b1 and stack it on b3.
+
+But to stack on b3, I need b3 clear, which it is.
+
+So:
+
+11. pickup b1 (landmark) : applicable
+
+S11 = { (on b3 b2), (clear b1), (holding b1), (arm-not-empty) }
+
+12. stack b1 b3 (landmark) : preconditions (clear b3), (holding b1) — in S11, b3 is on b2, so (clear b3) false, not applicable.
+
+Same problem.
+
+Unless in S10, b3 is clear, but b3 is on b2, so for b3 to be clear, it must have nothing on top, but in the stack (on b3 b2), b3 is on b2, so b2 is below, and b3 has nothing on top, so b3 is clear.
+
+In block world, when a block is on another block, the block on top is clear if nothing on it.
+
+For example, if b3 is on b2, then b3 is clear (no block on it), and b2 is not clear (has b3 on it).
+
+In S10, after stack b3 b2, b3 is clear, b2 is not clear.
+
+So for stack b1 b3, I need (clear b3), which is true, and (holding b1), which is true if I have it.
+
+In S10, arm-empty, so I can pick up b1.
+
+S11: pickup b1, so holding b1, arm not empty.
+
+Then stack b1 b3: preconditions (clear b3) true, (holding b1) true, so applicable.
+
+After stack b1 b3: delete (clear b3), (holding b1); add (arm-empty), (clear b1), (on b1 b3)
+
+So S12 = { (on b1 b3), (on b3 b2), (clear b1), (arm-empty) }
+
+Now I have both (on b1 b3) and (on b3 b2) true.
+
+Perfect!
+
+So the plan is:
+
+1. unstack b2 b3
+
+2. putdown b2
+
+3. pickup b3
+
+4. putdown b3
+
+5. pickup b1
+
+6. stack b1 b3
+
+7. unstack b1 b3
+
+8. putdown b1
+
+9. pickup b3
+
+10. stack b3 b2
+
+11. pickup b1
+
+12. stack b1 b3
+
+In step 7, unstack b1 b3 is done, then step 8 putdown b1, then step 9 pickup b3, step 10 stack b3 b2, then step 11 pickup b1, step 12 stack b1 b3.
+
+In step 12, stack b1 b3 is done, and it's the second time, but it's fine.
+
+The action landmarks are: pickup b1 (steps 5 and 11), pickup b3 (steps 3 and 9), stack b1 b3 (steps 6 and 12), stack b3 b2 (step 10).
+
+All included.
+
+Now, let's write the sequence with actions.
+
+Also, in step 4, putdown b3 is done, but in step 9, I pickup b3 again, so it's ok.
+
+To make it shorter, but I think this works.
+
+In step 7, unstack b1 b3 is done, but in the goal, I don't need it, but it's necessary to free b3 for stack b3 b2.
+
+In this sequence, after step 6, I have (on b1 b3), but I need to unstack it to do stack b3 b2, because when I stack b3 b2, I need b3 held, but in step 6, b3 is not held; it's on table.
+
+So I have to unstack b1 first to free b3.
+
+So the sequence is correct.
+
+Now for the output, I need to list the actions in order.
+
+The plan:
+
+- unstack b2 b3
+
+- putdown b2
+
+- pickup b3
+
+- putdown b3
+
+- pickup b1
+
+- stack b1 b3
+
+- unstack b1 b3
+
+- putdown b1
+
+- pickup b3
+
+- stack b3 b2
+
+- pickup b1
+
+- stack b1 b3
+
+In the action names, it's "unstack b2 b3" etc.
+
+Also, the action landmarks are all included.
+
+Let's count the actions.
+
+In the initial state, unstack b2 b3 is applicable, as we said.
+
+In the output, I need to write the action names as given.
+
+From the input, the actions are named like "unstack b2 b3" etc.
+
+In the list, it's written as "unstack b2 b3" with spaces.
+
+For the plan, I should write each action on a new line.
+
+Also, the problem says: "each plan's action should be identified by its name on the table"
+
+So for example, "unstack b2 b3"
+
+Now, to write the plan.
+
+But in step 4, putdown b3, but after step 3, I have b3 held, so putdown b3 is to put it on table.
+
+Similarly.
+
+I think this is the plan.
+
+To save actions, but I think it's fine.
+
+So the sequence:
+
+1. unstack b2 b3
+
+2. putdown b2
+
+3. pickup b3
+
+4. putdown b3
+
+5. pickup b1
+
+6. stack b1 b3
+
+7. unstack b1 b3
+
+8. putdown b1
+
+9. pickup b3
+
+10. stack b3 b2
+
+11. pickup b1
+
+12. stack b1 b3
+
+In step 12, stack b1 b3 is done, and it creates (on b1 b3), and we have (on b3 b2) from step 10.
+
+In step 10, stack b3 b2 creates (on b3 b2).
+
+In step 12, stack b1 b3 creates (on b1 b3).
+
+So goal achieved.
+
+Now, for the output, I need to wrap in <plan> tags.
+
+Also, the actions must be applicable at each step.
+
+Let's verify step by step.
+
+Initial state: S0
+
+1. unstack b2 b3: preconditions (on b2 b3) true, (clear b2) true, (arm-empty) true — all true, so applicable. After: S1 = { (on-table b1), (clear b1), (on-table b3), (clear b3), (holding b2), (arm-not-empty) }
+
+2. putdown b2: preconditions (holding b2) true — applicable. After: S2 = { (on-table b1), (clear b1), (on-table b3), (clear b3), (arm-empty), (on-table b2) }  // b2 on table clear
+
+3. pickup b3: preconditions (arm-empty) true, (clear b3) true, (on-table b3) true — applicable. After: S3 = { (on-table b1), (clear b1), (on-table b3), (clear b3), (holding b3), (arm-not-empty) }
+
+4. putdown b3: preconditions (holding b3) true — applicable. After: S4 = S2  // all on table clear
+
+5. pickup b1: preconditions (arm-empty) true, (clear b1) true, (on-table b1) true — applicable. After: S5 = { (on-table b3), (clear b3), (holding b1), (arm-not-empty) }
+
+6. stack b1 b3: preconditions (clear b3) true, (holding b1) true — applicable. After: S6 = { (on b1 b3), (on-table b3), (clear b1), (arm-empty) }
+
+7. unstack b1 b3: preconditions (arm-empty) true, (clear b1) true, (on b1 b3) true — applicable. After: S7 = { (clear b3), (holding b1), (on-table b3) }
+
+8. putdown b1: preconditions (holding b1) true — applicable. After: S8 = { (on-table b1), (clear b1), (on-table b3), (clear b3), (arm-empty) }  // all on table clear
+
+9. pickup b3: preconditions (arm-empty) true, (clear b3) true, (on-table b3) true — applicable. After: S9 = { (on-table b1), (clear b1), (on-table b3), (clear b3), (holding b3), (arm-not-empty) }
+
+10. stack b3 b2: preconditions (clear b2) true (b2 on table), (holding b3) true — applicable. After: S10 = { (on b3 b2), (on-table b1), (clear b1), (arm-empty), (clear b3) }
+
+11. pickup b1: preconditions (arm-empty) true, (clear b1) true, (on-table b1) true — applicable. After: S11 = { (on b3 b2), (clear b1), (holding b1), (arm-not-empty) }
+
+12. stack b1 b3: preconditions (clear b3) true, (holding b1) true — in S11, b3 is on b2, so (clear b3) true (since b3 has nothing on it), so applicable. After: S12 = { (on b1 b3), (on b3 b2), (clear b1), (arm-empty) }
+
+S12 has (on b1 b3) and (on b3 b2), which are the goal facts.
+
+Perfect.
+
+So the plan is 12 actions.
+
+Now, for the output, I need to list them in order.
+
+The actions:
+
+1. unstack b2 b3
+
+2. putdown b2
+
+3. pickup b3
+
+4. putdown b3
+
+5. pickup b1
+
+6. stack b1 b3
+
+7. unstack b1 b3
+
+8. putdown b1
+
+9. pickup b3
+
+10. stack b3 b2
+
+11. pickup b1
+
+12. stack b1 b3
+
+In the action names, it's written as "unstack b2 b3" etc., with spaces.
+
+In the input, it's given as "unstack b2 b3" for example.
+
+So I'll write it that way.
+
+Also, the output should be only the plan in <plan> tags.
+
+So:
+
+<plan>
+unstack b2 b3
+putdown b2
+pickup b3
+putdown b3
+pickup b1
+stack b1 b3
+unstack b1 b3
+putdown b1
+pickup b3
+stack b3 b2
+pickup b1
+stack b1 b3
+</plan>
+
+But in step 12, stack b1 b3 is done, and it's the second time, but it's fine.
+
+To confirm, the action landmarks are all included: pickup b1 (steps 5 and 11), pickup b3 (steps 3 and 9), stack b1 b3 (steps 6 and 12), stack b3 b2 (step 10).
+
+All present.
+
+I think this is a valid plan.
+
+So I'll go with this.
+</think>
+[2026-02-11 20:12:03,197] INFO :: Reasoning metadata: reasoning_tokens=17938, reasoning_source=tokens
+[2026-02-11 20:12:03,198] INFO :: Response:
+<plan>
+unstack b2 b3
+putdown b2
+pickup b3
+putdown b3
+pickup b1
+stack b1 b3
+unstack b1 b3
+putdown b1
+pickup b3
+stack b3 b2
+pickup b1
+stack b1 b3
+</plan>
+[2026-02-11 20:12:03,198] INFO :: Response tokens: 18009
+[2026-02-11 20:12:03,198] INFO :: Plan:
+unstack b2 b3
+putdown b2
+pickup b3
+putdown b3
+pickup b1
+stack b1 b3
+unstack b1 b3
+putdown b1
+pickup b3
+stack b3 b2
+pickup b1
+stack b1 b3
+[2026-02-11 20:12:03,198] INFO :: Extracted plan tokens: 62
+[2026-02-11 20:12:03,199] INFO :: Response metadata: response_tokens=18009, extracted_plan_tokens=62
+[2026-02-11 20:12:03,205] INFO :: Plan file: /content/drive/MyDrive/grounding-planning/logs/blocksworld/p08_landmarks_seed1.plan
+[2026-02-12 18:15:53,051] INFO :: ### Plan Validation ###
+
+Checking plan: logs/blocksworld/p08_landmarks_seed1.plan
+Plan to validate:
+
+Plan size: 12
+1:
+(unstack b2 b3)
+ 
+2:
+(putdown b2)
+ 
+3:
+(pickup b3)
+ 
+4:
+(putdown b3)
+ 
+5:
+(pickup b1)
+ 
+6:
+(stack b1 b3)
+ 
+7:
+(unstack b1 b3)
+ 
+8:
+(putdown b1)
+ 
+9:
+(pickup b3)
+ 
+10:
+(stack b3 b2)
+ 
+11:
+(pickup b1)
+ 
+12:
+(stack b1 b3)
+ 
+
+Plan Validation details
+-----------------------
+
+Checking next happening (time 1)
+Deleting (on b2 b3)
+Deleting (clear b2)
+Deleting (arm-empty)
+Adding (holding b2)
+Adding (clear b3)
+
+Checking next happening (time 2)
+Deleting (holding b2)
+Adding (clear b2)
+Adding (arm-empty)
+Adding (on-table b2)
+
+Checking next happening (time 3)
+Deleting (clear b3)
+Deleting (on-table b3)
+Deleting (arm-empty)
+Adding (holding b3)
+
+Checking next happening (time 4)
+Deleting (holding b3)
+Adding (clear b3)
+Adding (arm-empty)
+Adding (on-table b3)
+
+Checking next happening (time 5)
+Deleting (clear b1)
+Deleting (on-table b1)
+Deleting (arm-empty)
+Adding (holding b1)
+
+Checking next happening (time 6)
+Deleting (clear b3)
+Deleting (holding b1)
+Adding (arm-empty)
+Adding (clear b1)
+Adding (on b1 b3)
+
+Checking next happening (time 7)
+Deleting (on b1 b3)
+Deleting (clear b1)
+Deleting (arm-empty)
+Adding (holding b1)
+Adding (clear b3)
+
+Checking next happening (time 8)
+Deleting (holding b1)
+Adding (clear b1)
+Adding (arm-empty)
+Adding (on-table b1)
+
+Checking next happening (time 9)
+Deleting (clear b3)
+Deleting (on-table b3)
+Deleting (arm-empty)
+Adding (holding b3)
+
+Checking next happening (time 10)
+Deleting (clear b2)
+Deleting (holding b3)
+Adding (arm-empty)
+Adding (clear b3)
+Adding (on b3 b2)
+
+Checking next happening (time 11)
+Deleting (clear b1)
+Deleting (on-table b1)
+Deleting (arm-empty)
+Adding (holding b1)
+
+Checking next happening (time 12)
+Deleting (clear b3)
+Deleting (holding b1)
+Adding (arm-empty)
+Adding (clear b1)
+Adding (on b1 b3)
+Plan executed successfully - checking goal
+Plan valid
+Final value: 12 
+
+Successful plans:
+Value: 12
+ logs/blocksworld/p08_landmarks_seed1.plan 12 
+
+[2026-02-12 18:15:53,051] INFO :: Validate status: valid

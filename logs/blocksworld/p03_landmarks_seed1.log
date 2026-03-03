@@ -1,0 +1,765 @@
+[2026-02-11 18:39:13,172] INFO :: Stage: plan generation
+[2026-02-11 18:39:13,172] INFO :: Prompt metadata: domain=/content/drive/MyDrive/grounding-planning/benchmarks/blocksworld/domain.pddl, instance=/content/drive/MyDrive/grounding-planning/benchmarks/blocksworld/lifted/p03.pddl, template=landmarks, seed=1, timestamp=2026-02-11T18:39:13Z
+[2026-02-11 18:39:13,173] INFO :: Model metadata: model=Qwen/Qwen3-4B-Thinking-2507, device=cuda, dtype=torch.float16, generation_config=GenerationConfig {
+  "do_sample": true,
+  "eos_token_id": 151645,
+  "max_new_tokens": 81920,
+  "pad_token_id": 151643,
+  "temperature": 0.6,
+  "top_k": 20,
+  "top_p": 0.95
+}
+, library_versions={'python': '3.12.12', 'torch': '2.9.0+cu128', 'transformers': '5.0.0', 'numpy': '2.0.2'}
+[2026-02-11 18:39:14,143] INFO :: Prompt:
+
+<role>
+You are an AI planning expert.
+</role>
+
+<task>
+Given the initial state, the set of goal facts, and a list of available actions, return **a plan** (a sequence of actions) that transforms the initial state into a goal state.
+</task>
+
+<definitions>
+- A state is a set of facts.
+- A goal state is a state that has all goal facts.
+- An action is applicable if, and only if, **all** its preconditions are in the current state.
+- When an action is applied: remove its delete effects from the state, then add its add effects.
+- An action is an **action landmark** if it must appear on every valid plan. 
+</definitions>
+
+<inputs>
+This is the initial state:
+<initial-state>
+(on b2 b1)
+(on-table b1)
+(arm-empty)
+(clear b2)
+</initial-state>
+
+These are the goal facts:
+<goal-facts>
+(on b1 b2)
+</goal-facts>
+
+These are the actions:
+<actions>
+name:  (pickup b2) ; preconditions:  (on-table b2), (arm-empty), (clear b2) ; delete effects:  (on-table b2), (arm-empty), (clear b2) ; add effects:  (holding b2) ; is action landmark:  False
+name:  (pickup b1) ; preconditions:  (on-table b1), (clear b1), (arm-empty) ; delete effects:  (on-table b1), (clear b1), (arm-empty) ; add effects:  (holding b1) ; is action landmark:  True
+name:  (putdown b2) ; preconditions:  (holding b2) ; delete effects:  (holding b2) ; add effects:  (on-table b2), (arm-empty), (clear b2) ; is action landmark:  False
+name:  (putdown b1) ; preconditions:  (holding b1) ; delete effects:  (holding b1) ; add effects:  (on-table b1), (clear b1), (arm-empty) ; is action landmark:  False
+name:  (stack b2 b2) ; preconditions:  (holding b2), (clear b2) ; delete effects:  (holding b2) ; add effects:  (on b2 b2), (arm-empty) ; is action landmark:  False
+name:  (stack b2 b1) ; preconditions:  (holding b2), (clear b1) ; delete effects:  (holding b2), (clear b1) ; add effects:  (on b2 b1), (arm-empty), (clear b2) ; is action landmark:  False
+name:  (stack b1 b2) ; preconditions:  (holding b1), (clear b2) ; delete effects:  (holding b1), (clear b2) ; add effects:  (on b1 b2), (clear b1), (arm-empty) ; is action landmark:  True
+name:  (stack b1 b1) ; preconditions:  (holding b1), (clear b1) ; delete effects:  (holding b1) ; add effects:  (on b1 b1), (arm-empty) ; is action landmark:  False
+name:  (unstack b2 b2) ; preconditions:  (on b2 b2), (arm-empty), (clear b2) ; delete effects:  (on b2 b2), (arm-empty) ; add effects:  (holding b2) ; is action landmark:  False
+name:  (unstack b2 b1) ; preconditions:  (on b2 b1), (arm-empty), (clear b2) ; delete effects:  (on b2 b1), (clear b2), (arm-empty) ; add effects:  (holding b2), (clear b1) ; is action landmark:  True
+name:  (unstack b1 b2) ; preconditions:  (on b1 b2), (clear b1), (arm-empty) ; delete effects:  (on b1 b2), (clear b1), (arm-empty) ; add effects:  (holding b1), (clear b2) ; is action landmark:  False
+name:  (unstack b1 b1) ; preconditions:  (on b1 b1), (clear b1), (arm-empty) ; delete effects:  (on b1 b1), (arm-empty) ; add effects:  (holding b1) ; is action landmark:  False
+</actions>
+</inputs>
+
+<output-format>
+Return **only** a plan wrapped in "<plan>...</plan>", where each plan's action should be identified by its name on the table, each on a line. Do not include analysis, examples, or commentary outside the plan tags.
+</output-format>
+
+<requirements>
+- The plan must transform the initial state into a goal state.
+- All actions in the plan must be applicable.
+- All action landmarks must be included in the plan.
+- Your plan may include non-landmark actions.
+</requirements>
+[2026-02-11 18:39:14,149] INFO :: Prompt tokens: 1137
+[2026-02-11 18:44:19,149] INFO :: Reasoning trace:
+First, I need to understand the problem. I'm given an initial state, goal facts, and a list of actions. I have to find a sequence of actions that turns the initial state into the goal state. The output should be a plan wrapped in <plan> tags with each action on a new line.
+
+Initial state:
+- (on b2 b1)  // This means b2 is on top of b1
+- (on-table b1)  // b1 is on the table
+- (arm-empty)  // arm is not holding anything
+- (clear b2)  // b2 is clear (no object on top of it)
+
+Goal facts:
+- (on b1 b2)  // This means b1 is on top of b2
+
+So, the goal is to have b1 on b2, but currently, b2 is on b1. I need to flip them.
+
+Now, looking at the actions, I see that some are action landmarks. Specifically, from the list:
+
+- (pickup b1) is an action landmark (True)
+- (stack b1 b2) is an action landmark (True)
+- (unstack b2 b1) is an action landmark (True)
+
+Action landmarks must appear in every valid plan. So, my plan must include (pickup b1), (stack b1 b2), and (unstack b2 b1). But I need to be careful because the landmarks are specific actions.
+
+Let me list all actions with their landmarks:
+
+- (pickup b2): False
+- (pickup b1): True (landmark)
+- (putdown b2): False
+- (putdown b1): False
+- (stack b2 b2): False
+- (stack b2 b1): False
+- (stack b1 b2): True (landmark)
+- (stack b1 b1): False
+- (unstack b2 b2): False
+- (unstack b2 b1): True (landmark)
+- (unstack b1 b2): False
+- (unstack b1 b1): False
+
+So, action landmarks are: (pickup b1), (stack b1 b2), and (unstack b2 b1).
+
+I must include all three in my plan.
+
+Now, let's think about what the initial state means.
+
+Current state:
+- b2 is on b1 (so b1 is below, b2 is on top)
+- b1 is on the table (so b1 is directly on the table)
+- arm is empty
+- b2 is clear (no object on top of b2)
+
+Goal: b1 on b2, meaning b1 is on top of b2.
+
+Since b2 is currently on b1, and b1 is on the table, to get b1 on b2, I need to move b2 to be the base and b1 on top.
+
+But in the goal, it's (on b1 b2), which might be a bit confusing. In standard terms, (on A B) means A is on top of B. So (on b1 b2) means b1 is on top of b2.
+
+Currently, (on b2 b1) means b2 is on top of b1.
+
+So I need to swap the positions.
+
+Now, let's see what actions I can do.
+
+First, I need to pick up something. But to pick up b1, I need it to be on the table and clear. Is b1 clear? The state has (clear b2), but not (clear b1). Let's see.
+
+The state has:
+- (on b2 b1) : so b2 is on b1, which means b1 has something on it, so b1 is not clear. Clear means no object on top, so for b1 to be clear, nothing should be on it.
+
+In this state:
+- (on b2 b1) : b2 is on b1, so b1 has b2 on top, so b1 is not clear.
+- (on-table b1) : b1 is on table, so it's directly on table.
+- (clear b2) : b2 has nothing on top, so b2 is clear.
+
+So, b2 is clear, b1 is not clear.
+
+For pickup actions:
+- (pickup b2) requires (on-table b2), (arm-empty), (clear b2). But b2 is not on table; it's on b1. So (on-table b2) is false. Therefore, (pickup b2) is not applicable.
+
+- (pickup b1) requires (on-table b1), (clear b1), (arm-empty). But (clear b1) is false because b2 is on b1, so b1 is not clear. Therefore, (pickup b1) is not applicable initially.
+
+So, I can't pick up anything right now. I need to make b1 clear first.
+
+How can I make b1 clear? I need to remove b2 from b1.
+
+To unstack b2 from b1, I need the unstack action.
+
+Look at unstack actions:
+
+- (unstack b2 b1) : preconditions: (on b2 b1), (arm-empty), (clear b2)
+
+In current state:
+- (on b2 b1) : true
+- (arm-empty) : true
+- (clear b2) : true
+
+So, (unstack b2 b1) is applicable!
+
+And (unstack b2 b1) is an action landmark, so it must be in the plan.
+
+So, step 1: unstack b2 b1
+
+When I apply unstack b2 b1:
+
+- Delete effects: (on b2 b1), (clear b2), (arm-empty)
+- Add effects: (holding b2), (clear b1)
+
+So, after unstack b2 b1:
+
+- (holding b2) : now b2 is being held
+- (clear b1) : b1 is now clear (since b2 was removed)
+- (on b2 b1) is removed
+- (clear b2) is removed (since it was cleared, but now it's held, so not clear)
+- (arm-empty) is removed, so arm is not empty? Wait no.
+
+Let's be careful.
+
+Initial state: (on b2 b1), (on-table b1), (arm-empty), (clear b2)
+
+Apply unstack b2 b1:
+
+- Delete effects: (on b2 b1), (clear b2), (arm-empty)
+- Add effects: (holding b2), (clear b1)
+
+So new state:
+- (on-table b1) : still true? (on-table b1) wasn't deleted, so it remains.
+- (arm-empty) is deleted, so now arm is not empty? Add effects include (holding b2), so arm is holding b2.
+
+The effects:
+
+- Delete: remove (on b2 b1), (clear b2), (arm-empty)
+- Add: add (holding b2), (clear b1)
+
+So the state becomes:
+- (on-table b1) : yes, unchanged
+- (holding b2) : new
+- (clear b1) : new
+- (arm-empty) : removed, so not present
+- (on b2 b1) : removed
+- (clear b2) : removed
+
+Also, b1 is now clear.
+
+Now, with this state: (on-table b1), (holding b2), (clear b1)
+
+I need to get to (on b1 b2)
+
+Goal is (on b1 b2), meaning b1 on top of b2.
+
+Currently, I have b2 held, and b1 on table and clear.
+
+I need to stack b1 on b2.
+
+But to stack, I need to have b1 held or something.
+
+First, I need to pick up b1.
+
+Pickup b1: requires (on-table b1), (clear b1), (arm-empty)
+
+But now (arm-empty) is false because I'm holding b2. So arm is not empty.
+
+Therefore, I cannot pick up b1 directly because arm is not empty.
+
+I need to put down b2 first.
+
+Actions: putdown b2 is available.
+
+putdown b2: preconditions: (holding b2) — which is true now.
+
+Delete effects: (holding b2)
+
+Add effects: (on-table b2), (arm-empty), (clear b2)
+
+So, after putdown b2:
+
+- (on-table b2) : added
+- (arm-empty) : added
+- (clear b2) : added
+- (holding b2) : removed
+
+State now: (on-table b1), (on-table b2), (arm-empty), (clear b1)  [since clear b1 was added earlier]
+
+After unstack b2 b1, we had: (on-table b1), (holding b2), (clear b1)
+
+Then putdown b2: remove holding b2, add on-table b2, arm-empty, clear b2.
+
+So state: (on-table b1), (on-table b2), (arm-empty), (clear b1), (clear b2)
+
+b1 is clear, b2 is clear, both on table.
+
+Now, I can pick up b1.
+
+pickup b1: requires (on-table b1), (clear b1), (arm-empty) — all true.
+
+So apply pickup b1:
+
+- Delete: (on-table b1), (clear b1), (arm-empty)
+- Add: (holding b1)
+
+New state: (on-table b2), (holding b1), (clear b2)  [clear b2 was there]
+
+After pickup b1:
+- (on-table b1) removed
+- (clear b1) removed
+- (arm-empty) removed
+- (holding b1) added
+
+So state: (on-table b2), (holding b1), (clear b2)
+
+Now, I need to stack b1 on b2.
+
+Stack b1 b2: preconditions: (holding b1), (clear b2)
+
+Both true.
+
+Stack b1 b2: delete effects: (holding b1), (clear b2) ; add effects: (on b1 b2), (clear b1), (arm-empty)
+
+So apply stack b1 b2:
+
+- Remove holding b1 and clear b2
+- Add on b1 b2, clear b1, arm-empty
+
+New state: (on b1 b2), (clear b1), (arm-empty)
+
+And goal is (on b1 b2), which is achieved.
+
+Now, let's see if I have all action landmarks.
+
+Action landmarks: (pickup b1), (stack b1 b2), (unstack b2 b1)
+
+In my plan:
+1. unstack b2 b1
+2. putdown b2
+3. pickup b1
+4. stack b1 b2
+
+I have (unstack b2 b1), (pickup b1), (stack b1 b2) — all three landmarks are included.
+
+Is putdown b2 necessary? In this sequence, I used it to put down b2 before picking up b1.
+
+But is there a way without putdown? Let me see.
+
+After unstack b2 b1, I have holding b2 and clear b1.
+
+I need to pick up b1, but arm is not empty, so I must put down b2 first to free the arm.
+
+So putdown b2 is necessary.
+
+Now, the goal is (on b1 b2), which I have after stack b1 b2.
+
+In the state after stack b1 b2: (on b1 b2), (clear b1), (arm-empty) — yes, goal achieved.
+
+But let me confirm the actions.
+
+Also, I have (unstack b2 b1) as landmark, which I used first.
+
+In the sequence, I have four actions.
+
+But is there a shorter way?
+
+The landmarks must be included, so I have to have them.
+
+Another thing: in the actions, there is (stack b1 b2) which is a landmark, and I used it.
+
+But let me see if I can do it in fewer steps.
+
+Suppose I try to pick up b1 directly, but I can't because arm is not empty.
+
+After unstack, I have holding b2, so I need to put it down.
+
+Perhaps I can use other actions, but I think this is minimal.
+
+Now, the plan should be:
+
+1. unstack b2 b1
+
+2. putdown b2
+
+3. pickup b1
+
+4. stack b1 b2
+
+In the output, I need to write the action names as given.
+
+For unstack b2 b1: the name is "unstack b2 b1"
+
+Similarly for others.
+
+In the action list, it's written as "unstack b2 b1" etc.
+
+In the input, actions are listed with names like "(unstack b2 b1)" but in the output, I think I should write just the name without parentheses, as per the format.
+
+The output format says: "each plan's action should be identified by its name on the table"
+
+And in the example, it says "each on a line" with action names.
+
+Also, in the <output-format>, it says: "Return **only** a plan wrapped in "<plan>...</plan>", where each plan's action should be identified by its name on the table, each on a line."
+
+So, for example, for (unstack b2 b1), the name is "unstack b2 b1" but I think it's written as a string.
+
+In the action list, it's given with parentheses, but the name is the action string.
+
+For instance, "name: (unstack b2 b1)" so the name is "unstack b2 b1" without the parentheses? No, in the text, it's written with parentheses.
+
+Let me see the input:
+
+"name:  (unstack b2 b1) ; ..."
+
+So the action name is "(unstack b2 b1)" but when we output, I think we write it without the parentheses for the name? The requirement says: "identified by its name on the table"
+
+In the context, it says "each plan's action should be identified by its name", and in the actions list, it's given with parentheses.
+
+But for the output, since it's a plan, I think we write the action as it is, e.g., "unstack b2 b1" without parentheses? Or with?
+
+Look at the output format: it says "each on a line" and "action should be identified by its name"
+
+In the problem statement, it might be ambiguous.
+
+To be safe, I should output the action names as they are written in the list, but without the "name: " part.
+
+For example, the action is called "unstack b2 b1", so I should write "unstack b2 b1" on a line.
+
+Similarly, in the initial state, it's written with parentheses, but for actions, I think we write the command.
+
+The output format says: "each plan's action should be identified by its name on the table"
+
+I think for this context, since it's a sequence of actions, we write the action name as a string, like "unstack b2 b1".
+
+In the input, it's given with spaces and parentheses, but for output, probably without parentheses.
+
+Let me see the task description.
+
+It says: "return a plan (a sequence of actions) that transforms..."
+
+And "each plan's action should be identified by its name"
+
+In the actions list, each action has a name like "(pickup b1)", but I think for the plan, we output the action without the parentheses, as a simple string.
+
+For example, in many planning systems, actions are written as "pickup b1".
+
+I think that's standard.
+
+To confirm, in the output format, it says "Do not include analysis, examples, or commentary outside the plan tags."
+
+So, I should output only the actions.
+
+Also, in the requirements, it says "All actions in the plan must be applicable."
+
+In my plan:
+
+Start: initial state
+
+Action 1: unstack b2 b1
+
+Preconditions: (on b2 b1), (arm-empty), (clear b2) — all true in initial state.
+
+After: (on-table b1), (holding b2), (clear b1)
+
+Action 2: putdown b2
+
+Preconditions: (holding b2) — true
+
+After: (on-table b2), (arm-empty), (clear b2)
+
+State now: (on-table b1), (on-table b2), (arm-empty), (clear b1), (clear b2)
+
+Action 3: pickup b1
+
+Preconditions: (on-table b1), (clear b1), (arm-empty) — all true
+
+After: (on-table b2), (holding b1), (clear b2)
+
+Action 4: stack b1 b2
+
+Preconditions: (holding b1), (clear b2) — both true
+
+After: (on b1 b2), (clear b1), (arm-empty)
+
+Goal is (on b1 b2), achieved.
+
+All landmarks included: unstack b2 b1, pickup b1, stack b1 b2.
+
+Is there any issue?
+
+In the state after action 2, I have (clear b1) and (clear b2), but when I do pickup b1, it requires (clear b1), which is true.
+
+In action 3, pickup b1, it deletes (clear b1), so after that, clear b1 is gone.
+
+But in the stack action, it adds clear b1, so it's fine.
+
+Now, the goal is only (on b1 b2), which is achieved.
+
+But in the goal facts, it says <goal-facts> (on b1 b2) </goal-facts>, so only that one fact.
+
+In the state after stack, we have (on b1 b2), (clear b1), (arm-empty), so goal is satisfied.
+
+I think this works.
+
+But is putdown b2 necessary? Could I do something else?
+
+For example, after unstack b2 b1, I have holding b2 and clear b1.
+
+I could try to stack b1 on b2, but I don't have b1 held; I need to pick it up first, but arm is busy.
+
+So I must put down b2 to free the arm.
+
+No other actions seem relevant.
+
+Another action: there is (unstack b1 b2) but that requires (on b1 b2), which isn't true initially.
+
+So, I think this is the plan.
+
+The plan has four actions.
+
+But let me see if I can skip putdown.
+
+Suppose after unstack b2 b1, I have holding b2.
+
+I need to get b1 to be held.
+
+But to pick up b1, I need arm empty, which it's not.
+
+So I must put down b2 first.
+
+Perhaps I can use other actions, but I don't think so.
+
+Another thought: the action (stack b1 b2) is a landmark, and it must be done.
+
+In my plan, I did it.
+
+Now, for the output, I need to write the actions.
+
+The action names: from the list, it's "unstack b2 b1", "putdown b2", "pickup b1", "stack b1 b2"
+
+In the output, should I write them with spaces or as is.
+
+I think: "unstack b2 b1" for the first one.
+
+Similarly, "putdown b2", "pickup b1", "stack b1 b2"
+
+In the input, it's written with parentheses in the description, but for the plan, I think we output without parentheses.
+
+For example, in the output format, it says "each on a line", so probably just the string.
+
+To be precise, let's see the task.
+
+The user said: "each plan's action should be identified by its name on the table"
+
+And in the actions list, the name is given as e.g., "(pickup b1)" but I think for the plan, we write it as "pickup b1" without parentheses.
+
+In many contexts, actions are written without parentheses.
+
+I think it's safe to output without parentheses.
+
+For instance, in the initial state, facts are written with parentheses, but actions are the commands.
+
+I'll output the actions as strings like "unstack b2 b1" etc.
+
+Now, the plan sequence:
+
+1. unstack b2 b1
+
+2. putdown b2
+
+3. pickup b1
+
+4. stack b1 b2
+
+In the action list, "stack b1 b2" is listed as "stack b1 b2", yes.
+
+Also, for putdown, it's "putdown b2", not "put down" or something.
+
+In the list: "putdown b2" — it's written as "putdown" without space, I think.
+
+In the input: "name:  (putdown b2) ; ..."
+
+So the name is "putdown b2".
+
+Similarly, "unstack b2 b1", etc.
+
+So for output, I should write:
+
+unstack b2 b1
+
+putdown b2
+
+pickup b1
+
+stack b1 b2
+
+Each on a new line.
+
+Now, is there a shorter plan?
+
+The landmarks are three actions, so minimum three actions, but I have four because I need putdown.
+
+Can I do it in three?
+
+For example, if I could pick up b1 without putting down, but I can't.
+
+Another idea: after unstack b2 b1, I have b2 held and b1 clear on table.
+
+I could do something else, but I don't see.
+
+The action (stack b2 b1) is available, but it requires (holding b2), (clear b1) — clear b1 is true, but stack b2 b1 would put b2 on b1, but we want b1 on b2, so that would be wrong.
+
+Similarly, other stacks might not help.
+
+So I think four actions is necessary.
+
+Perhaps I can unstack, then stack directly, but I need to hold b1.
+
+No.
+
+So I think this is fine.
+
+Now, the action landmarks: I have all three: unstack b2 b1 (landmark), pickup b1 (landmark), stack b1 b2 (landmark).
+
+In the plan, I have them in order: unstack, then putdown, then pickup, then stack.
+
+The landmarks are included, but the order might be constrained.
+
+In this case, it works.
+
+I think this is correct.
+
+So the plan should be:
+
+unstack b2 b1
+
+putdown b2
+
+pickup b1
+
+stack b1 b2
+
+In the output, wrapped in <plan> tags.
+
+Also, the requirement says: "Your plan may include non-landmark actions." which I have putdown b2 as non-landmark.
+
+Now, to write it.
+
+But let me double-check the initial state.
+
+Initial state: (on b2 b1), (on-table b1), (arm-empty), (clear b2)
+
+After unstack b2 b1: remove (on b2 b1), (clear b2), (arm-empty) — so (arm-empty) removed, so arm not empty? Add effects: (holding b2), (clear b1)
+
+So state: (on-table b1), (holding b2), (clear b1) — (arm-empty) is gone, so arm is holding b2.
+
+Then putdown b2: requires (holding b2), so apply: remove (holding b2), add (on-table b2), (arm-empty), (clear b2)
+
+So state: (on-table b1), (on-table b2), (arm-empty), (clear b1), (clear b2)
+
+Then pickup b1: requires (on-table b1), (clear b1), (arm-empty) — all true.
+
+Apply: remove (on-table b1), (clear b1), (arm-empty), add (holding b1)
+
+State: (on-table b2), (holding b1), (clear b2)
+
+Then stack b1 b2: requires (holding b1), (clear b2) — true.
+
+Apply: remove (holding b1), (clear b2), add (on b1 b2), (clear b1), (arm-empty)
+
+State: (on b1 b2), (clear b1), (arm-empty) — goal (on b1 b2) achieved.
+
+Perfect.
+
+So the plan is four actions.
+
+Now for output.
+
+I need to write:
+
+<plan>
+unstack b2 b1
+putdown b2
+pickup b1
+stack b1 b2
+</plan>
+
+In the action names, should it be with spaces? I think so.
+
+In the input, it's written with spaces.
+
+Also, in the output format, it says "each on a line", so I'll write each action on a separate line inside the tags.
+
+No extra spaces or anything.
+
+I think that's it.
+
+But let me see if the action names are exactly as given.
+
+In the actions list:
+
+- (unstack b2 b1) — so name is "unstack b2 b1"
+
+- (putdown b2) — "putdown b2"
+
+- (pickup b1) — "pickup b1"
+
+- (stack b1 b2) — "stack b1 b2"
+
+Yes.
+
+In the landmark, (unstack b2 b1) is specified as True, which I used.
+
+Similarly for others.
+
+I think this is correct.
+
+So, the plan is:
+
+unstack b2 b1
+
+putdown b2
+
+pickup b1
+
+stack b1 b2
+
+Now, to output.
+</think>
+[2026-02-11 18:44:19,161] INFO :: Reasoning metadata: reasoning_tokens=5475, reasoning_source=tokens
+[2026-02-11 18:44:19,162] INFO :: Response:
+<plan>
+unstack b2 b1
+putdown b2
+pickup b1
+stack b1 b2
+</plan>
+[2026-02-11 18:44:19,162] INFO :: Response tokens: 5505
+[2026-02-11 18:44:19,162] INFO :: Plan:
+unstack b2 b1
+putdown b2
+pickup b1
+stack b1 b2
+[2026-02-11 18:44:19,162] INFO :: Extracted plan tokens: 21
+[2026-02-11 18:44:19,162] INFO :: Response metadata: response_tokens=5505, extracted_plan_tokens=21
+[2026-02-11 18:44:19,168] INFO :: Plan file: /content/drive/MyDrive/grounding-planning/logs/blocksworld/p03_landmarks_seed1.plan
+[2026-02-12 18:15:52,451] INFO :: ### Plan Validation ###
+
+Checking plan: logs/blocksworld/p03_landmarks_seed1.plan
+Plan to validate:
+
+Plan size: 4
+1:
+(unstack b2 b1)
+ 
+2:
+(putdown b2)
+ 
+3:
+(pickup b1)
+ 
+4:
+(stack b1 b2)
+ 
+
+Plan Validation details
+-----------------------
+
+Checking next happening (time 1)
+Deleting (on b2 b1)
+Deleting (clear b2)
+Deleting (arm-empty)
+Adding (holding b2)
+Adding (clear b1)
+
+Checking next happening (time 2)
+Deleting (holding b2)
+Adding (clear b2)
+Adding (arm-empty)
+Adding (on-table b2)
+
+Checking next happening (time 3)
+Deleting (clear b1)
+Deleting (on-table b1)
+Deleting (arm-empty)
+Adding (holding b1)
+
+Checking next happening (time 4)
+Deleting (clear b2)
+Deleting (holding b1)
+Adding (arm-empty)
+Adding (clear b1)
+Adding (on b1 b2)
+Plan executed successfully - checking goal
+Plan valid
+Final value: 4 
+
+Successful plans:
+Value: 4
+ logs/blocksworld/p03_landmarks_seed1.plan 4 
+
+[2026-02-12 18:15:52,451] INFO :: Validate status: valid

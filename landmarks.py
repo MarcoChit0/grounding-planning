@@ -28,7 +28,7 @@ class Node:
 
 
 
-def zhu_givan(task: Task):
+def landmarks(task: Task):
     """
     Extracts landmarks from a planning task using the Zhu-Givan method
     based on a simplified Relaxed Task Graph (sRTG).
