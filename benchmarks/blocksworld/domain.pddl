@@ -1,4 +1,4 @@
-(define (domain blocksworld-4ops)
+(define (domain blocksworld)
   (:requirements :strips)
   (:predicates
     (clear ?x)

@@ -31,7 +31,7 @@ BASE_DIR = Path("benchmarks/blocksworld")
 OUT_DIR = Path("logs/blocksworld_nvidia_gpt_oss_20b")
 
 # Run configuration
-INSTANCES = None  # e.g. 'p01,p02' or 'p0*'
+INSTANCES = None  # e.g. 'medium-p01,medium-p02' or 'medium-p*'
 
 MODEL_NAME = "openai/gpt-oss-20b"
 DOMAIN_NAME = "blocksworld"
@@ -843,7 +843,7 @@ def resolve_instances(base_dir: Path, instance_arg: Optional[str]) -> list[str]:
     if not lifted_dir.exists():
         raise FileNotFoundError(f"Lifted directory not found: {lifted_dir}")
 
-    available = sorted(p.stem for p in lifted_dir.glob("p*.pddl"))
+    available = sorted(p.stem for p in lifted_dir.glob("medium-p*.pddl"))
     if not available:
         raise FileNotFoundError(f"No instances found in {lifted_dir}")
 
@@ -862,10 +862,10 @@ def resolve_instances(base_dir: Path, instance_arg: Optional[str]) -> list[str]:
             continue
 
         candidates = {token}
-        if token.startswith("easy-"):
-            candidates.add(token[len("easy-") :])
+        if token.startswith("medium-"):
+            candidates.add(token[len("medium-") :])
         elif token.startswith("p"):
-            candidates.add(f"easy-{token}")
+            candidates.add(f"medium-{token}")
 
         for candidate in candidates:
             if candidate in available:

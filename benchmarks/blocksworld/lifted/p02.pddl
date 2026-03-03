@@ -1,5 +1,5 @@
 (define (problem BW-rand-2)
-(:domain blocksworld-4ops)
+(:domain blocksworld)
 (:objects b1 b2 )
 (:init
 (arm-empty)
