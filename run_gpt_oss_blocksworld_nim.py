@@ -37,7 +37,7 @@ MODEL_NAME = "openai/gpt-oss-20b"
 DOMAIN_NAME = "blocksworld"
 NVIDIA_NIM_BASE_URL = "https://integrate.api.nvidia.com/v1"
 
-MAX_OUTPUT_TOKENS = 96000
+MAX_OUTPUT_TOKENS = 130000
 TEMPERATURE = 1.0
 TOP_P = 0.95
 REASONING_EFFORT = "high"
@@ -840,12 +840,26 @@ def run_generation(
 
 def resolve_instances(base_dir: Path, instance_arg: Optional[str]) -> list[str]:
     lifted_dir = base_dir / "lifted"
-    if not lifted_dir.exists():
-        raise FileNotFoundError(f"Lifted directory not found: {lifted_dir}")
+    grounded_dir = base_dir / "grounded"
+    landmarks_dir = base_dir / "landmarks"
 
-    available = sorted(p.stem for p in lifted_dir.glob("medium-p*.pddl"))
+    for dirname, path in (
+        ("lifted", lifted_dir),
+        ("grounded", grounded_dir),
+        ("landmarks", landmarks_dir),
+    ):
+        if not path.exists():
+            raise FileNotFoundError(f"{dirname.capitalize()} directory not found: {path}")
+
+    lifted_instances = {p.stem for p in lifted_dir.glob("*.pddl")}
+    grounded_instances = {p.stem for p in grounded_dir.glob("*.txt")}
+    landmarks_instances = {p.stem for p in landmarks_dir.glob("*.txt")}
+    available = sorted(lifted_instances & grounded_instances & landmarks_instances)
+
     if not available:
-        raise FileNotFoundError(f"No instances found in {lifted_dir}")
+        raise FileNotFoundError(
+            "No shared instances found across lifted (*.pddl), grounded (*.txt), and landmarks (*.txt)."
+        )
 
     if not instance_arg:
         return available
@@ -854,7 +868,7 @@ def resolve_instances(base_dir: Path, instance_arg: Optional[str]) -> list[str]:
     tokens = [t.strip() for t in instance_arg.split(",") if t.strip()]
     for token in tokens:
         token = token.strip()
-        if token.endswith(".pddl"):
+        if token.endswith(".pddl") or token.endswith(".txt"):
             token = Path(token).stem
 
         if any(ch in token for ch in ("*", "?")):
@@ -873,7 +887,7 @@ def resolve_instances(base_dir: Path, instance_arg: Optional[str]) -> list[str]:
 
     selected = sorted(set(selected))
     if not selected:
-        raise ValueError("No instances match the provided filter.")
+        raise ValueError("No shared instances match the provided filter.")
     return selected
 
 

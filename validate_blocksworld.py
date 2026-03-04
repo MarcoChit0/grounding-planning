@@ -4,6 +4,7 @@ import csv
 import datetime as dt
 import re
 from dataclasses import dataclass
+from fnmatch import fnmatch
 from pathlib import Path
 from typing import Callable, List, Optional, Tuple
 
@@ -85,6 +86,55 @@ def collect_log_specs(outdir: Path, lifted_dir: Path) -> List[LogSpec]:
     if not specs:
         raise FileNotFoundError(f"No log files found in {outdir}")
     return specs
+
+
+def resolve_instances(lifted_dir: Path, instance_arg: Optional[str]) -> List[str]:
+    if not lifted_dir.exists():
+        raise FileNotFoundError(f"Lifted directory not found: {lifted_dir}")
+
+    available = sorted(p.stem for p in lifted_dir.glob("*.pddl"))
+    if not available:
+        raise FileNotFoundError(f"No instances found in {lifted_dir}")
+
+    # Default to the "medium" benchmark split used by the run script.
+    if not instance_arg:
+        selected = [name for name in available if fnmatch(name, "medium-p*")]
+        if not selected:
+            raise ValueError("No instances match default filter 'medium-p*'.")
+        return selected
+
+    selected: List[str] = []
+    tokens = [t.strip() for t in instance_arg.split(",") if t.strip()]
+    for token in tokens:
+        token = token.strip()
+        if token.endswith(".pddl"):
+            token = Path(token).stem
+
+        if any(ch in token for ch in ("*", "?")):
+            selected.extend(name for name in available if fnmatch(name, token))
+            continue
+
+        candidates = {token}
+        if token.startswith("medium-"):
+            candidates.add(token[len("medium-") :])
+        elif token.startswith("p"):
+            candidates.add(f"medium-{token}")
+
+        for candidate in candidates:
+            if candidate in available:
+                selected.append(candidate)
+
+    selected = sorted(set(selected))
+    if not selected:
+        raise ValueError("No instances match the provided --instances filter.")
+    return selected
+
+
+def filter_specs_by_instances(specs: List[LogSpec], allowed_instances: set[str]) -> List[LogSpec]:
+    filtered = [spec for spec in specs if spec.instance_id in allowed_instances]
+    if not filtered:
+        raise FileNotFoundError("No matching log files after applying instance filter.")
+    return filtered
 
 
 def validate_specs(
@@ -233,7 +283,7 @@ def latex_escape(text: str) -> str:
 
 
 def natural_sort_key(value: str) -> List[object]:
-    parts = re.split(r"(\\d+)", value)
+    parts = re.split(r"(\d+)", value)
     key: List[object] = []
     for part in parts:
         if part.isdigit():
@@ -249,7 +299,11 @@ def generate_latex_table(
     log_file_basename: bool,
 ) -> None:
     _ = log_file_basename
-    seed_order = [1, 2, 3]
+    seed_order = sorted({result.seed for result in results})
+    if not seed_order:
+        seed_order = [1]
+    single_seed_mode = len(seed_order) == 1
+    columns_per_template = 1 if single_seed_mode else (len(seed_order) + 1)  # seeds + total
     template_set = {result.template for result in results}
     preferred_templates = [t for t in DEFAULT_TEMPLATE_ORDER if t in template_set]
     extra_templates = sorted(template_set - set(preferred_templates))
@@ -264,23 +318,25 @@ def generate_latex_table(
         key = (result.instance, result.template, result.seed)
         validity_map[key] = max(validity_map.get(key, 0), result.is_valid)
 
-    column_aligns = "l" + ("|cccc" * len(templates))
+    column_aligns = "l" + (f"|{'c' * columns_per_template}" * len(templates))
     lines: List[str] = []
     lines.append(f"\\begin{{tabular}}{{{column_aligns}}}")
     lines.append("\\hline")
 
     header_cells = ["Instance"]
     for template in templates:
-        header_cells.append(f"\\multicolumn{{4}}{{c}}{{{latex_escape(template)}}}")
+        header_cells.append(f"\\multicolumn{{{columns_per_template}}}{{c}}{{{latex_escape(template)}}}")
     lines.append(" & ".join(header_cells) + " \\\\")
 
-    subheader_cells = [""]
-    for _ in templates:
-        subheader_cells.extend(["s1", "s2", "s3", "total"])
-    lines.append(" & ".join(subheader_cells) + " \\\\")
+    if not single_seed_mode:
+        subheader_cells = [""]
+        for _ in templates:
+            subheader_cells.extend([f"s{seed}" for seed in seed_order])
+            subheader_cells.append("total")
+        lines.append(" & ".join(subheader_cells) + " \\\\")
     lines.append("\\hline")
 
-    totals = [0 for _ in range(len(templates) * 4)]
+    totals = [0 for _ in range(len(templates) * columns_per_template)]
     for instance in instances:
         row_cells = [latex_escape(instance)]
         col_index = 0
@@ -289,9 +345,11 @@ def generate_latex_table(
             for seed in seed_order:
                 value = validity_map.get((instance, template, seed), 0)
                 seed_values.append(value)
-                row_cells.append(str(value))
-                totals[col_index] += value
-                col_index += 1
+                if not single_seed_mode:
+                    row_cells.append(str(value))
+                    totals[col_index] += value
+                    col_index += 1
+
             total_value = 1 if any(seed_values) else 0
             row_cells.append(str(total_value))
             totals[col_index] += total_value
@@ -337,6 +395,14 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Use only the log filename (not full path) in the LaTeX table.",
     )
+    parser.add_argument(
+        "--instances",
+        default=None,
+        help=(
+            "Comma-separated instance ids/patterns to include (supports * and ?). "
+            "Default: medium-p*."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -352,7 +418,9 @@ def main() -> None:
     if not lifted_dir.exists():
         raise FileNotFoundError(f"Lifted directory not found: {lifted_dir}")
 
+    selected_instances = set(resolve_instances(lifted_dir, args.instances))
     specs = collect_log_specs(outdir, lifted_dir)
+    specs = filter_specs_by_instances(specs, selected_instances)
     validator = load_validator()
     results = validate_specs(specs, domain_path, validator)
 
