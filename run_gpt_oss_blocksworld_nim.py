@@ -33,17 +33,19 @@ OUT_DIR = Path("logs/blocksworld_nvidia_gpt_oss_20b")
 # Run configuration
 INSTANCES = None  # e.g. 'medium-p01,medium-p02' or 'medium-p*'
 
-MODEL_NAME = "openai/gpt-oss-20b"
+MODEL_NAME = "qwen/qwen3-coder-480b-a35b-instruct"
 DOMAIN_NAME = "blocksworld"
 NVIDIA_NIM_BASE_URL = "https://integrate.api.nvidia.com/v1"
 
-MAX_OUTPUT_TOKENS = 130000
-TEMPERATURE = 1.0
-TOP_P = 0.95
+MAX_OUTPUT_TOKENS = 256000
+TEMPERATURE = 0.7
+TOP_K = 20
+TOP_P = 0.8
 REASONING_EFFORT = "high"
 MAX_REQUESTS_PER_MINUTE_PER_KEY = 12
 POST_RESPONSE_DELAY_SECONDS = 5
 REQUEST_RETRY_DELAYS_SECONDS = (0, 30, 60)
+CONTEXT_WINDOW_TOKEN_MARGIN = 32
 
 SEEDS = [1]
 TEMPLATES = ("grounded", "lifted", "landmarks")
@@ -534,11 +536,46 @@ def _extract_thinking_tokens(usage: object, reasoning_text: Optional[str]) -> in
     return _count_tokens(reasoning_text or "")
 
 
+def _extract_context_overflow_limits(error: Exception) -> Optional[tuple[int, int]]:
+    message = str(error)
+    match = re.search(
+        r"maximum context length is\s*(\d+)\s*tokens.*?request has\s*(\d+)\s*input tokens",
+        message,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    if not match:
+        return None
+    try:
+        return int(match.group(1)), int(match.group(2))
+    except ValueError:
+        return None
+
+
+def _create_nvidia_nim_completion(
+    client: Any,
+    request_kwargs: dict[str, Any],
+    top_k: int,
+    reasoning_effort: str,
+) -> Any:
+    try:
+        return client.chat.completions.create(**request_kwargs)
+    except TypeError:
+        fallback_kwargs = dict(request_kwargs)
+        fallback_kwargs.pop("top_k", None)
+        fallback_kwargs.pop("reasoning_effort", None)
+        fallback_kwargs["extra_body"] = {
+            "top_k": top_k,
+            "reasoning_effort": reasoning_effort,
+        }
+        return client.chat.completions.create(**fallback_kwargs)
+
+
 def _run_nvidia_nim_chat(
     prompt: str,
     seed: int,
     api_key: str,
     temperature: float,
+    top_k: int,
     top_p: float,
     max_output_tokens: int,
     reasoning_effort: str,
@@ -552,6 +589,7 @@ def _run_nvidia_nim_chat(
         "model": MODEL_NAME,
         "messages": [{"role": "user", "content": prompt}],
         "temperature": temperature,
+        "top_k": top_k,
         "top_p": top_p,
         "max_tokens": max_output_tokens,
         "reasoning_effort": reasoning_effort,
@@ -559,11 +597,23 @@ def _run_nvidia_nim_chat(
         "stream": False,
     }
     try:
-        completion = client.chat.completions.create(**request_kwargs)
-    except TypeError:
-        request_kwargs.pop("reasoning_effort", None)
-        request_kwargs["extra_body"] = {"reasoning_effort": reasoning_effort}
-        completion = client.chat.completions.create(**request_kwargs)
+        completion = _create_nvidia_nim_completion(client, request_kwargs, top_k, reasoning_effort)
+    except Exception as exc:
+        overflow_limits = _extract_context_overflow_limits(exc)
+        if overflow_limits is None:
+            raise
+
+        max_context_tokens, input_tokens = overflow_limits
+        adjusted_max_tokens = max_context_tokens - input_tokens - CONTEXT_WINDOW_TOKEN_MARGIN
+        if adjusted_max_tokens < 1:
+            raise RuntimeError(
+                "Prompt exceeds model context window "
+                f"(context={max_context_tokens}, input={input_tokens}, margin={CONTEXT_WINDOW_TOKEN_MARGIN})."
+            ) from exc
+
+        adjusted_kwargs = dict(request_kwargs)
+        adjusted_kwargs["max_tokens"] = adjusted_max_tokens
+        completion = _create_nvidia_nim_completion(client, adjusted_kwargs, top_k, reasoning_effort)
 
     usage = completion.usage
     prompt_tokens = usage.prompt_tokens if usage else None
@@ -586,12 +636,14 @@ def _run_nvidia_nim_chat(
 def format_generation_config(
     max_output_tokens: int,
     temperature: float,
+    top_k: int,
     top_p: float,
     reasoning_effort: str,
 ) -> dict[str, Any]:
     return {
         "max_tokens": max_output_tokens,
         "temperature": temperature,
+        "top_k": top_k,
         "top_p": top_p,
         "reasoning_effort": reasoning_effort,
         "seeded": True,
@@ -727,6 +779,7 @@ def run_generation(
                         seed=spec.seed,
                         api_key=api_key,
                         temperature=float(generation_config["temperature"]),
+                        top_k=int(generation_config["top_k"]),
                         top_p=float(generation_config["top_p"]),
                         max_output_tokens=int(generation_config["max_tokens"]),
                         reasoning_effort=str(generation_config["reasoning_effort"]),
@@ -854,6 +907,7 @@ def resolve_instances(base_dir: Path, instance_arg: Optional[str]) -> list[str]:
     lifted_instances = {p.stem for p in lifted_dir.glob("*.pddl")}
     grounded_instances = {p.stem for p in grounded_dir.glob("*.txt")}
     landmarks_instances = {p.stem for p in landmarks_dir.glob("*.txt")}
+    # Only run tasks that exist in all 3 benchmarks.
     available = sorted(lifted_instances & grounded_instances & landmarks_instances)
 
     if not available:
@@ -902,6 +956,18 @@ def build_run_specs(instances: list[str], base_dir: Path, outdir: Path) -> list[
         problem_path = lifted_dir / f"{instance_id}.pddl"
         grounded_path = grounded_dir / f"{instance_id}.txt"
         landmarks_path = landmarks_dir / f"{instance_id}.txt"
+
+        if not (problem_path.exists() and grounded_path.exists() and landmarks_path.exists()):
+            logging.warning(
+                "Skipping instance '%s' because it is missing from one or more benchmarks "
+                "(lifted=%s, grounded=%s, landmarks=%s).",
+                instance_id,
+                problem_path.exists(),
+                grounded_path.exists(),
+                landmarks_path.exists(),
+            )
+            continue
+
         for template in TEMPLATES:
             for seed in SEEDS:
                 log_name = f"{instance_id}_{template}_seed{seed}.log"
@@ -1010,6 +1076,7 @@ def run_blocksworld(
     outdir: Path,
     instances: Optional[str],
     temperature: float,
+    top_k: int,
     top_p: float,
     max_output_tokens: int,
     reasoning_effort: str,
@@ -1022,7 +1089,7 @@ def run_blocksworld(
 
     instances_list = resolve_instances(base_dir, instances)
     specs = build_run_specs(instances_list, base_dir, outdir)
-    generation_config = format_generation_config(max_output_tokens, temperature, top_p, reasoning_effort)
+    generation_config = format_generation_config(max_output_tokens, temperature, top_k, top_p, reasoning_effort)
 
     domain_text = domain_path.read_text(encoding="utf-8", errors="replace")
 
@@ -1062,6 +1129,7 @@ def main() -> int:
     parser.add_argument("--out-dir", type=Path, default=OUT_DIR)
     parser.add_argument("--instances", type=str, default=INSTANCES)
     parser.add_argument("--temperature", type=float, default=TEMPERATURE)
+    parser.add_argument("--top-k", type=int, default=TOP_K)
     parser.add_argument("--top-p", type=float, default=TOP_P)
     parser.add_argument("--max-output-tokens", type=int, default=MAX_OUTPUT_TOKENS)
     parser.add_argument("--reasoning-effort", type=str, default=REASONING_EFFORT)
@@ -1084,6 +1152,7 @@ def main() -> int:
         outdir=args.out_dir,
         instances=args.instances,
         temperature=args.temperature,
+        top_k=args.top_k,
         top_p=args.top_p,
         max_output_tokens=args.max_output_tokens,
         reasoning_effort=args.reasoning_effort,

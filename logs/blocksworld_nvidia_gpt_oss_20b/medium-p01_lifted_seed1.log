@@ -1,0 +1,359 @@
+[2026-03-05 09:03:57,823] INFO :: Stage: plan generation
+[2026-03-05 09:03:57,823] INFO :: Prompt metadata: domain=benchmarks/blocksworld/domain.pddl, instance=benchmarks/blocksworld/lifted/medium-p01.pddl, template=lifted, seed=1, timestamp=2026-03-05T12:03:57Z
+[2026-03-05 09:03:57,823] INFO :: Model metadata: model=qwen/qwen3-coder-480b-a35b-instruct, device=nvidia-nim-api, dtype=n/a, generation_config={'max_tokens': 256000, 'temperature': 0.7, 'top_k': 20, 'top_p': 0.8, 'reasoning_effort': 'high', 'seeded': True}, library_versions={'python': '3.13.7', 'openai': '2.24.0', 'python-dotenv': '1.2.1', 'numpy': '2.4.2'}
+[2026-03-05 09:03:57,823] INFO :: Prompt:
+
+<role>
+You are an AI planning expert.
+</role>
+
+<task>
+Given the PDDL domain and the PDDL instance, return a plan (a sequence of actions) that transforms the initial state into a goal state.
+</task>
+
+<definitions>
+- A state is a set of facts.
+- A goal state is a state that has all goal facts.
+- An action is applicable if, and only if, **all** its preconditions are in the current state.
+- When an action is applied: remove its delete effects from the state, then add its add effects.
+</definitions>
+
+<inputs>
+This is the PDDL domain:
+<pddl-domain>
+(define (domain blocksworld)
+  (:requirements :strips)
+  (:predicates
+    (clear ?x)
+    (on-table ?x)
+    (arm-empty)
+    (holding ?x)
+    (on ?x ?y)
+  )
+
+  (:action pickup
+    :parameters (?ob)
+    :precondition (and (clear ?ob) (on-table ?ob) (arm-empty))
+    :effect (and (holding ?ob) (not (clear ?ob)) (not (on-table ?ob))
+      (not (arm-empty)))
+  )
+
+  (:action putdown
+    :parameters (?ob)
+    :precondition (holding ?ob)
+    :effect (and (clear ?ob) (arm-empty) (on-table ?ob)
+      (not (holding ?ob)))
+  )
+
+  (:action stack
+    :parameters (?ob ?underob)
+    :precondition (and (clear ?underob) (holding ?ob))
+    :effect (and (arm-empty) (clear ?ob) (on ?ob ?underob)
+      (not (clear ?underob)) (not (holding ?ob)))
+  )
+
+  (:action unstack
+    :parameters (?ob ?underob)
+    :precondition (and (on ?ob ?underob) (clear ?ob) (arm-empty))
+    :effect (and (holding ?ob) (clear ?underob)
+      (not (on ?ob ?underob)) (not (clear ?ob)) (not (arm-empty)))
+  )
+)
+</pddl-domain>
+
+This is the PDDL instance:
+<pddl-instance>
+;; blocks=35, out_folder=new/medium, instance_id=1, seed=42
+
+(define (problem blocksworld-01)
+ (:domain blocksworld)
+ (:objects b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24 b25 b26 b27 b28 b29 b30 b31 b32 b33 b34 b35 - object)
+ (:init 
+    (arm-empty)
+    (clear b10)
+    (on b10 b13)
+    (on b13 b6)
+    (on b6 b21)
+    (on b21 b32)
+    (on b32 b23)
+    (on b23 b30)
+    (on b30 b17)
+    (on b17 b27)
+    (on b27 b25)
+    (on b25 b15)
+    (on b15 b11)
+    (on b11 b12)
+    (on b12 b28)
+    (on-table b28)
+    (clear b9)
+    (on b9 b20)
+    (on b20 b31)
+    (on b31 b7)
+    (on b7 b26)
+    (on b26 b1)
+    (on b1 b34)
+    (on b34 b14)
+    (on b14 b19)
+    (on b19 b3)
+    (on b3 b33)
+    (on b33 b29)
+    (on b29 b22)
+    (on-table b22)
+    (clear b4)
+    (on b4 b24)
+    (on b24 b5)
+    (on b5 b35)
+    (on b35 b16)
+    (on b16 b18)
+    (on b18 b2)
+    (on b2 b8)
+    (on-table b8))
+ (:goal  (and 
+    (clear b17)
+    (on b17 b10)
+    (on b10 b2)
+    (on b2 b19)
+    (on b19 b32)
+    (on b32 b16)
+    (on b16 b35)
+    (on b35 b14)
+    (on b14 b1)
+    (on b1 b27)
+    (on b27 b4)
+    (on b4 b28)
+    (on b28 b31)
+    (on b31 b33)
+    (on b33 b5)
+    (on b5 b13)
+    (on b13 b15)
+    (on b15 b26)
+    (on b26 b8)
+    (on b8 b18)
+    (on b18 b6)
+    (on b6 b25)
+    (on b25 b20)
+    (on b20 b3)
+    (on b3 b21)
+    (on-table b21)
+    (clear b29)
+    (on b29 b23)
+    (on b23 b9)
+    (on b9 b22)
+    (on b22 b7)
+    (on b7 b12)
+    (on b12 b34)
+    (on b34 b11)
+    (on b11 b24)
+    (on b24 b30)
+    (on-table b30))))
+
+</pddl-instance>
+</inputs>
+
+<output-format>
+Return **only** a plan wrapped in "<plan>...</plan>", where each plan's action must use the same name and same number of parameters as one of the action schemas, each on a line. Do not include analysis, examples, or commentary outside the plan tags.
+</output-format>
+
+<requirements>
+The plan must be valid: each action must be applicable in the state it is applied in, and the plan must end in a goal state.
+</requirements>
+[2026-03-05 09:06:24,553] INFO :: Prompt tokens: 1429
+[2026-03-05 09:06:24,554] INFO :: Reasoning trace:
+<none>
+[2026-03-05 09:06:24,554] INFO :: Reasoning metadata: reasoning_tokens=0, reasoning_source=none
+[2026-03-05 09:06:24,554] INFO :: Response:
+<plan>
+unstack b10 b13
+putdown b10
+unstack b13 b6
+putdown b13
+unstack b6 b21
+putdown b6
+unstack b21 b32
+putdown b21
+unstack b32 b23
+putdown b32
+unstack b23 b30
+putdown b23
+unstack b30 b17
+putdown b30
+unstack b17 b27
+putdown b17
+unstack b27 b25
+putdown b27
+unstack b25 b15
+putdown b25
+unstack b15 b11
+putdown b15
+unstack b11 b12
+putdown b11
+unstack b12 b28
+putdown b12
+pickup b17
+stack b17 b10
+pickup b10
+stack b10 b2
+pickup b2
+stack b2 b19
+pickup b19
+stack b19 b32
+pickup b32
+stack b32 b16
+pickup b16
+stack b16 b35
+pickup b35
+stack b35 b14
+pickup b14
+stack b14 b1
+pickup b1
+stack b1 b27
+pickup b27
+stack b27 b4
+pickup b4
+stack b4 b28
+pickup b28
+stack b28 b31
+pickup b31
+stack b31 b33
+pickup b33
+stack b33 b5
+pickup b5
+stack b5 b13
+pickup b13
+stack b13 b15
+pickup b15
+stack b15 b26
+pickup b26
+stack b26 b8
+pickup b8
+stack b8 b18
+pickup b18
+stack b18 b6
+pickup b6
+stack b6 b25
+pickup b25
+stack b25 b20
+pickup b20
+stack b20 b3
+pickup b3
+stack b3 b21
+pickup b21
+putdown b21
+pickup b29
+stack b29 b23
+pickup b23
+stack b23 b9
+pickup b9
+stack b9 b22
+pickup b22
+stack b22 b7
+pickup b7
+stack b7 b12
+pickup b12
+stack b12 b34
+pickup b34
+stack b34 b11
+pickup b11
+stack b11 b24
+pickup b24
+stack b24 b30
+</plan>
+[2026-03-05 09:06:24,554] INFO :: Response tokens: 612
+[2026-03-05 09:06:24,554] INFO :: Plan:
+unstack b10 b13
+putdown b10
+unstack b13 b6
+putdown b13
+unstack b6 b21
+putdown b6
+unstack b21 b32
+putdown b21
+unstack b32 b23
+putdown b32
+unstack b23 b30
+putdown b23
+unstack b30 b17
+putdown b30
+unstack b17 b27
+putdown b17
+unstack b27 b25
+putdown b27
+unstack b25 b15
+putdown b25
+unstack b15 b11
+putdown b15
+unstack b11 b12
+putdown b11
+unstack b12 b28
+putdown b12
+pickup b17
+stack b17 b10
+pickup b10
+stack b10 b2
+pickup b2
+stack b2 b19
+pickup b19
+stack b19 b32
+pickup b32
+stack b32 b16
+pickup b16
+stack b16 b35
+pickup b35
+stack b35 b14
+pickup b14
+stack b14 b1
+pickup b1
+stack b1 b27
+pickup b27
+stack b27 b4
+pickup b4
+stack b4 b28
+pickup b28
+stack b28 b31
+pickup b31
+stack b31 b33
+pickup b33
+stack b33 b5
+pickup b5
+stack b5 b13
+pickup b13
+stack b13 b15
+pickup b15
+stack b15 b26
+pickup b26
+stack b26 b8
+pickup b8
+stack b8 b18
+pickup b18
+stack b18 b6
+pickup b6
+stack b6 b25
+pickup b25
+stack b25 b20
+pickup b20
+stack b20 b3
+pickup b3
+stack b3 b21
+pickup b21
+putdown b21
+pickup b29
+stack b29 b23
+pickup b23
+stack b23 b9
+pickup b9
+stack b9 b22
+pickup b22
+stack b22 b7
+pickup b7
+stack b7 b12
+pickup b12
+stack b12 b34
+pickup b34
+stack b34 b11
+pickup b11
+stack b11 b24
+pickup b24
+stack b24 b30
+[2026-03-05 09:06:24,554] INFO :: Extracted plan tokens: 234
+[2026-03-05 09:06:24,554] INFO :: Response metadata: response_tokens=612, extracted_plan_tokens=234
+[2026-03-05 09:06:24,555] INFO :: Plan file: logs/blocksworld_nvidia_gpt_oss_20b/medium-p01_lifted_seed1.plan
